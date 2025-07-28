@@ -88,7 +88,7 @@ export default function ChatPanel({
         </div>
         <p className="text-sm text-slate-600">
           {workspaceType === 'document' && "Ask questions and get formatted answers automatically inserted into your document."}
-          {workspaceType === 'cheatsheet' && "Request formulas and they'll be added as auto-sized boxes to your sheet."}
+          {workspaceType === 'cheatsheet' && "Request mathematical formulas and they'll be added as draggable, resizable boxes with LaTeX rendering."}
           {workspaceType === 'template' && "AI fills specific template sections with properly formatted content."}
         </p>
       </div>
@@ -168,6 +168,31 @@ export default function ChatPanel({
             <Send className="w-4 h-4" />
           </Button>
         </form>
+        {workspaceType === 'cheatsheet' && messages.length === 0 && (
+          <div className="mt-3 space-y-2">
+            <div className="text-xs text-slate-600 mb-1">Quick suggestions:</div>
+            <div className="space-y-1">
+              <button 
+                onClick={() => setMessage("Give me 50 essential calculus formulas with LaTeX formatting")}
+                className="w-full text-left text-xs p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded transition-colors"
+              >
+                50 Calculus Formulas
+              </button>
+              <button 
+                onClick={() => setMessage("Give me 50 algebra and trigonometry formulas")}
+                className="w-full text-left text-xs p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded transition-colors"
+              >
+                50 Algebra & Trig Formulas
+              </button>
+              <button 
+                onClick={() => setMessage("Give me 50 physics formulas with units")}
+                className="w-full text-left text-xs p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded transition-colors"
+              >
+                50 Physics Formulas
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
           <span>Press Enter to send</span>
           <span className="flex items-center">

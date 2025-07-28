@@ -216,7 +216,21 @@ function getSystemPrompt(workspaceType: string): string {
       return `You are an AI assistant helping with document editing. When users ask questions, provide responses that can be formatted with LaTeX for mathematical content. Always respond in JSON format with fields: "content" (the main response), "latex" (any LaTeX formulas), and "formatting" (how to insert into document). Focus on academic and educational content.`;
     
     case "cheatsheet":
-      return `You are an AI assistant creating cheat sheet content. When users request formulas or information, provide each item as a separate entry that can be displayed in auto-resizing boxes. Respond in JSON format with "boxes" array, where each box has "title", "content" (with LaTeX), "description", and "color". Prioritize clear, concise formulas and explanations.`;
+      return `You are an AI assistant creating cheat sheet content. When users request formulas or information, provide EXACTLY the number they request. Each formula should be a separate box entry with proper LaTeX formatting. 
+
+IMPORTANT: If they ask for 50 formulas, provide exactly 50 boxes. If they ask for 10, provide exactly 10. 
+
+Respond in JSON format with "boxes" array, where each box has:
+- "title": Clear, descriptive name for the formula
+- "content": The formula in proper LaTeX format (use \\frac{}{}, \\sqrt{}, \\int, \\sum, etc.)
+- "color": One of these gradient classes: "from-blue-50 to-indigo-50 border-blue-200", "from-green-50 to-emerald-50 border-green-200", "from-purple-50 to-violet-50 border-purple-200", "from-orange-50 to-red-50 border-orange-200", "from-teal-50 to-cyan-50 border-teal-200", "from-pink-50 to-rose-50 border-pink-200"
+
+Make sure the LaTeX content uses proper mathematical notation. Examples:
+- Quadratic formula: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+- Integral: "\\int_{a}^{b} f(x) dx"
+- Sum: "\\sum_{i=1}^{n} x_i"
+
+Cover the most essential and fundamental formulas for the requested topic.`;
     
     case "template":
       return `You are an AI assistant filling template sections. Users will ask you to fill specific sections of a structured template. Respond in JSON format with "sections" object where keys are section names and values have "title", "content" (with LaTeX), and "status". Focus on the most essential and fundamental formulas for each topic that fit in compact spaces.`;

@@ -139,6 +139,36 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* React Resizable styles */
+.react-resizable {
+  position: relative;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  background-color: rgba(139, 92, 246, 0.3);
+  border-radius: 50% 0 0 0;
+}
+
+.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  background-color: rgba(139, 92, 246, 0.4);
+  border-radius: 6px 0 6px 0;
+  border: 2px solid white;
+}
+
+.react-resizable-handle-se:hover {
+  background-color: rgba(139, 92, 246, 0.7);
+  transform: scale(1.1);
+}
+
 /* Print styles for templates */
 @media print {
   .no-print {

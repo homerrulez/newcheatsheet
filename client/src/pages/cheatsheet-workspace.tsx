@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Draggable from 'react-draggable';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 import { useParams, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft } from 'lucide-react';
+import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft, Move, Maximize2 } from 'lucide-react';
 import ChatPanel from '@/components/chat-panel';
 import LaTeXRenderer from '@/components/latex-renderer';
 import { CheatSheet, CheatSheetBox } from '@shared/schema';
@@ -128,12 +131,29 @@ export default function CheatSheetWorkspace() {
         title: box.title || 'Formula',
         content: box.content || '',
         color: box.color || getRandomColor(),
-        position: { x: (index % 2) * 300, y: Math.floor(index / 2) * 200 },
-        size: { width: 280, height: 'auto' }
+        position: { x: (index % 4) * 320, y: Math.floor(index / 4) * 200 },
+        size: { width: 300, height: 160 }
       }));
       setBoxes(prev => [...prev, ...newBoxes]);
+      saveSheetMutation.mutate();
     }
   };
+
+  const updateBoxPosition = useCallback((boxId: string, deltaPosition: { x: number, y: number }) => {
+    setBoxes(prev => prev.map(box => 
+      box.id === boxId 
+        ? { ...box, position: { x: box.position.x + deltaPosition.x, y: box.position.y + deltaPosition.y } }
+        : box
+    ));
+  }, []);
+
+  const updateBoxSize = useCallback((boxId: string, size: { width: number, height: number }) => {
+    setBoxes(prev => prev.map(box => 
+      box.id === boxId 
+        ? { ...box, size }
+        : box
+    ));
+  }, []);
 
   const getRandomColor = () => {
     const colors = [
@@ -268,53 +288,93 @@ export default function CheatSheetWorkspace() {
           </div>
 
           {/* Cheat Sheet Content */}
-          <ScrollArea className="flex-1 p-6">
-            <div className="max-w-5xl mx-auto">
+          <div className="flex-1 relative bg-gray-50 overflow-auto">
+            <div 
+              className="relative w-full h-full min-h-[800px]" 
+              style={{ 
+                backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)',
+                backgroundSize: '20px 20px'
+              }}
+            >
               {boxes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {boxes.map((box, index) => (
-                    <div
-                      key={box.id}
-                      className={`bg-gradient-to-br ${box.color} rounded-xl p-4 hover:shadow-lg transition-all duration-300 animate-scale-in`}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-slate-900 text-sm">{box.title}</h4>
-                        <SquareArrowOutUpLeft className="w-3 h-3 text-slate-500" />
-                      </div>
-                      <div className="mb-2">
-                        {box.content.includes('$') ? (
-                          <LaTeXRenderer 
-                            content={box.content.replace(/\$/g, '')} 
-                            className="text-base"
-                          />
-                        ) : (
-                          <div className="text-sm">{box.content}</div>
-                        )}
-                      </div>
+                boxes.map((box, index) => (
+                  <Draggable
+                    key={box.id}
+                    defaultPosition={box.position || { x: 0, y: 0 }}
+                    onStop={(e, data) => updateBoxPosition(box.id, { x: data.x - (box.position?.x || 0), y: data.y - (box.position?.y || 0) })}
+                    handle=".drag-handle"
+                    bounds="parent"
+                  >
+                    <div className="absolute">
+                      <ResizableBox
+                        width={box.size?.width || 300}
+                        height={box.size?.height || 160}
+                        minConstraints={[200, 100]}
+                        maxConstraints={[600, 400]}
+                        onResize={(e, data) => updateBoxSize(box.id, { width: data.size.width, height: data.size.height })}
+                        resizeHandles={['se']}
+                        className="relative"
+                      >
+                        <div
+                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden`}
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          {/* Drag Handle */}
+                          <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 cursor-move bg-white/10 backdrop-blur-sm">
+                            <h4 className="font-semibold text-slate-900 text-sm truncate">{box.title}</h4>
+                            <div className="flex items-center space-x-1">
+                              <Move className="w-3 h-3 text-slate-600" />
+                              <Maximize2 className="w-3 h-3 text-slate-600" />
+                            </div>
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="p-3 h-full overflow-auto">
+                            <div className="text-sm leading-relaxed">
+                              {/* Properly render LaTeX content */}
+                              {box.content.includes('\\') || box.content.includes('$') ? (
+                                <LaTeXRenderer 
+                                  content={box.content.replace(/^\$+|\$+$/g, '')} 
+                                  className="text-base"
+                                />
+                              ) : (
+                                <div className="whitespace-pre-wrap">{box.content}</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </ResizableBox>
                     </div>
-                  ))}
-                  
-                  {/* Add More Box */}
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer min-h-[120px]">
-                    <div className="text-center text-slate-500">
-                      <Plus className="w-6 h-6 mx-auto mb-2" />
-                      <p className="text-sm">Add new box via AI</p>
-                    </div>
-                  </div>
-                </div>
+                  </Draggable>
+                ))
               ) : (
-                <div className="text-center py-16">
-                  <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
-                  <p className="text-slate-600 mb-4">Ask the AI assistant to add formulas and content boxes</p>
-                  <div className="text-sm text-slate-500">
-                    Try: "Give me 10 essential calculus formulas"
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center py-16 max-w-md">
+                    <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
+                    <p className="text-slate-600 mb-4">Ask the AI assistant to add formulas and content boxes</p>
+                    <div className="text-sm text-slate-500">
+                      Try: "Give me 50 essential math formulas" or "Add calculus derivatives"
+                    </div>
                   </div>
                 </div>
               )}
+              
+              {/* Floating Add Button */}
+              {boxes.length > 0 && (
+                <div className="absolute bottom-6 right-6">
+                  <Button
+                    className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-12 h-12 shadow-lg"
+                    onClick={() => {
+                      // Trigger AI to add more boxes
+                    }}
+                  >
+                    <Plus className="w-6 h-6" />
+                  </Button>
+                </div>
+              )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Right Panel: ChatGPT */}
