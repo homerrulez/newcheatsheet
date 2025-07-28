@@ -1,0 +1,113 @@
+# replit.md
+
+## Overview
+
+StudyFlow is a full-stack web application designed as an academic productivity platform. It provides three main workspace types for students and academics: document editing with LaTeX support, interactive cheat sheets, and customizable templates. The application features AI-powered assistance through OpenAI integration and real-time collaboration capabilities.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter for client-side routing
+- **State Management**: TanStack Query (React Query) for server state management
+- **UI Framework**: Radix UI components with Tailwind CSS styling
+- **Styling**: Tailwind CSS with CSS variables for theming
+- **Build Tool**: Vite for development and production builds
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules
+- **API Pattern**: RESTful API with conventional routes
+- **Middleware**: Custom logging, JSON parsing, error handling
+- **Development**: Hot module replacement via Vite integration
+
+### Database & ORM
+- **Database**: PostgreSQL (configured for Neon serverless)
+- **ORM**: Drizzle ORM with Drizzle Kit for migrations
+- **Schema**: Shared schema definitions between client and server
+- **Validation**: Zod schemas for runtime type validation
+
+## Key Components
+
+### Workspace Types
+1. **Document Workspace**: Rich text editor with LaTeX rendering support
+2. **Cheat Sheet Workspace**: Grid-based layout with customizable boxes
+3. **Template Workspace**: Structured templates for different academic subjects
+
+### Core Features
+- **LaTeX Rendering**: Dynamic mathematical notation rendering via KaTeX
+- **AI Chat Integration**: OpenAI-powered assistance contextual to each workspace
+- **Real-time Collaboration**: Shared workspaces with chat history
+- **Responsive Design**: Mobile-first approach with adaptive layouts
+
+### UI Components
+- **Component Library**: Comprehensive set of Radix UI primitives
+- **Design System**: Consistent theming with CSS custom properties
+- **Form Handling**: React Hook Form with Zod validation
+- **Accessibility**: ARIA-compliant components throughout
+
+## Data Flow
+
+### Client-Server Communication
+1. Frontend makes API requests using TanStack Query
+2. Server processes requests with Express middleware chain
+3. Data validation occurs at API boundary using Zod schemas
+4. Database operations handled through Drizzle ORM
+5. Response data cached and synchronized on client
+
+### State Management
+- Server state managed by TanStack Query with automatic caching
+- Local component state handled by React hooks
+- Form state managed by React Hook Form
+- Global UI state (toasts, modals) via context providers
+
+### AI Integration
+- Chat messages stored per workspace with type and ID
+- OpenAI API calls made from server with user context
+- Responses integrated into workspace content dynamically
+- Chat history maintained for conversation continuity
+
+## External Dependencies
+
+### Core Dependencies
+- **@neondatabase/serverless**: PostgreSQL connection for serverless environments
+- **@tanstack/react-query**: Server state management and caching
+- **drizzle-orm**: Type-safe database operations
+- **openai**: Official OpenAI API client
+- **wouter**: Lightweight React router
+
+### UI & Styling
+- **@radix-ui/***: Headless UI component primitives
+- **tailwindcss**: Utility-first CSS framework
+- **class-variance-authority**: Component variant management
+- **lucide-react**: Icon library
+
+### Development Tools
+- **vite**: Build tool and development server
+- **typescript**: Static type checking
+- **tsx**: TypeScript execution for development
+- **esbuild**: Production bundling for server code
+
+## Deployment Strategy
+
+### Build Process
+1. Frontend built with Vite to `dist/public` directory
+2. Server code bundled with esbuild to `dist` directory
+3. Static assets served by Express in production
+4. Environment-specific configuration via environment variables
+
+### Environment Configuration
+- Development: Vite dev server with Express API proxy
+- Production: Single Express server serving both API and static files
+- Database: PostgreSQL connection via DATABASE_URL environment variable
+- AI: OpenAI API key via OPENAI_API_KEY environment variable
+
+### Deployment Requirements
+- Node.js runtime environment
+- PostgreSQL database instance
+- Environment variables for external service credentials
+- Static file serving capability for frontend assets
