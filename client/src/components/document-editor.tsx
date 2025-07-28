@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import LaTeXRenderer from './latex-renderer';
-import { Bold, Italic, Underline, List, ListOrdered, SquareRadical } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, SquareRadical, Code, Quote, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DocumentEditorProps {
@@ -136,6 +136,25 @@ export default function DocumentEditor({
                 className="p-2 hover:bg-slate-100"
               >
                 <ListOrdered className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="w-px h-6 bg-slate-300"></div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => insertText('`', '`')}
+                className="p-2 hover:bg-slate-100"
+              >
+                <Code className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => insertText('> ', '')}
+                className="p-2 hover:bg-slate-100"
+              >
+                <Quote className="w-4 h-4" />
               </Button>
             </div>
             <div className="w-px h-6 bg-slate-300"></div>

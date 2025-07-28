@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Download, Plus, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Download, Plus, FileText, Clock, Type, Hash } from 'lucide-react';
 import ChatPanel from '@/components/chat-panel';
 import DocumentEditor from '@/components/document-editor';
 import { Document } from '@shared/schema';
@@ -14,6 +14,7 @@ export default function DocumentWorkspace() {
   const { id } = useParams();
   const [currentDoc, setCurrentDoc] = useState<Document | null>(null);
   const [content, setContent] = useState('');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -66,12 +67,55 @@ export default function DocumentWorkspace() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      setLastSaved(new Date());
       toast({
         title: "Document saved",
         description: "Your document has been saved successfully.",
       });
     },
   });
+
+  const handleExport = () => {
+    if (!currentDoc || !content) {
+      toast({
+        title: "Nothing to export",
+        description: "Please create some content first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create a downloadable file
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentDoc.title || 'document'}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Document exported",
+      description: "Your document has been downloaded as a Markdown file.",
+    });
+  };
+
+  // Auto-save functionality
+  const autoSave = useCallback(() => {
+    if (currentDoc && content && !saveDocumentMutation.isPending) {
+      saveDocumentMutation.mutate();
+    }
+  }, [currentDoc, content, saveDocumentMutation]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      autoSave();
+    }, 3000); // Auto-save after 3 seconds of inactivity
+
+    return () => clearTimeout(timer);
+  }, [content, autoSave]);
 
   const handleAIResponse = (response: any) => {
     if (response.content) {
@@ -91,6 +135,14 @@ export default function DocumentWorkspace() {
     if (diffInHours < 1) return 'Less than an hour ago';
     if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
     return `${Math.floor(diffInHours / 24)} day${Math.floor(diffInHours / 24) > 1 ? 's' : ''} ago`;
+  };
+
+  const getDocumentStats = () => {
+    const words = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const characters = content.length;
+    const lines = content.split('\n').length;
+    const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
+    return { words, characters, lines, paragraphs };
   };
 
   return (
@@ -120,7 +172,11 @@ export default function DocumentWorkspace() {
               <Save className="w-4 h-4 mr-2" />
               Save
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={handleExport}
+              disabled={!currentDoc || !content}
+            >
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
@@ -198,6 +254,35 @@ export default function DocumentWorkspace() {
           workspaceType="document"
           onAIResponse={handleAIResponse}
         />
+      </div>
+
+      {/* Status Bar */}
+      <div className="bg-white border-t border-slate-200 px-6 py-2">
+        <div className="flex items-center justify-between text-sm text-slate-600">
+          <div className="flex items-center space-x-6">
+            <span className="flex items-center">
+              <Type className="w-4 h-4 mr-1" />
+              {getDocumentStats().words} words
+            </span>
+            <span className="flex items-center">
+              <Hash className="w-4 h-4 mr-1" />
+              {getDocumentStats().characters} characters
+            </span>
+            <span>{getDocumentStats().lines} lines</span>
+            <span>{getDocumentStats().paragraphs} paragraphs</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            {lastSaved && (
+              <span className="text-green-600">
+                Last saved: {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+            {saveDocumentMutation.isPending && (
+              <span className="text-blue-600">Saving...</span>
+            )}
+            <span>Auto-save enabled</span>
+          </div>
+        </div>
       </div>
     </div>
   );

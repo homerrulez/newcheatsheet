@@ -103,6 +103,93 @@ export default function TemplateWorkspace() {
     },
   });
 
+  const handleExportPDF = () => {
+    if (completedSections === 0) {
+      toast({
+        title: "Nothing to export",
+        description: "Please fill some template sections first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create a printable HTML version for PDF export
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${templateTypes[selectedType as keyof typeof templateTypes]}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 0; padding: 40px; background: white; }
+              .template-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+              .template-title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+              .template-subtitle { font-size: 14px; color: #666; }
+              .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; height: 720px; }
+              .section { border: 1px solid #ccc; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; }
+              .section-title { font-weight: bold; text-align: center; margin-bottom: 8px; font-size: 11px; }
+              .section-content { flex: 1; font-size: 10px; line-height: 1.3; }
+              .empty { background: #f9f9f9; color: #999; }
+              .filled { background: #f0f8ff; }
+              @media print { 
+                body { margin: 0; padding: 20px; } 
+                .template-header { page-break-inside: avoid; }
+                .grid { page-break-inside: avoid; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="template-header">
+              <div class="template-title">${templateTypes[selectedType as keyof typeof templateTypes].toUpperCase()}</div>
+              <div class="template-subtitle">Essential Formulas & Concepts</div>
+            </div>
+            <div class="grid">
+              ${sections.map(section => `
+                <div class="section ${section.status === 'complete' ? 'filled' : 'empty'}">
+                  <div class="section-title">${section.title}</div>
+                  <div class="section-content">
+                    ${section.status === 'complete' && section.content ? 
+                      section.content.replace(/\$/g, '') : 
+                      'Empty'
+                    }
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+
+    toast({
+      title: "Export ready",
+      description: "Use your browser's print dialog to save as PDF.",
+    });
+  };
+
+  const handlePrint = () => {
+    if (completedSections === 0) {
+      toast({
+        title: "Nothing to print",
+        description: "Please fill some template sections first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    window.print();
+    
+    toast({
+      title: "Printing template",
+      description: "Your template is being sent to the printer.",
+    });
+  };
+
   const handleAIResponse = (response: any) => {
     if (response.sections) {
       setSections(prev => 
@@ -162,13 +249,22 @@ export default function TemplateWorkspace() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
+            <Button 
+              onClick={handleExportPDF}
+              disabled={completedSections === 0}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
               <Download className="w-4 h-4 mr-2" />
               Export PDF
             </Button>
-            <Button variant="outline" className="no-print">
+            <Button 
+              variant="outline" 
+              onClick={handlePrint}
+              disabled={completedSections === 0}
+              className="no-print"
+            >
               <Printer className="w-4 h-4 mr-2" />
-              Printer
+              Print
             </Button>
           </div>
         </div>

@@ -72,6 +72,55 @@ export default function CheatSheetWorkspace() {
     },
   });
 
+  const handlePrint = () => {
+    if (boxes.length === 0) {
+      toast({
+        title: "Nothing to print",
+        description: "Please add some content first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create a printable version
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${currentSheet?.title || 'Cheat Sheet'}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+              .box { border: 2px solid #ccc; border-radius: 8px; padding: 16px; break-inside: avoid; }
+              .title { font-weight: bold; margin-bottom: 8px; color: #333; }
+              .content { font-size: 14px; line-height: 1.4; }
+              @media print { body { margin: 10px; } .box { page-break-inside: avoid; } }
+            </style>
+          </head>
+          <body>
+            <h1>${currentSheet?.title || 'Cheat Sheet'}</h1>
+            <div class="grid">
+              ${boxes.map(box => `
+                <div class="box">
+                  <div class="title">${box.title}</div>
+                  <div class="content">${box.content}</div>
+                </div>
+              `).join('')}
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+
+    toast({
+      title: "Opening print dialog",
+      description: "Your cheat sheet is ready to print.",
+    });
+  };
+
   const handleAIResponse = (response: any) => {
     if (response.boxes && Array.isArray(response.boxes)) {
       const newBoxes = response.boxes.map((box: any, index: number) => ({
@@ -135,9 +184,13 @@ export default function CheatSheetWorkspace() {
               <Save className="w-4 h-4 mr-2" />
               Save Sheet
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={handlePrint}
+              disabled={boxes.length === 0}
+            >
               <Printer className="w-4 h-4 mr-2" />
-              Printer
+              Print
             </Button>
           </div>
         </div>
