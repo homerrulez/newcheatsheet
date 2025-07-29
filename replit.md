@@ -8,6 +8,14 @@ StudyFlow is a full-stack web application designed as an academic productivity p
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### July 29, 2025 - ChatGPT Error Handling Improvements
+- **Issue**: ChatGPT messages were silently failing due to API quota exceeded
+- **Solution**: Added comprehensive error handling with user-friendly toast notifications
+- **Changes**: Enhanced chat component with proper error states and messaging
+- **Status**: Error handling working correctly, waiting for valid OpenAI API key with quota
+
 ## System Architecture
 
 ### Frontend Architecture
