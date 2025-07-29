@@ -1,6 +1,7 @@
 import { 
   type User, 
   type InsertUser, 
+  type UpsertUser,
   type Document, 
   type InsertDocument,
   type CheatSheet,
@@ -17,6 +18,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
 
   // Document methods
   getDocument(id: string): Promise<Document | undefined>;
@@ -37,8 +39,8 @@ export interface IStorage {
   updateTemplate(id: string, updates: Partial<Template>): Promise<Template>;
   
   // Chat methods
-  getChatMessages(workspaceId: string, workspaceType: string): Promise<ChatMessage[]>;
-  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessages(workspaceId: string, workspaceType: string, userId: string): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage & { userId: string }): Promise<ChatMessage>;
 }
 
 export class MemStorage implements IStorage {
@@ -62,15 +64,42 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === username,
     );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(userData.id!);
+    if (existingUser) {
+      const updatedUser: User = {
+        ...existingUser,
+        ...userData,
+        updatedAt: new Date()
+      };
+      this.users.set(userData.id!, updatedUser);
+      return updatedUser;
+    } else {
+      const newUser: User = {
+        ...userData,
+        id: userData.id || randomUUID(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.users.set(newUser.id, newUser);
+      return newUser;
+    }
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
@@ -178,13 +207,13 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getChatMessages(workspaceId: string, workspaceType: string): Promise<ChatMessage[]> {
+  async getChatMessages(workspaceId: string, workspaceType: string, userId: string): Promise<ChatMessage[]> {
     return Array.from(this.chatMessages.values())
-      .filter(msg => msg.workspaceId === workspaceId && msg.workspaceType === workspaceType)
+      .filter(msg => msg.workspaceId === workspaceId && msg.workspaceType === workspaceType && msg.userId === userId)
       .sort((a, b) => a.createdAt!.getTime() - b.createdAt!.getTime());
   }
 
-  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+  async createChatMessage(message: InsertChatMessage & { userId: string }): Promise<ChatMessage> {
     const id = randomUUID();
     const now = new Date();
     const newMessage: ChatMessage = { 
