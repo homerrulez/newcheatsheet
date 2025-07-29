@@ -138,46 +138,54 @@ export default function CheatSheetWorkspace() {
     gutter: 10         // Space between boxes
   };
 
-  const calculateGridPosition = useCallback((index: number) => {
-    const { pageWidth, pageHeight, margin, columns, maxBoxWidth, maxBoxHeight, gutter } = GRID_CONFIG;
-    
-    // Calculate available content area
+  // Dynamic positioning that fills pages efficiently
+  const calculateDynamicPosition = useCallback((index: number, allBoxes: any[]) => {
+    const { pageWidth, pageHeight, margin } = GRID_CONFIG;
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
     
-    // Calculate rows that fit per page (with some buffer)
-    const rowsPerPage = Math.floor((contentHeight - gutter) / (maxBoxHeight + gutter));
-    const boxesPerPage = columns * rowsPerPage;
+    // Start position for new boxes
+    const startX = margin;
+    const startY = margin + 60; // Leave space for page header
     
-    // Determine page and position within page
-    const pageNumber = Math.floor(index / boxesPerPage);
-    const indexOnPage = index % boxesPerPage;
+    // If it's the first box, place it at the start
+    if (index === 0) {
+      return { x: startX, y: startY };
+    }
     
-    // Column-wise placement: fill column 1, then column 2, then column 3
-    const col = Math.floor(indexOnPage / rowsPerPage);
-    const row = indexOnPage % rowsPerPage;
+    // For subsequent boxes, try to place them efficiently
+    // Simple flow layout: left to right, then down
+    const boxWidth = 220; // Estimated average width
+    const boxHeight = 140; // Estimated average height
+    const spacing = 20;
     
-    // Calculate exact grid position relative to page start
-    const pageStartY = pageNumber * (pageHeight + 40); // 40px for page margin
-    const x = margin + (col * (maxBoxWidth + gutter));
-    const y = pageStartY + 20 + margin + (row * (maxBoxHeight + gutter)); // 20px top margin
+    const boxesPerRow = Math.floor(contentWidth / (boxWidth + spacing));
+    const row = Math.floor(index / boxesPerRow);
+    const col = index % boxesPerRow;
     
-    return { 
-      x, 
-      y, 
-      page: pageNumber,
-      width: maxBoxWidth,
-      height: maxBoxHeight,
-      gridCol: col,
-      gridRow: row
-    };
+    // Calculate which page this should be on
+    const rowsPerPage = Math.floor((contentHeight - 60) / (boxHeight + spacing));
+    const pageNumber = Math.floor(row / rowsPerPage);
+    const rowOnPage = row % rowsPerPage;
+    
+    const x = startX + (col * (boxWidth + spacing));
+    const y = startY + (pageNumber * (pageHeight + 40)) + (rowOnPage * (boxHeight + spacing));
+    
+    return { x, y };
   }, []);
 
-  // Calculate total pages needed
-  const contentHeight = GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2);
-  const rowsPerPage = Math.floor((contentHeight - GRID_CONFIG.gutter) / (GRID_CONFIG.maxBoxHeight + GRID_CONFIG.gutter));
-  const boxesPerPage = GRID_CONFIG.columns * rowsPerPage;
-  const totalPages = Math.max(1, Math.ceil(boxes.length / boxesPerPage));
+  // Calculate total pages based on box positions
+  const calculateTotalPages = () => {
+    if (boxes.length === 0) return 1;
+    
+    const maxY = Math.max(...boxes.map(box => 
+      (box.position?.y || 0) + (box.size?.height || 140)
+    ));
+    
+    return Math.max(1, Math.ceil((maxY + 100) / (GRID_CONFIG.pageHeight + 40)));
+  };
+  
+  const totalPages = calculateTotalPages();
 
   const handleAIResponse = (response: any) => {
     // Handle box operations (delete, edit, etc.)
@@ -214,15 +222,19 @@ export default function CheatSheetWorkspace() {
       setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
-    // Handle new boxes creation - position managed by CSS Grid
+    // Handle new boxes creation with smart positioning
     else if (response.boxes && Array.isArray(response.boxes)) {
-      const newBoxes = response.boxes.map((box: any, index: number) => ({
-        id: `box-${Date.now()}-${index}`,
-        title: box.title || 'Formula',
-        content: box.content || '',
-        color: box.color || getRandomColor()
-        // Position and size managed automatically by CSS Grid
-      }));
+      const newBoxes = response.boxes.map((box: any, index: number) => {
+        const position = calculateDynamicPosition(boxes.length + index, boxes);
+        return {
+          id: `box-${Date.now()}-${index}`,
+          title: box.title || 'Formula',
+          content: box.content || '',
+          color: box.color || getRandomColor(),
+          position,
+          size: { width: 220, height: 140 } // Initial size, will auto-adjust
+        };
+      });
       
       setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
@@ -439,19 +451,15 @@ export default function CheatSheetWorkspace() {
             </div>
           </div>
 
-          {/* Cheat Sheet Content - True CSS Grid Layout */}
-          <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth snap-y snap-mandatory">
-            {/* Generate pages with actual CSS Grid containers */}
-            {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
-              // Calculate which boxes belong to this page
-              const startIndex = pageIndex * boxesPerPage;
-              const endIndex = Math.min(startIndex + boxesPerPage, boxes.length);
-              const pageBoxes = boxes.slice(startIndex, endIndex);
-              
-              return (
+          {/* Cheat Sheet Content - Dynamic Flexible Layout */}
+          <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
+            {/* Dynamic Page System */}
+            <div className="relative" style={{ minHeight: `${totalPages * 832}px` }}>
+              {/* Page boundaries for print layout */}
+              {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => (
                 <div
                   key={pageIndex}
-                  className="page-container snap-start"
+                  className="page-container"
                   style={{
                     marginTop: pageIndex === 0 ? '20px' : '40px'
                   }}
@@ -461,77 +469,46 @@ export default function CheatSheetWorkspace() {
                     Page {pageIndex + 1} of {Math.max(1, totalPages)}
                   </div>
                   
-                  {/* Grid columns indicator */}
+                  {/* Page content indicator */}
                   <div className="absolute top-2 left-4 text-xs text-gray-400 z-10">
-                    Grid: {pageBoxes.length}/{boxesPerPage} boxes
-                  </div>
-                  
-                  {/* CSS Grid Container with Dynamic Sizing */}
-                  <div 
-                    className="absolute grid gap-2.5 p-9"
-                    style={{
-                      gridTemplateColumns: `repeat(3, minmax(${GRID_CONFIG.minBoxWidth}px, ${GRID_CONFIG.maxBoxWidth}px))`,
-                      gridAutoRows: 'min-content',
-                      gridAutoFlow: 'column',
-                      justifyContent: 'space-between',
-                      alignContent: 'start',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%'
-                    }}
-                  >
-                    {pageBoxes.map((box, indexOnPage) => (
-                      <div
-                        key={box.id}
-                        className="grid-box-container"
-                        style={{
-                          gridColumn: Math.floor(indexOnPage / rowsPerPage) + 1,
-                          gridRow: (indexOnPage % rowsPerPage) + 1
-                        }}
-                      >
-                        <AutoResizeMathBox
-                          id={box.id}
-                          title={box.title}
-                          content={box.content}
-                          color={box.color}
-                          position={{ x: 0, y: 0 }} // Position managed by CSS Grid
-                          size={{ 
-                            width: GRID_CONFIG.maxBoxWidth, 
-                            height: GRID_CONFIG.maxBoxHeight 
-                          }}
-                          onPositionChange={() => {}} // No manual positioning in grid
-                          onSizeChange={() => {}} // Size managed by content
-                          onSaveRequest={debounceAndSave}
-                          boxNumber={startIndex + indexOnPage + 1}
-                          isGridMode={true}
-                          minWidth={GRID_CONFIG.minBoxWidth}
-                          maxWidth={GRID_CONFIG.maxBoxWidth}
-                          minHeight={GRID_CONFIG.minBoxHeight}
-                          maxHeight={GRID_CONFIG.maxBoxHeight}
-                        />
-                      </div>
-                    ))}
+                    Content-aware layout
                   </div>
                 </div>
-              );
-            })}
-            
-            {/* Empty state */}
-            {boxes.length === 0 && (
-              <div className="page-container snap-start mt-5">
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center py-16 max-w-md">
-                    <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
-                    <p className="text-slate-600 mb-4">Ask the AI assistant to add formulas and content boxes</p>
-                    <div className="text-sm text-slate-500">
-                      Try: "Give me 50 essential math formulas" or "Add calculus derivatives"
+              ))}
+              
+              {/* All boxes positioned dynamically */}
+              <div className="absolute inset-0">
+                {boxes.length > 0 ? (
+                  boxes.map((box, index) => (
+                    <AutoResizeMathBox
+                      key={box.id}
+                      id={box.id}
+                      title={box.title}
+                      content={box.content}
+                      color={box.color}
+                      position={box.position || calculateDynamicPosition(index, boxes)}
+                      size={box.size}
+                      onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                      onSizeChange={(size) => updateBoxSize(box.id, size)}
+                      onSaveRequest={debounceAndSave}
+                      boxNumber={index + 1}
+                      isGridMode={false} // Enable full draggability
+                    />
+                  ))
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center py-16 max-w-md">
+                      <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
+                      <p className="text-slate-600 mb-4">Ask the AI assistant to add formulas and content boxes</p>
+                      <div className="text-sm text-slate-500">
+                        Try: "Give me 50 essential math formulas" or "Add calculus derivatives"
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 

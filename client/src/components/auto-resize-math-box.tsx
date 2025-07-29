@@ -35,231 +35,171 @@ export default function AutoResizeMathBox({
   boxNumber,
   isGridMode = false,
   minWidth = 160,
-  maxWidth = 200,
+  maxWidth = 400,
   minHeight = 100,
   maxHeight = 300
 }: AutoResizeMathBoxProps) {
   const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
   const [isManuallyResized, setIsManuallyResized] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  // Use external size if manually resized, otherwise use auto-calculated size
-  const currentSize = isManuallyResized && externalSize ? externalSize : autoSize;
-
-  // Auto-resize based on content using ResizeObserver
-  const setupResizeObserver = useCallback(() => {
-    if (!contentRef.current || isManuallyResized) return;
-
-    // Clean up previous observer
-    if (resizeObserverRef.current) {
-      resizeObserverRef.current.disconnect();
-    }
-
-    resizeObserverRef.current = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        
-        // Add padding for title bar (4rem) and content padding (24px)
-        const newHeight = Math.max(120, height + 64 + 24);
-        const newWidth = Math.max(200, Math.min(800, width + 48));
-        
-        setAutoSize(prev => {
-          // Only update if size actually changed to avoid infinite loops
-          if (Math.abs(prev.width - newWidth) > 5 || Math.abs(prev.height - newHeight) > 5) {
-            return { width: newWidth, height: newHeight };
-          }
-          return prev;
-        });
-      }
-    });
-
-    resizeObserverRef.current.observe(contentRef.current);
-  }, [isManuallyResized]);
-
-  // Set up ResizeObserver when content changes
-  useEffect(() => {
-    if (!isManuallyResized) {
-      const timer = setTimeout(() => {
-        setupResizeObserver();
-      }, 100);
-
-      return () => {
-        clearTimeout(timer);
-        if (resizeObserverRef.current) {
-          resizeObserverRef.current.disconnect();
-        }
-      };
-    }
-  }, [content, setupResizeObserver, isManuallyResized]);
-
-  // Handle position updates
-  const handleDragStop = useCallback((e: any, data: any) => {
-    const newPosition = { x: Math.max(0, data.x), y: Math.max(0, data.y) };
-    onPositionChange(newPosition);
-    onSaveRequest();
-  }, [onPositionChange, onSaveRequest]);
-
-  // Handle manual resize
-  const handleResize = useCallback((e: any, data: any) => {
-    setIsManuallyResized(true);
-    onSizeChange({ width: data.size.width, height: data.size.height });
-  }, [onSizeChange]);
-
-  const handleResizeStop = useCallback(() => {
-    onSaveRequest();
-  }, [onSaveRequest]);
-
-  // Content-aware size calculation for grid mode
+  // Content-aware size calculation
   const calculateContentSize = useCallback(() => {
-    if (!contentRef.current) return { width: minWidth, height: minHeight };
+    if (!contentRef.current) return { width: 200, height: 120 };
     
     const contentElement = contentRef.current;
     const titleHeight = 48; // Fixed title height
-    const padding = 24; // Total padding
+    const padding = 24; // Total padding (12px each side)
     
-    // Get natural content dimensions
-    contentElement.style.width = 'auto';
-    contentElement.style.height = 'auto';
+    // Create a temporary element to measure natural content size
+    const measureElement = document.createElement('div');
+    measureElement.style.position = 'absolute';
+    measureElement.style.visibility = 'hidden';
+    measureElement.style.whiteSpace = 'nowrap';
+    measureElement.style.fontSize = window.getComputedStyle(contentElement).fontSize;
+    measureElement.style.fontFamily = window.getComputedStyle(contentElement).fontFamily;
+    measureElement.style.lineHeight = window.getComputedStyle(contentElement).lineHeight;
+    measureElement.innerHTML = contentElement.innerHTML;
+    document.body.appendChild(measureElement);
     
-    const scrollWidth = contentElement.scrollWidth;
-    const scrollHeight = contentElement.scrollHeight;
+    const naturalWidth = measureElement.scrollWidth;
+    document.body.removeChild(measureElement);
     
-    // Calculate optimal width (respecting grid constraints)
-    let optimalWidth = Math.max(minWidth, Math.min(maxWidth, scrollWidth + padding));
+    // Calculate width: natural width + padding, with reasonable constraints
+    let optimalWidth = Math.max(180, naturalWidth + padding);
+    optimalWidth = Math.min(400, optimalWidth);
     
-    // Calculate height needed for this width
+    // Now measure height for the calculated width
     contentElement.style.width = `${optimalWidth - padding}px`;
     const heightForWidth = contentElement.scrollHeight;
     
-    let optimalHeight = Math.max(minHeight, Math.min(maxHeight, heightForWidth + titleHeight + padding));
+    let optimalHeight = Math.max(100, heightForWidth + titleHeight + padding);
     
-    // Maintain balanced ratio (avoid extreme shapes)
+    // Maintain reasonable proportions
     const ratio = optimalWidth / optimalHeight;
-    if (ratio > 2.5) { // Too wide
-      optimalHeight = Math.min(maxHeight, optimalWidth / 2.2);
-    } else if (ratio < 0.4) { // Too tall
-      optimalWidth = Math.max(minWidth, optimalHeight * 0.6);
+    if (ratio > 3.5) { // Very wide - increase height slightly
+      optimalHeight = Math.max(optimalHeight, optimalWidth / 3.2);
+    } else if (ratio < 0.3) { // Very tall - increase width slightly  
+      optimalWidth = Math.max(optimalWidth, optimalHeight * 0.4);
     }
     
     return { 
       width: Math.round(optimalWidth), 
       height: Math.round(optimalHeight) 
     };
-  }, [minWidth, maxWidth, minHeight, maxHeight]);
+  }, []);
 
-  // Grid mode with content-aware auto-sizing
-  if (isGridMode) {
-    const [gridSize, setGridSize] = useState({ width: minWidth, height: minHeight });
-    
-    // Update size when content changes
-    useEffect(() => {
-      if (contentRef.current) {
+  // Update size when content changes
+  useEffect(() => {
+    if (contentRef.current && !isManuallyResized) {
+      const timer = setTimeout(() => {
         const newSize = calculateContentSize();
-        setGridSize(newSize);
-      }
-    }, [content, calculateContentSize]);
+        setAutoSize(newSize);
+        onSizeChange(newSize);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [content, calculateContentSize, onSizeChange, isManuallyResized]);
 
-    return (
-      <div
-        className={`bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
-        style={{
-          width: `${gridSize.width}px`,
-          height: `${gridSize.height}px`,
-          minWidth: `${minWidth}px`,
-          maxWidth: `${maxWidth}px`,
-          minHeight: `${minHeight}px`,
-          maxHeight: `${maxHeight}px`
-        }}
-      >
-        {/* Title Header */}
-        <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-              {boxNumber}
-            </div>
-            <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
-          </div>
-        </div>
-        
-        {/* Content Container */}
-        <div className="p-3 overflow-hidden" style={{ height: `${gridSize.height - 48}px` }}>
-          <div 
-            ref={contentRef}
-            className="text-sm leading-relaxed overflow-auto h-full"
-          >
-            {/* Render LaTeX or regular content */}
-            {content.includes('\\') || content.includes('$') ? (
-              <LaTeXRenderer 
-                content={content.replace(/^\$+|\$+$/g, '')} 
-                className="text-base math-content"
-              />
-            ) : (
-              <div className="whitespace-pre-wrap">{content}</div>
-            )}
-          </div>
-        </div>
-        
-        {/* Grid mode indicator */}
-        <div className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none">
-          <div className="w-full h-full bg-blue-400 rounded-tl-lg transform rotate-45 scale-75"></div>
-        </div>
-      </div>
-    );
-  }
+  // Use auto size unless manually resized
+  const boxSize = isManuallyResized && externalSize ? externalSize : autoSize;
 
-  // Free positioning mode: draggable and resizable
+  const handleDragStop = useCallback((e: any, data: any) => {
+    onPositionChange({ x: data.x, y: data.y });
+    onSaveRequest();
+  }, [onPositionChange, onSaveRequest]);
+
+  const handleResize = useCallback((e: any, { size }: any) => {
+    setIsManuallyResized(true);
+    onSizeChange(size);
+  }, [onSizeChange]);
+
+  const handleResizeStop = useCallback(() => {
+    onSaveRequest();
+  }, [onSaveRequest]);
+
   return (
     <Draggable
       position={position}
       onStop={handleDragStop}
       grid={[10, 10]}
       handle=".drag-handle"
+      disabled={isGridMode}
     >
-      <div className="absolute">
-        <ResizableBox
-          width={currentSize.width}
-          height={currentSize.height}
-          minConstraints={[200, 120]}
-          maxConstraints={[800, 600]}
-          onResize={handleResize}
-          onResizeStop={handleResizeStop}
-          resizeHandles={['se', 'sw', 'ne', 'nw']}
-          className="relative group professional-resize-handles"
-        >
-          <div
-            className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
+      <div className="absolute" style={{ 
+        width: `${boxSize.width}px`,
+        height: `${boxSize.height}px`
+      }}>
+        {!isGridMode ? (
+          // Free positioning mode with resize handles
+          <ResizableBox
+            width={boxSize.width}
+            height={boxSize.height}
+            minConstraints={[150, 80]}
+            maxConstraints={[600, 400]}
+            onResize={handleResize}
+            onResizeStop={handleResizeStop}
+            resizeHandles={['se']}
+            className="relative group"
           >
-            {/* Title Header with Drag Handle and Box Number */}
-            <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm cursor-move hover:bg-white/20 transition-colors">
+            <div className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}>
+              {/* Make entire box draggable */}
+              <div className="drag-handle w-full h-full cursor-move">
+                {/* Title Header */}
+                <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                      {boxNumber}
+                    </div>
+                    <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-4 h-4 bg-slate-400/30 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Content Container */}
+                <div className="p-3" style={{ height: `${boxSize.height - 48}px` }}>
+                  <div 
+                    ref={contentRef}
+                    className="text-sm leading-relaxed h-full overflow-visible"
+                    style={{ cursor: 'text' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {content.includes('\\') || content.includes('$') ? (
+                      <LaTeXRenderer 
+                        content={content.replace(/^\$+|\$+$/g, '')} 
+                        className="text-base math-content"
+                      />
+                    ) : (
+                      <div className="whitespace-pre-wrap">{content}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ResizableBox>
+        ) : (
+          // Grid mode - auto-sizing only, no manual resize
+          <div className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}>
+            {/* Title Header */}
+            <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
                   {boxNumber}
                 </div>
                 <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
               </div>
-              <div className="flex items-center space-x-1 opacity-60">
-                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-              </div>
             </div>
             
             {/* Content Container */}
-            <div className="p-3 h-[calc(100%-4rem)] overflow-auto">
+            <div className="p-3" style={{ height: `${boxSize.height - 48}px` }}>
               <div 
                 ref={contentRef}
-                className="text-sm leading-relaxed"
-                style={!isManuallyResized ? { 
-                  width: 'fit-content',
-                  maxWidth: '100%',
-                  display: 'inline-block'
-                } : {}}
+                className="text-sm leading-relaxed h-full overflow-visible"
               >
-                {/* Render LaTeX or regular content */}
                 {content.includes('\\') || content.includes('$') ? (
                   <LaTeXRenderer 
                     content={content.replace(/^\$+|\$+$/g, '')} 
@@ -271,13 +211,15 @@ export default function AutoResizeMathBox({
               </div>
             </div>
             
-            {/* Size indicator - auto (green) or manual (blue) */}
-            <div className="absolute bottom-1 right-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <div className={`w-full h-full ${isManuallyResized ? 'bg-blue-400' : 'bg-green-400'} rounded-tl-lg transform rotate-45 scale-75`}></div>
+            {/* Grid mode indicator */}
+            <div className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none">
+              <div className="w-full h-full bg-blue-400 rounded-tl-lg transform rotate-45 scale-75"></div>
             </div>
           </div>
-        </ResizableBox>
+        )}
       </div>
     </Draggable>
   );
 }
+
+export { AutoResizeMathBox };
