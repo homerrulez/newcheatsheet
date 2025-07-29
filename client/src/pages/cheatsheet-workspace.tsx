@@ -202,7 +202,7 @@ export default function CheatSheetWorkspace() {
       setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
-    // Handle new boxes creation
+    // Handle new boxes creation with tight auto-sizing
     else if (response.boxes && Array.isArray(response.boxes)) {
       const newBoxes = response.boxes.map((box: any, index: number) => {
         const optimalSize = calculateOptimalSize(box.content || '', box.title || 'Formula');
@@ -216,7 +216,7 @@ export default function CheatSheetWorkspace() {
         };
       });
       
-      // Calculate positions for all new boxes
+      // Calculate grid positions for all new boxes
       const allNewBoxes = newBoxes.map((box: any, index: number) => ({
         ...box,
         position: calculateGridPosition(boxes.length + index, box.size, [...boxes, ...newBoxes])
@@ -243,56 +243,61 @@ export default function CheatSheetWorkspace() {
     ));
   }, []);
 
-  // Auto-sizing function that calculates optimal box dimensions based on content
+  // Tight-fitting auto-sizing function for minimal waste space
   const calculateOptimalSize = useCallback((content: string, title: string) => {
-    // Base dimensions
-    const minWidth = 250;
-    const minHeight = 120;
+    // Tighter base dimensions for minimal waste
+    const minWidth = 180;
+    const minHeight = 90;
     const maxWidth = 800;
     const maxHeight = 600;
     
-    // Calculate content metrics
-    const titleLength = title.length;
-    const contentLength = content.length;
-    const lineCount = content.split('\n').length;
-    const avgWordsPerLine = content.split(' ').length / Math.max(lineCount, 1);
+    // Precise content analysis
+    const lines = content.split('\n');
+    const lineCount = lines.length;
+    const longestLine = Math.max(...lines.map(line => line.length));
+    const totalChars = content.length;
     
-    // Detect content type for specialized sizing
-    const hasMath = /(\$.*?\$|\\\w+|\^|\{|\}|\\frac|\\sqrt|\\sum|\\int)/.test(content);
-    const hasLongText = contentLength > 200;
-    const hasMultipleLines = lineCount > 3;
+    // Content type detection
+    const isMath = /(\$.*?\$|\\\w+|\^|\{|\}|\\frac|\\sqrt|\\sum|\\int|\\begin|\\end)/.test(content);
+    const isPhysics = /[A-Z]\s*=|F\s*=|E\s*=|P\s*=|v\s*=|a\s*=/.test(content);
+    const isShortFormula = totalChars < 40 && (isMath || isPhysics);
+    const isEquation = /=/.test(content) && totalChars < 80;
     
-    // Calculate optimal width based on content
-    let optimalWidth = minWidth;
-    if (hasMath) {
-      // Math content needs more horizontal space
-      optimalWidth = Math.min(maxWidth, minWidth + Math.max(titleLength * 8, contentLength * 3, avgWordsPerLine * 25));
-    } else if (hasLongText) {
-      // Essay/paragraph content
-      optimalWidth = Math.min(maxWidth, minWidth + Math.sqrt(contentLength) * 15);
+    let width, height;
+    
+    if (isShortFormula) {
+      // Very tight for short formulas like "F = ma"
+      width = Math.max(minWidth, longestLine * 7 + 30);
+      height = Math.max(minHeight, lineCount * 20 + 50);
+    } else if (isEquation || isMath) {
+      // Compact for math expressions
+      width = Math.max(minWidth, longestLine * 8 + 40);
+      height = Math.max(minHeight, lineCount * 25 + 60);
+    } else if (totalChars > 150) {
+      // Long text - optimize for readability
+      const estimatedCharsPerLine = 60;
+      width = Math.min(maxWidth, Math.max(minWidth, estimatedCharsPerLine * 7 + 60));
+      const wrappedLines = Math.ceil(totalChars / estimatedCharsPerLine);
+      height = Math.max(minHeight, wrappedLines * 20 + 80);
     } else {
-      // Regular content
-      optimalWidth = Math.min(maxWidth, minWidth + Math.max(titleLength * 10, contentLength * 4));
+      // Regular content - tight fit
+      width = Math.max(minWidth, longestLine * 7 + 40);
+      height = Math.max(minHeight, lineCount * 22 + 60);
     }
     
-    // Calculate optimal height based on content
-    let optimalHeight = minHeight;
-    if (hasMultipleLines || contentLength > 100) {
-      optimalHeight = Math.min(maxHeight, minHeight + lineCount * 30 + Math.floor(contentLength / 50) * 20);
-    } else {
-      optimalHeight = Math.min(maxHeight, minHeight + Math.floor(contentLength / 30) * 25);
-    }
+    // Ensure title fits
+    const titleWidth = title.length * 7 + 40;
+    width = Math.max(width, titleWidth);
     
-    // Add extra space for math rendering
-    if (hasMath) {
-      optimalHeight += 40;
-    }
+    // Apply bounds
+    width = Math.min(maxWidth, width);
+    height = Math.min(maxHeight, height);
     
-    // Round to grid (10px increments)
-    optimalWidth = Math.round(optimalWidth / 10) * 10;
-    optimalHeight = Math.round(optimalHeight / 10) * 10;
+    // Grid snapping
+    width = Math.round(width / 10) * 10;
+    height = Math.round(height / 10) * 10;
     
-    return { width: optimalWidth, height: optimalHeight };
+    return { width, height };
   }, []);
 
   const debounceAndSave = useCallback(
@@ -310,45 +315,31 @@ export default function CheatSheetWorkspace() {
     [currentSheet, saveSheetMutation]
   );
 
-  // Auto-fit all boxes to their content
+  // Auto-fit all boxes to their content with tight sizing
   const autoFitAllBoxes = useCallback(() => {
-    console.log('Auto-fitting boxes...', boxes.length);
-    setBoxes(prev => {
-      const updated = prev.map(box => {
-        const optimalSize = calculateOptimalSize(box.content, box.title);
-        console.log(`Box ${box.title}: ${box.size?.width}x${box.size?.height} -> ${optimalSize.width}x${optimalSize.height}`);
-        return { ...box, size: optimalSize };
-      });
-      return updated;
-    });
+    setBoxes(prev => prev.map(box => ({
+      ...box,
+      size: calculateOptimalSize(box.content, box.title)
+    })));
     debounceAndSave();
     toast({
       title: "Boxes auto-fitted",
-      description: "All boxes have been resized to fit their content.",
+      description: "All boxes resized to fit content tightly without wasted space.",
     });
-  }, [boxes.length, calculateOptimalSize, debounceAndSave, toast]);
+  }, [calculateOptimalSize, debounceAndSave, toast]);
 
   // Organize boxes into clean grid layout
   const organizeBoxes = useCallback(() => {
-    console.log('Organizing boxes into grid...', boxes.length);
-    setBoxes(prev => {
-      const updated = prev.map((box, index) => {
-        const oldPos = box.position;
-        const newPos = calculateGridPosition(index, box.size || { width: 300, height: 180 }, prev);
-        console.log(`Box ${index + 1}: (${oldPos.x}, ${oldPos.y}) -> (${newPos.x}, ${newPos.y})`);
-        return {
-          ...box,
-          position: newPos
-        };
-      });
-      return updated;
-    });
+    setBoxes(prev => prev.map((box, index) => ({
+      ...box,
+      position: calculateGridPosition(index, box.size || { width: 300, height: 180 }, prev)
+    })));
     debounceAndSave();
     toast({
       title: "Boxes organized",
-      description: "All boxes have been arranged in a clean grid layout.",
+      description: "All boxes arranged in a clean grid layout with optimal spacing.",
     });
-  }, [boxes.length, calculateGridPosition, debounceAndSave, toast]);
+  }, [calculateGridPosition, debounceAndSave, toast]);
 
   const getRandomColor = () => {
     const colors = [
