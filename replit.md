@@ -40,6 +40,17 @@ Preferred communication style: Simple, everyday language.
   - Auto-sizing applies to new AI-generated boxes automatically
 - **Status**: ✓ Completed - Boxes now auto-fit any content without manual intervention
 
+### July 29, 2025 - Sequential Box Numbering and ChatGPT Operations
+- **Issue**: Need numbered boxes for ChatGPT to reference and manipulate specific content
+- **Solution**: Added sequential numbering system with full ChatGPT integration
+- **Changes**:
+  - Added numbered badges (1, 2, 3...) to each box title header
+  - Updated ChatGPT system prompt to support numbered box operations
+  - Implemented delete, edit, and replace operations via box numbers
+  - Added current box context to ChatGPT conversations
+  - Enhanced box operation handling with auto-resizing for edited content
+- **Status**: ✓ Completed - ChatGPT can now interact with specific numbered boxes
+
 ## System Architecture
 
 ### Frontend Architecture

@@ -125,7 +125,44 @@ export default function CheatSheetWorkspace() {
   };
 
   const handleAIResponse = (response: any) => {
-    if (response.boxes && Array.isArray(response.boxes)) {
+    // Handle box operations (delete, edit, etc.)
+    if (response.operations && Array.isArray(response.operations)) {
+      let updatedBoxes = [...boxes];
+      
+      response.operations.forEach((operation: any) => {
+        const boxNumber = parseInt(operation.boxNumber);
+        const boxIndex = boxNumber - 1; // Convert to 0-based index
+        
+        switch (operation.type) {
+          case 'delete':
+            if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
+              updatedBoxes.splice(boxIndex, 1);
+            }
+            break;
+          case 'edit':
+          case 'replace':
+            if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
+              const existingBox = updatedBoxes[boxIndex];
+              const newSize = calculateOptimalSize(
+                operation.content || existingBox.content, 
+                operation.title || existingBox.title
+              );
+              updatedBoxes[boxIndex] = {
+                ...existingBox,
+                title: operation.title || existingBox.title,
+                content: operation.content || existingBox.content,
+                size: newSize
+              };
+            }
+            break;
+        }
+      });
+      
+      setBoxes(updatedBoxes);
+      saveSheetMutation.mutate();
+    }
+    // Handle new boxes creation
+    else if (response.boxes && Array.isArray(response.boxes)) {
       const newBoxes = response.boxes.map((box: any, index: number) => {
         const optimalSize = calculateOptimalSize(box.content || '', box.title || 'Formula');
         return {
@@ -423,9 +460,14 @@ export default function CheatSheetWorkspace() {
                           className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
                           style={{ animationDelay: `${index * 0.1}s` }}
                         >
-                          {/* Title Header with Drag Handle */}
+                          {/* Title Header with Drag Handle and Box Number */}
                           <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm cursor-move hover:bg-white/20 transition-colors">
-                            <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{box.title}</h4>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                                {index + 1}
+                              </div>
+                              <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{box.title}</h4>
+                            </div>
                             <div className="flex items-center space-x-1 opacity-60">
                               <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
                               <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
@@ -495,6 +537,7 @@ export default function CheatSheetWorkspace() {
           workspaceId={currentSheet?.id || 'new'}
           workspaceType="cheatsheet"
           onAIResponse={handleAIResponse}
+          currentBoxes={boxes}
         />
       </div>
     </div>
