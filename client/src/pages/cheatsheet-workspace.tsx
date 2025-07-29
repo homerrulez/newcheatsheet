@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft } from 'lucide-react';
 import ChatPanel from '@/components/chat-panel';
 import LaTeXRenderer from '@/components/latex-renderer';
+import AutoResizeMathBox from '@/components/auto-resize-math-box';
 import { CheatSheet, CheatSheetBox } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -178,15 +179,11 @@ export default function CheatSheetWorkspace() {
           case 'replace':
             if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
               const existingBox = updatedBoxes[boxIndex];
-              const newSize = calculateOptimalSize(
-                operation.content || existingBox.content, 
-                operation.title || existingBox.title
-              );
               updatedBoxes[boxIndex] = {
                 ...existingBox,
                 title: operation.title || existingBox.title,
-                content: operation.content || existingBox.content,
-                size: newSize
+                content: operation.content || existingBox.content
+                // Size will auto-adjust via ResizeObserver
               };
             }
             break;
@@ -202,27 +199,18 @@ export default function CheatSheetWorkspace() {
       setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
-    // Handle new boxes creation with tight auto-sizing
+    // Handle new boxes creation with auto-resizing
     else if (response.boxes && Array.isArray(response.boxes)) {
-      const newBoxes = response.boxes.map((box: any, index: number) => {
-        const optimalSize = calculateOptimalSize(box.content || '', box.title || 'Formula');
-        return {
-          id: `box-${Date.now()}-${index}`,
-          title: box.title || 'Formula',
-          content: box.content || '',
-          color: box.color || getRandomColor(),
-          size: optimalSize,
-          position: { x: 0, y: 0 } // Will be calculated below
-        };
-      });
-      
-      // Calculate grid positions for all new boxes
-      const allNewBoxes = newBoxes.map((box: any, index: number) => ({
-        ...box,
-        position: calculateGridPosition(boxes.length + index, box.size, [...boxes, ...newBoxes])
+      const newBoxes = response.boxes.map((box: any, index: number) => ({
+        id: `box-${Date.now()}-${index}`,
+        title: box.title || 'Formula',
+        content: box.content || '',
+        color: box.color || getRandomColor(),
+        position: calculateGridPosition(boxes.length + index, { width: 250, height: 150 }, boxes)
+        // Size will auto-adjust via ResizeObserver in AutoResizeMathBox
       }));
       
-      setBoxes(prev => [...prev, ...allNewBoxes]);
+      setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
     }
   };
@@ -243,62 +231,8 @@ export default function CheatSheetWorkspace() {
     ));
   }, []);
 
-  // Tight-fitting auto-sizing function for minimal waste space
-  const calculateOptimalSize = useCallback((content: string, title: string) => {
-    // Tighter base dimensions for minimal waste
-    const minWidth = 180;
-    const minHeight = 90;
-    const maxWidth = 800;
-    const maxHeight = 600;
-    
-    // Precise content analysis
-    const lines = content.split('\n');
-    const lineCount = lines.length;
-    const longestLine = Math.max(...lines.map(line => line.length));
-    const totalChars = content.length;
-    
-    // Content type detection
-    const isMath = /(\$.*?\$|\\\w+|\^|\{|\}|\\frac|\\sqrt|\\sum|\\int|\\begin|\\end)/.test(content);
-    const isPhysics = /[A-Z]\s*=|F\s*=|E\s*=|P\s*=|v\s*=|a\s*=/.test(content);
-    const isShortFormula = totalChars < 40 && (isMath || isPhysics);
-    const isEquation = /=/.test(content) && totalChars < 80;
-    
-    let width, height;
-    
-    if (isShortFormula) {
-      // Very tight for short formulas like "F = ma"
-      width = Math.max(minWidth, longestLine * 7 + 30);
-      height = Math.max(minHeight, lineCount * 20 + 50);
-    } else if (isEquation || isMath) {
-      // Compact for math expressions
-      width = Math.max(minWidth, longestLine * 8 + 40);
-      height = Math.max(minHeight, lineCount * 25 + 60);
-    } else if (totalChars > 150) {
-      // Long text - optimize for readability
-      const estimatedCharsPerLine = 60;
-      width = Math.min(maxWidth, Math.max(minWidth, estimatedCharsPerLine * 7 + 60));
-      const wrappedLines = Math.ceil(totalChars / estimatedCharsPerLine);
-      height = Math.max(minHeight, wrappedLines * 20 + 80);
-    } else {
-      // Regular content - tight fit
-      width = Math.max(minWidth, longestLine * 7 + 40);
-      height = Math.max(minHeight, lineCount * 22 + 60);
-    }
-    
-    // Ensure title fits
-    const titleWidth = title.length * 7 + 40;
-    width = Math.max(width, titleWidth);
-    
-    // Apply bounds
-    width = Math.min(maxWidth, width);
-    height = Math.min(maxHeight, height);
-    
-    // Grid snapping
-    width = Math.round(width / 10) * 10;
-    height = Math.round(height / 10) * 10;
-    
-    return { width, height };
-  }, []);
+  // Auto-resize is now handled by ResizeObserver in AutoResizeMathBox component
+  // This function is kept for compatibility but is no longer used for auto-sizing
 
   const debounceAndSave = useCallback(
     (() => {
@@ -315,29 +249,26 @@ export default function CheatSheetWorkspace() {
     [currentSheet, saveSheetMutation]
   );
 
-  // Auto-fit all boxes to their content with tight sizing
+  // Trigger re-render to force ResizeObserver recalculation
   const autoFitAllBoxes = useCallback(() => {
-    setBoxes(prev => prev.map(box => ({
-      ...box,
-      size: calculateOptimalSize(box.content, box.title)
-    })));
-    debounceAndSave();
+    // Force component re-render to trigger ResizeObserver
+    setBoxes(prev => [...prev]);
     toast({
-      title: "Boxes auto-fitted",
-      description: "All boxes resized to fit content tightly without wasted space.",
+      title: "Auto-fit triggered",
+      description: "Boxes will automatically resize to fit their rendered content.",
     });
-  }, [calculateOptimalSize, debounceAndSave, toast]);
+  }, [toast]);
 
   // Organize boxes into clean grid layout
   const organizeBoxes = useCallback(() => {
     setBoxes(prev => prev.map((box, index) => ({
       ...box,
-      position: calculateGridPosition(index, box.size || { width: 300, height: 180 }, prev)
+      position: calculateGridPosition(index, { width: 250, height: 150 }, prev) // Default size for grid calculation
     })));
     debounceAndSave();
     toast({
       title: "Boxes organized",
-      description: "All boxes arranged in a clean grid layout with optimal spacing.",
+      description: "Boxes arranged in grid layout. Sizes auto-adjust to content.",
     });
   }, [calculateGridPosition, debounceAndSave, toast]);
 
@@ -502,81 +433,22 @@ export default function CheatSheetWorkspace() {
               style={{ 
                 backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)',
                 backgroundSize: '20px 20px',
-                height: `${Math.max(2000, ...boxes.map(box => (box.position?.y || 0) + (box.size?.height || 160) + 200))}px`
+                height: `${Math.max(2000, ...boxes.map(box => (box.position?.y || 0) + 300))}px` // Extra space for auto-resizing boxes
               }}
             >
               {boxes.length > 0 ? (
                 boxes.map((box, index) => (
-                  <Draggable
+                  <AutoResizeMathBox
                     key={box.id}
+                    id={box.id}
+                    title={box.title}
+                    content={box.content}
+                    color={box.color}
                     position={box.position || { x: 0, y: 0 }}
-                    onStop={(e, data) => {
-                      updateBoxPosition(box.id, { x: Math.max(0, data.x), y: Math.max(0, data.y) });
-                      debounceAndSave();
-                    }}
-                    grid={[10, 10]}
-                    handle=".drag-handle"
-                  >
-                    <div className="absolute">
-                      <ResizableBox
-                        width={box.size?.width || 300}
-                        height={box.size?.height || 160}
-                        minConstraints={[200, 100]}
-                        maxConstraints={[800, 600]}
-                        onResize={(e, data) => {
-                          updateBoxSize(box.id, { width: data.size.width, height: data.size.height });
-                        }}
-                        onResizeStop={() => {
-                          debounceAndSave();
-                        }}
-                        resizeHandles={['se', 'sw', 'ne', 'nw']}
-                        className="relative group modern-resize-handles"
-                      >
-                        <div
-                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
-                          style={{ animationDelay: `${index * 0.1}s` }}
-                        >
-                          {/* Title Header with Drag Handle and Box Number */}
-                          <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm cursor-move hover:bg-white/20 transition-colors">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                                {index + 1}
-                              </div>
-                              <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{box.title}</h4>
-                            </div>
-                            <div className="flex items-center space-x-1 opacity-60">
-                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                            </div>
-                          </div>
-                          
-                          {/* Content */}
-                          <div className="p-3 h-[calc(100%-4rem)] overflow-auto">
-                            <div className="text-sm leading-relaxed">
-                              {/* Properly render LaTeX content */}
-                              {box.content.includes('\\') || box.content.includes('$') ? (
-                                <LaTeXRenderer 
-                                  content={box.content.replace(/^\$+|\$+$/g, '')} 
-                                  className="text-base"
-                                />
-                              ) : (
-                                <div className="whitespace-pre-wrap">{box.content}</div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Modern Resize Indicator */}
-                          <div className="absolute bottom-1 right-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            <div className="w-full h-full bg-slate-400 rounded-tl-lg transform rotate-45 scale-75"></div>
-                          </div>
-                        </div>
-                      </ResizableBox>
-                    </div>
-                  </Draggable>
+                    onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                    onSaveRequest={debounceAndSave}
+                    boxNumber={index + 1}
+                  />
                 ))
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
