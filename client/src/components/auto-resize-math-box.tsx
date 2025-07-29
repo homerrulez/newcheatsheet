@@ -16,6 +16,10 @@ interface AutoResizeMathBoxProps {
   onSaveRequest: () => void;
   boxNumber: number;
   isGridMode?: boolean;
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
 }
 
 export default function AutoResizeMathBox({
@@ -29,7 +33,11 @@ export default function AutoResizeMathBox({
   onSizeChange,
   onSaveRequest,
   boxNumber,
-  isGridMode = false
+  isGridMode = false,
+  minWidth = 160,
+  maxWidth = 200,
+  minHeight = 100,
+  maxHeight = 300
 }: AutoResizeMathBoxProps) {
   const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
   const [isManuallyResized, setIsManuallyResized] = useState(false);
@@ -102,11 +110,67 @@ export default function AutoResizeMathBox({
     onSaveRequest();
   }, [onSaveRequest]);
 
-  // Grid mode: fixed positioning with no dragging/resizing
+  // Content-aware size calculation for grid mode
+  const calculateContentSize = useCallback(() => {
+    if (!contentRef.current) return { width: minWidth, height: minHeight };
+    
+    const contentElement = contentRef.current;
+    const titleHeight = 48; // Fixed title height
+    const padding = 24; // Total padding
+    
+    // Get natural content dimensions
+    contentElement.style.width = 'auto';
+    contentElement.style.height = 'auto';
+    
+    const scrollWidth = contentElement.scrollWidth;
+    const scrollHeight = contentElement.scrollHeight;
+    
+    // Calculate optimal width (respecting grid constraints)
+    let optimalWidth = Math.max(minWidth, Math.min(maxWidth, scrollWidth + padding));
+    
+    // Calculate height needed for this width
+    contentElement.style.width = `${optimalWidth - padding}px`;
+    const heightForWidth = contentElement.scrollHeight;
+    
+    let optimalHeight = Math.max(minHeight, Math.min(maxHeight, heightForWidth + titleHeight + padding));
+    
+    // Maintain balanced ratio (avoid extreme shapes)
+    const ratio = optimalWidth / optimalHeight;
+    if (ratio > 2.5) { // Too wide
+      optimalHeight = Math.min(maxHeight, optimalWidth / 2.2);
+    } else if (ratio < 0.4) { // Too tall
+      optimalWidth = Math.max(minWidth, optimalHeight * 0.6);
+    }
+    
+    return { 
+      width: Math.round(optimalWidth), 
+      height: Math.round(optimalHeight) 
+    };
+  }, [minWidth, maxWidth, minHeight, maxHeight]);
+
+  // Grid mode with content-aware auto-sizing
   if (isGridMode) {
+    const [gridSize, setGridSize] = useState({ width: minWidth, height: minHeight });
+    
+    // Update size when content changes
+    useEffect(() => {
+      if (contentRef.current) {
+        const newSize = calculateContentSize();
+        setGridSize(newSize);
+      }
+    }, [content, calculateContentSize]);
+
     return (
       <div
-        className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
+        className={`bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
+        style={{
+          width: `${gridSize.width}px`,
+          height: `${gridSize.height}px`,
+          minWidth: `${minWidth}px`,
+          maxWidth: `${maxWidth}px`,
+          minHeight: `${minHeight}px`,
+          maxHeight: `${maxHeight}px`
+        }}
       >
         {/* Title Header */}
         <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
@@ -119,10 +183,10 @@ export default function AutoResizeMathBox({
         </div>
         
         {/* Content Container */}
-        <div className="p-3 h-[calc(100%-4rem)] overflow-auto">
+        <div className="p-3 overflow-hidden" style={{ height: `${gridSize.height - 48}px` }}>
           <div 
             ref={contentRef}
-            className="text-sm leading-relaxed"
+            className="text-sm leading-relaxed overflow-auto h-full"
           >
             {/* Render LaTeX or regular content */}
             {content.includes('\\') || content.includes('$') ? (

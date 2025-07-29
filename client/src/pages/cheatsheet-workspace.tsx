@@ -125,26 +125,28 @@ export default function CheatSheetWorkspace() {
     });
   };
 
-  // Grid-based layout system with snap-to-grid positioning
+  // Grid-based layout system with dynamic content-aware sizing
   const GRID_CONFIG = {
     pageWidth: 612,    // 8.5 inches at 72 DPI
     pageHeight: 792,   // 11 inches at 72 DPI
     margin: 36,        // 0.5 inch margins
     columns: 3,        // Fixed 3 columns per page
-    boxWidth: 180,     // Fixed box width for grid alignment
-    boxHeight: 140,    // Fixed box height for grid alignment
+    minBoxWidth: 160,  // Minimum box width
+    maxBoxWidth: 200,  // Maximum box width per grid cell
+    minBoxHeight: 100, // Minimum box height
+    maxBoxHeight: 300, // Maximum box height to prevent overflow
     gutter: 10         // Space between boxes
   };
 
   const calculateGridPosition = useCallback((index: number) => {
-    const { pageWidth, pageHeight, margin, columns, boxWidth, boxHeight, gutter } = GRID_CONFIG;
+    const { pageWidth, pageHeight, margin, columns, maxBoxWidth, maxBoxHeight, gutter } = GRID_CONFIG;
     
     // Calculate available content area
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
     
     // Calculate rows that fit per page (with some buffer)
-    const rowsPerPage = Math.floor((contentHeight - gutter) / (boxHeight + gutter));
+    const rowsPerPage = Math.floor((contentHeight - gutter) / (maxBoxHeight + gutter));
     const boxesPerPage = columns * rowsPerPage;
     
     // Determine page and position within page
@@ -157,15 +159,15 @@ export default function CheatSheetWorkspace() {
     
     // Calculate exact grid position relative to page start
     const pageStartY = pageNumber * (pageHeight + 40); // 40px for page margin
-    const x = margin + (col * (boxWidth + gutter));
-    const y = pageStartY + 20 + margin + (row * (boxHeight + gutter)); // 20px top margin
+    const x = margin + (col * (maxBoxWidth + gutter));
+    const y = pageStartY + 20 + margin + (row * (maxBoxHeight + gutter)); // 20px top margin
     
     return { 
       x, 
       y, 
       page: pageNumber,
-      width: boxWidth,
-      height: boxHeight,
+      width: maxBoxWidth,
+      height: maxBoxHeight,
       gridCol: col,
       gridRow: row
     };
@@ -173,7 +175,7 @@ export default function CheatSheetWorkspace() {
 
   // Calculate total pages needed
   const contentHeight = GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2);
-  const rowsPerPage = Math.floor((contentHeight - GRID_CONFIG.gutter) / (GRID_CONFIG.boxHeight + GRID_CONFIG.gutter));
+  const rowsPerPage = Math.floor((contentHeight - GRID_CONFIG.gutter) / (GRID_CONFIG.maxBoxHeight + GRID_CONFIG.gutter));
   const boxesPerPage = GRID_CONFIG.columns * rowsPerPage;
   const totalPages = Math.max(1, Math.ceil(boxes.length / boxesPerPage));
 
@@ -464,13 +466,15 @@ export default function CheatSheetWorkspace() {
                     Grid: {pageBoxes.length}/{boxesPerPage} boxes
                   </div>
                   
-                  {/* CSS Grid Container */}
+                  {/* CSS Grid Container with Dynamic Sizing */}
                   <div 
                     className="absolute grid gap-2.5 p-9"
                     style={{
-                      gridTemplateColumns: `repeat(3, ${GRID_CONFIG.boxWidth}px)`,
-                      gridAutoRows: `${GRID_CONFIG.boxHeight}px`,
+                      gridTemplateColumns: `repeat(3, minmax(${GRID_CONFIG.minBoxWidth}px, ${GRID_CONFIG.maxBoxWidth}px))`,
+                      gridAutoRows: 'min-content',
                       gridAutoFlow: 'column',
+                      justifyContent: 'space-between',
+                      alignContent: 'start',
                       top: 0,
                       left: 0,
                       width: '100%',
@@ -492,12 +496,19 @@ export default function CheatSheetWorkspace() {
                           content={box.content}
                           color={box.color}
                           position={{ x: 0, y: 0 }} // Position managed by CSS Grid
-                          size={{ width: GRID_CONFIG.boxWidth, height: GRID_CONFIG.boxHeight }}
+                          size={{ 
+                            width: GRID_CONFIG.maxBoxWidth, 
+                            height: GRID_CONFIG.maxBoxHeight 
+                          }}
                           onPositionChange={() => {}} // No manual positioning in grid
-                          onSizeChange={() => {}} // Fixed size in grid
+                          onSizeChange={() => {}} // Size managed by content
                           onSaveRequest={debounceAndSave}
                           boxNumber={startIndex + indexOnPage + 1}
                           isGridMode={true}
+                          minWidth={GRID_CONFIG.minBoxWidth}
+                          maxWidth={GRID_CONFIG.maxBoxWidth}
+                          minHeight={GRID_CONFIG.minBoxHeight}
+                          maxHeight={GRID_CONFIG.maxBoxHeight}
                         />
                       </div>
                     ))}

@@ -286,12 +286,17 @@
   border: 2px solid #e2e8f0;
 }
 
-/* Grid container styling */
+/* Grid container styling for auto-sizing boxes */
 .grid-box-container {
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   border: 1px dashed rgba(99, 102, 241, 0.2);
   border-radius: 6px;
   transition: border-color 0.2s ease;
+  min-height: 100px;
+  padding: 5px;
 }
 
 .grid-box-container:hover {
