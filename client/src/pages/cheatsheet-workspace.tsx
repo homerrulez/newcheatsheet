@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Draggable from 'react-draggable';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
@@ -126,14 +126,17 @@ export default function CheatSheetWorkspace() {
 
   const handleAIResponse = (response: any) => {
     if (response.boxes && Array.isArray(response.boxes)) {
-      const newBoxes = response.boxes.map((box: any, index: number) => ({
-        id: `box-${Date.now()}-${index}`,
-        title: box.title || 'Formula',
-        content: box.content || '',
-        color: box.color || getRandomColor(),
-        position: { x: (index % 4) * 320, y: Math.floor(index / 4) * 200 },
-        size: { width: 300, height: 160 }
-      }));
+      const newBoxes = response.boxes.map((box: any, index: number) => {
+        const optimalSize = calculateOptimalSize(box.content || '', box.title || 'Formula');
+        return {
+          id: `box-${Date.now()}-${index}`,
+          title: box.title || 'Formula',
+          content: box.content || '',
+          color: box.color || getRandomColor(),
+          position: { x: (index % 4) * (optimalSize.width + 30), y: Math.floor(index / 4) * (optimalSize.height + 30) },
+          size: optimalSize
+        };
+      });
       setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
     }
@@ -155,6 +158,58 @@ export default function CheatSheetWorkspace() {
     ));
   }, []);
 
+  // Auto-sizing function that calculates optimal box dimensions based on content
+  const calculateOptimalSize = useCallback((content: string, title: string) => {
+    // Base dimensions
+    const minWidth = 250;
+    const minHeight = 120;
+    const maxWidth = 800;
+    const maxHeight = 600;
+    
+    // Calculate content metrics
+    const titleLength = title.length;
+    const contentLength = content.length;
+    const lineCount = content.split('\n').length;
+    const avgWordsPerLine = content.split(' ').length / Math.max(lineCount, 1);
+    
+    // Detect content type for specialized sizing
+    const hasMath = /(\$.*?\$|\\\w+|\^|\{|\}|\\frac|\\sqrt|\\sum|\\int)/.test(content);
+    const hasLongText = contentLength > 200;
+    const hasMultipleLines = lineCount > 3;
+    
+    // Calculate optimal width based on content
+    let optimalWidth = minWidth;
+    if (hasMath) {
+      // Math content needs more horizontal space
+      optimalWidth = Math.min(maxWidth, minWidth + Math.max(titleLength * 8, contentLength * 3, avgWordsPerLine * 25));
+    } else if (hasLongText) {
+      // Essay/paragraph content
+      optimalWidth = Math.min(maxWidth, minWidth + Math.sqrt(contentLength) * 15);
+    } else {
+      // Regular content
+      optimalWidth = Math.min(maxWidth, minWidth + Math.max(titleLength * 10, contentLength * 4));
+    }
+    
+    // Calculate optimal height based on content
+    let optimalHeight = minHeight;
+    if (hasMultipleLines || contentLength > 100) {
+      optimalHeight = Math.min(maxHeight, minHeight + lineCount * 30 + Math.floor(contentLength / 50) * 20);
+    } else {
+      optimalHeight = Math.min(maxHeight, minHeight + Math.floor(contentLength / 30) * 25);
+    }
+    
+    // Add extra space for math rendering
+    if (hasMath) {
+      optimalHeight += 40;
+    }
+    
+    // Round to grid (10px increments)
+    optimalWidth = Math.round(optimalWidth / 10) * 10;
+    optimalHeight = Math.round(optimalHeight / 10) * 10;
+    
+    return { width: optimalWidth, height: optimalHeight };
+  }, []);
+
   const debounceAndSave = useCallback(
     (() => {
       let timeoutId: NodeJS.Timeout;
@@ -169,6 +224,19 @@ export default function CheatSheetWorkspace() {
     })(),
     [currentSheet, saveSheetMutation]
   );
+
+  // Auto-fit all boxes to their content
+  const autoFitAllBoxes = useCallback(() => {
+    setBoxes(prev => prev.map(box => {
+      const optimalSize = calculateOptimalSize(box.content, box.title);
+      return { ...box, size: optimalSize };
+    }));
+    debounceAndSave();
+    toast({
+      title: "Boxes auto-fitted",
+      description: "All boxes have been resized to fit their content.",
+    });
+  }, [calculateOptimalSize, debounceAndSave, toast]);
 
   const getRandomColor = () => {
     const colors = [
@@ -294,10 +362,22 @@ export default function CheatSheetWorkspace() {
               <h2 className="text-lg font-semibold text-slate-900">
                 {currentSheet?.title || 'New Cheat Sheet'}
               </h2>
-              <div className="flex items-center space-x-2 text-sm text-slate-600">
-                <span>{boxes.length} boxes</span>
-                <span>•</span>
-                <span>Auto-sizing enabled</span>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                  <span>{boxes.length} boxes</span>
+                  <span>•</span>
+                  <span>Auto-sizing enabled</span>
+                </div>
+                {boxes.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={autoFitAllBoxes}
+                    className="text-xs"
+                  >
+                    Auto-fit All
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -329,7 +409,7 @@ export default function CheatSheetWorkspace() {
                         width={box.size?.width || 300}
                         height={box.size?.height || 160}
                         minConstraints={[200, 100]}
-                        maxConstraints={[600, 400]}
+                        maxConstraints={[800, 600]}
                         onResize={(e, data) => {
                           updateBoxSize(box.id, { width: data.size.width, height: data.size.height });
                         }}
