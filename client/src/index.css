@@ -139,9 +139,81 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* React Resizable styles */
+/* Modern React Resizable Styles */
 .react-resizable {
   position: relative;
+}
+
+.modern-resize-handles .react-resizable-handle {
+  position: absolute;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border: 2px solid white;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.modern-resize-handles:hover .react-resizable-handle {
+  opacity: 0.8;
+}
+
+.modern-resize-handles .react-resizable-handle:hover {
+  opacity: 1 !important;
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.5);
+}
+
+.modern-resize-handles .react-resizable-handle-se {
+  width: 12px;
+  height: 12px;
+  right: -6px;
+  bottom: -6px;
+  cursor: se-resize;
+}
+
+.modern-resize-handles .react-resizable-handle-sw {
+  width: 10px;
+  height: 10px;
+  left: -5px;
+  bottom: -5px;
+  cursor: sw-resize;
+  opacity: 0.6;
+}
+
+.modern-resize-handles .react-resizable-handle-ne {
+  width: 10px;
+  height: 10px;
+  right: -5px;
+  top: -5px;
+  cursor: ne-resize;
+  opacity: 0.6;
+}
+
+.modern-resize-handles .react-resizable-handle-nw {
+  width: 10px;
+  height: 10px;
+  left: -5px;
+  top: -5px;
+  cursor: nw-resize;
+  opacity: 0.6;
+}
+
+/* Improved dragging and positioning */
+.react-draggable-dragging {
+  z-index: 1000;
+}
+
+.react-draggable-dragging .modern-resize-handles .react-resizable-handle {
+  opacity: 0 !important;
+}
+
+/* Better visual feedback during resize */
+.react-resizable-handle:active,
+.react-resizable-handle:focus {
+  background: linear-gradient(135deg, #6d28d9, #7c2d12) !important;
+  transform: scale(1.3) !important;
 }
 
 .react-resizable-handle {

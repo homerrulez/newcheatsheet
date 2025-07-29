@@ -139,10 +139,10 @@ export default function CheatSheetWorkspace() {
     }
   };
 
-  const updateBoxPosition = useCallback((boxId: string, deltaPosition: { x: number, y: number }) => {
+  const updateBoxPosition = useCallback((boxId: string, newPosition: { x: number, y: number }) => {
     setBoxes(prev => prev.map(box => 
       box.id === boxId 
-        ? { ...box, position: { x: box.position.x + deltaPosition.x, y: box.position.y + deltaPosition.y } }
+        ? { ...box, position: newPosition }
         : box
     ));
   }, []);
@@ -150,10 +150,25 @@ export default function CheatSheetWorkspace() {
   const updateBoxSize = useCallback((boxId: string, size: { width: number, height: number }) => {
     setBoxes(prev => prev.map(box => 
       box.id === boxId 
-        ? { ...box, size }
+        ? { ...box, size: { width: Math.max(200, size.width), height: Math.max(100, size.height) } }
         : box
     ));
   }, []);
+
+  const debounceAndSave = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (currentSheet) {
+            saveSheetMutation.mutate();
+          }
+        }, 1000);
+      };
+    })(),
+    [currentSheet, saveSheetMutation]
+  );
 
   const getRandomColor = () => {
     const colors = [
@@ -300,9 +315,14 @@ export default function CheatSheetWorkspace() {
                 boxes.map((box, index) => (
                   <Draggable
                     key={box.id}
-                    defaultPosition={box.position || { x: 0, y: 0 }}
-                    onStop={(e, data) => updateBoxPosition(box.id, { x: data.x - (box.position?.x || 0), y: data.y - (box.position?.y || 0) })}
+                    position={box.position || { x: 0, y: 0 }}
+                    onStop={(e, data) => {
+                      updateBoxPosition(box.id, { x: data.x, y: data.y });
+                      debounceAndSave();
+                    }}
                     bounds="parent"
+                    grid={[10, 10]}
+                    handle=".drag-handle"
                   >
                     <div className="absolute">
                       <ResizableBox
@@ -310,21 +330,34 @@ export default function CheatSheetWorkspace() {
                         height={box.size?.height || 160}
                         minConstraints={[200, 100]}
                         maxConstraints={[600, 400]}
-                        onResize={(e, data) => updateBoxSize(box.id, { width: data.size.width, height: data.size.height })}
-                        resizeHandles={['se']}
-                        className="relative"
+                        onResize={(e, data) => {
+                          updateBoxSize(box.id, { width: data.size.width, height: data.size.height });
+                        }}
+                        onResizeStop={() => {
+                          debounceAndSave();
+                        }}
+                        resizeHandles={['se', 'sw', 'ne', 'nw']}
+                        className="relative group modern-resize-handles"
                       >
                         <div
-                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden cursor-move`}
+                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
                           style={{ animationDelay: `${index * 0.1}s` }}
                         >
-                          {/* Title Header */}
-                          <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
-                            <h4 className="font-semibold text-slate-900 text-sm truncate">{box.title}</h4>
+                          {/* Title Header with Drag Handle */}
+                          <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm cursor-move hover:bg-white/20 transition-colors">
+                            <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{box.title}</h4>
+                            <div className="flex items-center space-x-1 opacity-60">
+                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                            </div>
                           </div>
                           
                           {/* Content */}
-                          <div className="p-3 h-full overflow-auto">
+                          <div className="p-3 h-[calc(100%-4rem)] overflow-auto">
                             <div className="text-sm leading-relaxed">
                               {/* Properly render LaTeX content */}
                               {box.content.includes('\\') || box.content.includes('$') ? (
@@ -336,6 +369,11 @@ export default function CheatSheetWorkspace() {
                                 <div className="whitespace-pre-wrap">{box.content}</div>
                               )}
                             </div>
+                          </div>
+                          
+                          {/* Modern Resize Indicator */}
+                          <div className="absolute bottom-1 right-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            <div className="w-full h-full bg-slate-400 rounded-tl-lg transform rotate-45 scale-75"></div>
                           </div>
                         </div>
                       </ResizableBox>
