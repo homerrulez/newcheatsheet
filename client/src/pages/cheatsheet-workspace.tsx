@@ -6,7 +6,7 @@ import { useParams, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft, Move, Maximize2 } from 'lucide-react';
+import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft } from 'lucide-react';
 import ChatPanel from '@/components/chat-panel';
 import LaTeXRenderer from '@/components/latex-renderer';
 import { CheatSheet, CheatSheetBox } from '@shared/schema';
@@ -302,7 +302,6 @@ export default function CheatSheetWorkspace() {
                     key={box.id}
                     defaultPosition={box.position || { x: 0, y: 0 }}
                     onStop={(e, data) => updateBoxPosition(box.id, { x: data.x - (box.position?.x || 0), y: data.y - (box.position?.y || 0) })}
-                    handle=".drag-handle"
                     bounds="parent"
                   >
                     <div className="absolute">
@@ -316,16 +315,12 @@ export default function CheatSheetWorkspace() {
                         className="relative"
                       >
                         <div
-                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden`}
+                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden cursor-move`}
                           style={{ animationDelay: `${index * 0.1}s` }}
                         >
-                          {/* Drag Handle */}
-                          <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 cursor-move bg-white/10 backdrop-blur-sm">
+                          {/* Title Header */}
+                          <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
                             <h4 className="font-semibold text-slate-900 text-sm truncate">{box.title}</h4>
-                            <div className="flex items-center space-x-1">
-                              <Move className="w-3 h-3 text-slate-600" />
-                              <Maximize2 className="w-3 h-3 text-slate-600" />
-                            </div>
                           </div>
                           
                           {/* Content */}
