@@ -213,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
   switch (workspaceType) {
     case "document":
-      return `You are an AI assistant helping with document editing. When users ask questions, provide responses that can be formatted with LaTeX for mathematical content. Always respond in JSON format with fields: "content" (the main response), "latex" (any LaTeX formulas), and "formatting" (how to insert into document). Focus on academic and educational content.`;
+      return `You are an AI assistant helping with document editing. When users ask questions, provide responses that can be formatted with LaTeX for mathematical content. Always respond in valid JSON format with fields: "content" (the main response), "latex" (any LaTeX formulas), and "formatting" (how to insert into document). Focus on academic and educational content. Your response must be valid JSON.`;
     
     case "cheatsheet":
       const boxContext = currentBoxes && currentBoxes.length > 0 
@@ -222,32 +222,34 @@ function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
           ).join('\n')}`
         : '\n\nNo boxes currently on the sheet.';
       
-      return `You are an AI assistant for cheat sheet management. You can create new content OR perform operations on existing numbered boxes.${boxContext}
+      return `You are an AI assistant for cheat sheet management. You can create new content OR perform operations on existing numbered boxes. Always respond in valid JSON format.${boxContext}
 
 CREATING NEW CONTENT:
-When users request new formulas/information, respond with "boxes" array format:
+When users request new formulas/information, respond with JSON containing "boxes" array format:
 - "title": Clear, descriptive name
 - "content": LaTeX formatted content (use \\frac{}{}, \\sqrt{}, \\int, \\sum, etc.)
 - "color": One of: "from-blue-50 to-indigo-50 border-blue-200", "from-green-50 to-emerald-50 border-green-200", "from-purple-50 to-violet-50 border-purple-200", "from-orange-50 to-red-50 border-orange-200", "from-teal-50 to-cyan-50 border-teal-200", "from-pink-50 to-rose-50 border-pink-200"
 
 BOX OPERATIONS (use when users reference specific box numbers):
-For operations like "delete box 3", "edit box 5", "replace box 2 content", respond with "operations" array:
+For operations like "delete box 3", "edit box 5", "replace box 2 content", respond with JSON containing "operations" array:
 - "type": "delete" | "edit" | "replace"
 - "boxNumber": the numbered box (1, 2, 3, etc.)
 - "title": new title (for edit/replace operations)
 - "content": new content (for edit/replace operations)
 
-Examples:
+JSON Examples:
 - "Delete box 3" → {"operations": [{"type": "delete", "boxNumber": "3"}]}
 - "Replace box 2 with Newton's law" → {"operations": [{"type": "replace", "boxNumber": "2", "title": "Newton's Second Law", "content": "F = ma"}]}
 - "Edit box 5 to include momentum" → {"operations": [{"type": "edit", "boxNumber": "5", "content": "p = mv"}]}
 
-LaTeX examples: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", "\\int_{a}^{b} f(x) dx", "\\sum_{i=1}^{n} x_i"`;
+LaTeX examples: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", "\\int_{a}^{b} f(x) dx", "\\sum_{i=1}^{n} x_i"
+
+Always return valid JSON response.`;
     
     case "template":
-      return `You are an AI assistant filling template sections. Users will ask you to fill specific sections of a structured template. Respond in JSON format with "sections" object where keys are section names and values have "title", "content" (with LaTeX), and "status". Focus on the most essential and fundamental formulas for each topic that fit in compact spaces.`;
+      return `You are an AI assistant filling template sections. Users will ask you to fill specific sections of a structured template. Always respond in valid JSON format with "sections" object where keys are section names and values have "title", "content" (with LaTeX), and "status". Focus on the most essential and fundamental formulas for each topic that fit in compact spaces. Your response must be valid JSON.`;
     
     default:
-      return `You are a helpful AI assistant. Respond in JSON format with appropriate fields for the context.`;
+      return `You are a helpful AI assistant. Always respond in valid JSON format with appropriate fields for the context. Your response must be valid JSON.`;
   }
 }
