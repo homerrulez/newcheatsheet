@@ -138,38 +138,39 @@ export default function CheatSheetWorkspace() {
     gutter: 10         // Space between boxes
   };
 
-  // Dynamic positioning that fills pages efficiently
+  // Dynamic positioning that keeps boxes within page boundaries
   const calculateDynamicPosition = useCallback((index: number, allBoxes: any[]) => {
     const { pageWidth, pageHeight, margin } = GRID_CONFIG;
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
     
-    // Start position for new boxes
-    const startX = margin;
-    const startY = margin + 60; // Leave space for page header
+    // Position relative to the viewport, with page offset
+    const pageOffset = 20; // Offset for page container
+    const pageStartX = pageOffset + margin;
+    const pageStartY = pageOffset + margin + 40; // Leave space for page header
     
-    // If it's the first box, place it at the start
-    if (index === 0) {
-      return { x: startX, y: startY };
-    }
+    // Box sizing constraints  
+    const boxWidth = 200;
+    const boxHeight = 120;
+    const spacing = 15;
     
-    // For subsequent boxes, try to place them efficiently
-    // Simple flow layout: left to right, then down
-    const boxWidth = 220; // Estimated average width
-    const boxHeight = 140; // Estimated average height
-    const spacing = 20;
+    // Calculate available space within page boundaries
+    const availableWidth = pageWidth - (margin * 2) - spacing;
+    const availableHeight = pageHeight - (margin * 2) - 80; // Reserve space for headers
     
-    const boxesPerRow = Math.floor(contentWidth / (boxWidth + spacing));
-    const row = Math.floor(index / boxesPerRow);
-    const col = index % boxesPerRow;
+    const boxesPerRow = Math.max(1, Math.floor(availableWidth / (boxWidth + spacing)));
+    const rowsPerPage = Math.max(1, Math.floor(availableHeight / (boxHeight + spacing)));
+    const boxesPerPage = boxesPerRow * rowsPerPage;
     
-    // Calculate which page this should be on
-    const rowsPerPage = Math.floor((contentHeight - 60) / (boxHeight + spacing));
-    const pageNumber = Math.floor(row / rowsPerPage);
-    const rowOnPage = row % rowsPerPage;
+    // Determine which page and position within that page
+    const pageNumber = Math.floor(index / boxesPerPage);
+    const indexOnPage = index % boxesPerPage;
+    const row = Math.floor(indexOnPage / boxesPerRow);
+    const col = indexOnPage % boxesPerRow;
     
-    const x = startX + (col * (boxWidth + spacing));
-    const y = startY + (pageNumber * (pageHeight + 40)) + (rowOnPage * (boxHeight + spacing));
+    // Calculate absolute position
+    const x = pageStartX + (col * (boxWidth + spacing));
+    const y = pageStartY + (pageNumber * (pageHeight + 40)) + (row * (boxHeight + spacing));
     
     return { x, y };
   }, []);
@@ -225,14 +226,14 @@ export default function CheatSheetWorkspace() {
     // Handle new boxes creation with smart positioning
     else if (response.boxes && Array.isArray(response.boxes)) {
       const newBoxes = response.boxes.map((box: any, index: number) => {
-        const position = calculateDynamicPosition(boxes.length + index, boxes);
+        const position = calculateDynamicPosition(boxes.length + index, []);
         return {
           id: `box-${Date.now()}-${index}`,
           title: box.title || 'Formula',
           content: box.content || '',
           color: box.color || getRandomColor(),
           position,
-          size: { width: 220, height: 140 } // Initial size, will auto-adjust
+          size: { width: 200, height: 120 } // Initial size, will auto-adjust
         };
       });
       
@@ -456,33 +457,43 @@ export default function CheatSheetWorkspace() {
             </div>
           </div>
 
-          {/* Cheat Sheet Content - Dynamic Flexible Layout */}
+          {/* Cheat Sheet Content - Page-Constrained Layout */}
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
-            {/* Dynamic Page System */}
+            {/* Page System with Visual Boundaries */}
             <div className="relative" style={{ minHeight: `${totalPages * 832}px` }}>
-              {/* Page boundaries for print layout */}
+              {/* Render page boundaries as visual guides */}
               {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => (
                 <div
                   key={pageIndex}
-                  className="page-container"
+                  className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
                   style={{
-                    marginTop: pageIndex === 0 ? '20px' : '40px'
+                    top: `${20 + pageIndex * (GRID_CONFIG.pageHeight + 40)}px`,
+                    left: '20px',
+                    width: `${GRID_CONFIG.pageWidth}px`,
+                    height: `${GRID_CONFIG.pageHeight}px`,
+                    zIndex: 0
                   }}
                 >
                   {/* Page header */}
-                  <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">
+                  <div className="absolute top-2 right-4 text-xs text-gray-400">
                     Page {pageIndex + 1} of {Math.max(1, totalPages)}
                   </div>
                   
-                  {/* Page content indicator */}
-                  <div className="absolute top-2 left-4 text-xs text-gray-400 z-10">
-                    Content-aware layout
-                  </div>
+                  {/* Page margins guide */}
+                  <div 
+                    className="absolute border border-blue-200 border-dashed"
+                    style={{
+                      top: `${GRID_CONFIG.margin}px`,
+                      left: `${GRID_CONFIG.margin}px`,
+                      width: `${GRID_CONFIG.pageWidth - (GRID_CONFIG.margin * 2)}px`,
+                      height: `${GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2)}px`
+                    }}
+                  />
                 </div>
               ))}
               
-              {/* All boxes positioned dynamically */}
-              <div className="absolute inset-0">
+              {/* All boxes positioned within page boundaries */}
+              <div className="absolute inset-0" style={{ zIndex: 10 }}>
                 {boxes.length > 0 ? (
                   boxes.map((box, index) => (
                     <AutoResizeMathBox
