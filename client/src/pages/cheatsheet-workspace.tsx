@@ -217,7 +217,7 @@ export default function CheatSheetWorkspace() {
       });
       
       // Calculate positions for all new boxes
-      const allNewBoxes = newBoxes.map((box, index) => ({
+      const allNewBoxes = newBoxes.map((box: any, index: number) => ({
         ...box,
         position: calculateGridPosition(boxes.length + index, box.size, [...boxes, ...newBoxes])
       }));
@@ -312,29 +312,43 @@ export default function CheatSheetWorkspace() {
 
   // Auto-fit all boxes to their content
   const autoFitAllBoxes = useCallback(() => {
-    setBoxes(prev => prev.map(box => {
-      const optimalSize = calculateOptimalSize(box.content, box.title);
-      return { ...box, size: optimalSize };
-    }));
+    console.log('Auto-fitting boxes...', boxes.length);
+    setBoxes(prev => {
+      const updated = prev.map(box => {
+        const optimalSize = calculateOptimalSize(box.content, box.title);
+        console.log(`Box ${box.title}: ${box.size?.width}x${box.size?.height} -> ${optimalSize.width}x${optimalSize.height}`);
+        return { ...box, size: optimalSize };
+      });
+      return updated;
+    });
     debounceAndSave();
     toast({
       title: "Boxes auto-fitted",
       description: "All boxes have been resized to fit their content.",
     });
-  }, [calculateOptimalSize, debounceAndSave, toast]);
+  }, [boxes.length, calculateOptimalSize, debounceAndSave, toast]);
 
   // Organize boxes into clean grid layout
   const organizeBoxes = useCallback(() => {
-    setBoxes(prev => prev.map((box, index) => ({
-      ...box,
-      position: calculateGridPosition(index, box.size || { width: 300, height: 180 }, prev)
-    })));
+    console.log('Organizing boxes into grid...', boxes.length);
+    setBoxes(prev => {
+      const updated = prev.map((box, index) => {
+        const oldPos = box.position;
+        const newPos = calculateGridPosition(index, box.size || { width: 300, height: 180 }, prev);
+        console.log(`Box ${index + 1}: (${oldPos.x}, ${oldPos.y}) -> (${newPos.x}, ${newPos.y})`);
+        return {
+          ...box,
+          position: newPos
+        };
+      });
+      return updated;
+    });
     debounceAndSave();
     toast({
       title: "Boxes organized",
       description: "All boxes have been arranged in a clean grid layout.",
     });
-  }, [calculateGridPosition, debounceAndSave, toast]);
+  }, [boxes.length, calculateGridPosition, debounceAndSave, toast]);
 
   const getRandomColor = () => {
     const colors = [
