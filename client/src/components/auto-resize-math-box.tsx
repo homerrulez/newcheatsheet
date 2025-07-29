@@ -15,6 +15,7 @@ interface AutoResizeMathBoxProps {
   onSizeChange: (size: { width: number; height: number }) => void;
   onSaveRequest: () => void;
   boxNumber: number;
+  isGridMode?: boolean;
 }
 
 export default function AutoResizeMathBox({
@@ -27,7 +28,8 @@ export default function AutoResizeMathBox({
   onPositionChange,
   onSizeChange,
   onSaveRequest,
-  boxNumber
+  boxNumber,
+  isGridMode = false
 }: AutoResizeMathBoxProps) {
   const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
   const [isManuallyResized, setIsManuallyResized] = useState(false);
@@ -100,6 +102,49 @@ export default function AutoResizeMathBox({
     onSaveRequest();
   }, [onSaveRequest]);
 
+  // Grid mode: fixed positioning with no dragging/resizing
+  if (isGridMode) {
+    return (
+      <div
+        className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
+      >
+        {/* Title Header */}
+        <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+              {boxNumber}
+            </div>
+            <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
+          </div>
+        </div>
+        
+        {/* Content Container */}
+        <div className="p-3 h-[calc(100%-4rem)] overflow-auto">
+          <div 
+            ref={contentRef}
+            className="text-sm leading-relaxed"
+          >
+            {/* Render LaTeX or regular content */}
+            {content.includes('\\') || content.includes('$') ? (
+              <LaTeXRenderer 
+                content={content.replace(/^\$+|\$+$/g, '')} 
+                className="text-base math-content"
+              />
+            ) : (
+              <div className="whitespace-pre-wrap">{content}</div>
+            )}
+          </div>
+        </div>
+        
+        {/* Grid mode indicator */}
+        <div className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none">
+          <div className="w-full h-full bg-blue-400 rounded-tl-lg transform rotate-45 scale-75"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Free positioning mode: draggable and resizable
   return (
     <Draggable
       position={position}

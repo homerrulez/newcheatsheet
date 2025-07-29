@@ -273,7 +273,7 @@
 }
 
 /* Page layout styles for multi-page cheat sheets */
-/* Grid-based page layout for cheat sheets */
+/* CSS Grid-based page layout for cheat sheets */
 .page-container {
   width: 612px; /* 8.5 inches at 72 DPI */
   height: 792px; /* 11 inches at 72 DPI */
@@ -284,6 +284,18 @@
   position: relative;
   overflow: hidden;
   border: 2px solid #e2e8f0;
+}
+
+/* Grid container styling */
+.grid-box-container {
+  position: relative;
+  border: 1px dashed rgba(99, 102, 241, 0.2);
+  border-radius: 6px;
+  transition: border-color 0.2s ease;
+}
+
+.grid-box-container:hover {
+  border-color: rgba(99, 102, 241, 0.4);
 }
 
 .page-container::before {

@@ -207,32 +207,20 @@ export default function CheatSheetWorkspace() {
         }
       });
       
-      // Recalculate positions for remaining boxes to maintain grid layout
-      updatedBoxes = updatedBoxes.map((box, index) => {
-        const gridPos = calculateGridPosition(index);
-        return {
-          ...box,
-          position: { x: gridPos.x, y: gridPos.y },
-          size: { width: gridPos.width, height: gridPos.height }
-        };
-      });
+      // No need to recalculate positions - CSS Grid handles layout automatically
       
       setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
-    // Handle new boxes creation with grid positioning
+    // Handle new boxes creation - position managed by CSS Grid
     else if (response.boxes && Array.isArray(response.boxes)) {
-      const newBoxes = response.boxes.map((box: any, index: number) => {
-        const gridPos = calculateGridPosition(boxes.length + index);
-        return {
-          id: `box-${Date.now()}-${index}`,
-          title: box.title || 'Formula',
-          content: box.content || '',
-          color: box.color || getRandomColor(),
-          position: { x: gridPos.x, y: gridPos.y },
-          size: { width: gridPos.width, height: gridPos.height }
-        };
-      });
+      const newBoxes = response.boxes.map((box: any, index: number) => ({
+        id: `box-${Date.now()}-${index}`,
+        title: box.title || 'Formula',
+        content: box.content || '',
+        color: box.color || getRandomColor()
+        // Position and size managed automatically by CSS Grid
+      }));
       
       setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
@@ -273,40 +261,27 @@ export default function CheatSheetWorkspace() {
     [currentSheet, saveSheetMutation]
   );
 
-  // Auto-fit all boxes to grid positions and content sizing
+  // Re-organize all boxes into proper grid layout
   const autoFitAllBoxes = useCallback(() => {
-    setBoxes(prev => prev.map((box, index) => {
-      const gridPos = calculateGridPosition(index);
-      return {
-        ...box,
-        position: { x: gridPos.x, y: gridPos.y },
-        size: { width: gridPos.width, height: gridPos.height }
-      };
-    }));
-    debounceAndSave();
+    // Simply trigger a re-render since boxes are now managed by CSS Grid
+    setBoxes(prev => [...prev]);
     
     toast({
-      title: "Auto-fit complete",
-      description: "All boxes snapped to grid positions and sized for optimal display.",
+      title: "Grid layout refreshed",
+      description: "All boxes positioned in structured 3-column grid layout.",
     });
-  }, [calculateGridPosition, debounceAndSave, toast]);
+  }, [toast]);
 
-  // Snap all boxes to grid positions
+  // Since boxes are now in CSS Grid, this function is for manual reordering
   const organizeBoxes = useCallback(() => {
-    setBoxes(prev => prev.map((box, index) => {
-      const gridPos = calculateGridPosition(index);
-      return {
-        ...box,
-        position: { x: gridPos.x, y: gridPos.y },
-        size: { width: gridPos.width, height: gridPos.height }
-      };
-    }));
+    // Re-order boxes by their content or other criteria if needed
+    setBoxes(prev => [...prev]);
     debounceAndSave();
     toast({
       title: "Grid layout applied",
       description: `${boxes.length} boxes organized in ${totalPages} page${totalPages > 1 ? 's' : ''} (${boxesPerPage} boxes per page, column-wise).`,
     });
-  }, [calculateGridPosition, debounceAndSave, toast, totalPages, boxes.length, boxesPerPage]);
+  }, [debounceAndSave, toast, totalPages, boxes.length, boxesPerPage]);
 
   const getRandomColor = () => {
     const colors = [
@@ -446,7 +421,7 @@ export default function CheatSheetWorkspace() {
                       onClick={autoFitAllBoxes}
                       className="text-xs"
                     >
-                      Auto-fit All
+                      Refresh Grid
                     </Button>
                     <Button 
                       variant="outline" 
@@ -454,7 +429,7 @@ export default function CheatSheetWorkspace() {
                       onClick={organizeBoxes}
                       className="text-xs"
                     >
-                      Snap to Grid
+                      Re-organize
                     </Button>
                   </div>
                 )}
@@ -462,58 +437,79 @@ export default function CheatSheetWorkspace() {
             </div>
           </div>
 
-          {/* Cheat Sheet Content - Grid Layout */}
+          {/* Cheat Sheet Content - True CSS Grid Layout */}
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth snap-y snap-mandatory">
-            {/* Page containers with grid overlay */}
-            {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => (
-              <div
-                key={pageIndex}
-                className="page-container snap-start"
-                style={{
-                  marginTop: pageIndex === 0 ? '20px' : '40px'
-                }}
-              >
-                {/* Page header */}
-                <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">
-                  Page {pageIndex + 1} of {Math.max(1, totalPages)}
+            {/* Generate pages with actual CSS Grid containers */}
+            {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
+              // Calculate which boxes belong to this page
+              const startIndex = pageIndex * boxesPerPage;
+              const endIndex = Math.min(startIndex + boxesPerPage, boxes.length);
+              const pageBoxes = boxes.slice(startIndex, endIndex);
+              
+              return (
+                <div
+                  key={pageIndex}
+                  className="page-container snap-start"
+                  style={{
+                    marginTop: pageIndex === 0 ? '20px' : '40px'
+                  }}
+                >
+                  {/* Page header */}
+                  <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">
+                    Page {pageIndex + 1} of {Math.max(1, totalPages)}
+                  </div>
+                  
+                  {/* Grid columns indicator */}
+                  <div className="absolute top-2 left-4 text-xs text-gray-400 z-10">
+                    Grid: {pageBoxes.length}/{boxesPerPage} boxes
+                  </div>
+                  
+                  {/* CSS Grid Container */}
+                  <div 
+                    className="absolute grid gap-2.5 p-9"
+                    style={{
+                      gridTemplateColumns: `repeat(3, ${GRID_CONFIG.boxWidth}px)`,
+                      gridAutoRows: `${GRID_CONFIG.boxHeight}px`,
+                      gridAutoFlow: 'column',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  >
+                    {pageBoxes.map((box, indexOnPage) => (
+                      <div
+                        key={box.id}
+                        className="grid-box-container"
+                        style={{
+                          gridColumn: Math.floor(indexOnPage / rowsPerPage) + 1,
+                          gridRow: (indexOnPage % rowsPerPage) + 1
+                        }}
+                      >
+                        <AutoResizeMathBox
+                          id={box.id}
+                          title={box.title}
+                          content={box.content}
+                          color={box.color}
+                          position={{ x: 0, y: 0 }} // Position managed by CSS Grid
+                          size={{ width: GRID_CONFIG.boxWidth, height: GRID_CONFIG.boxHeight }}
+                          onPositionChange={() => {}} // No manual positioning in grid
+                          onSizeChange={() => {}} // Fixed size in grid
+                          onSaveRequest={debounceAndSave}
+                          boxNumber={startIndex + indexOnPage + 1}
+                          isGridMode={true}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                {/* Grid columns indicator */}
-                <div className="absolute top-2 left-4 text-xs text-gray-400 z-10">
-                  3-Column Grid ({boxesPerPage} boxes/page)
-                </div>
-                
-                {/* Column separators */}
-                <div className="grid-separator"></div>
-                <div className="grid-separator"></div>
-              </div>
-            ))}
+              );
+            })}
             
-            {/* All boxes positioned absolutely with grid constraints */}
-            <div 
-              className="absolute inset-0"
-              style={{ 
-                height: `${Math.max(800, totalPages * 832)}px` // Height based on pages + margins
-              }}
-            >
-              {boxes.length > 0 ? (
-                boxes.map((box, index) => (
-                  <AutoResizeMathBox
-                    key={box.id}
-                    id={box.id}
-                    title={box.title}
-                    content={box.content}
-                    color={box.color}
-                    position={box.position || { x: 0, y: 0 }}
-                    size={box.size || { width: GRID_CONFIG.boxWidth, height: GRID_CONFIG.boxHeight }}
-                    onPositionChange={(position) => updateBoxPosition(box.id, position)}
-                    onSizeChange={(size) => updateBoxSize(box.id, size)}
-                    onSaveRequest={debounceAndSave}
-                    boxNumber={index + 1}
-                  />
-                ))
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
+            {/* Empty state */}
+            {boxes.length === 0 && (
+              <div className="page-container snap-start mt-5">
+                <div className="flex items-center justify-center h-full">
                   <div className="text-center py-16 max-w-md">
                     <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                     <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
@@ -523,22 +519,8 @@ export default function CheatSheetWorkspace() {
                     </div>
                   </div>
                 </div>
-              )}
-              
-              {/* Floating Add Button */}
-              {boxes.length > 0 && (
-                <div className="absolute bottom-6 right-6">
-                  <Button
-                    className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-12 h-12 shadow-lg"
-                    onClick={() => {
-                      // Trigger AI to add more boxes
-                    }}
-                  >
-                    <Plus className="w-6 h-6" />
-                  </Button>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
