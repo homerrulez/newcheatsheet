@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Draggable from 'react-draggable';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 import LaTeXRenderer from './latex-renderer';
 
 interface AutoResizeMathBoxProps {
@@ -8,7 +10,9 @@ interface AutoResizeMathBoxProps {
   content: string;
   color: string;
   position: { x: number; y: number };
+  size?: { width: number; height: number };
   onPositionChange: (position: { x: number; y: number }) => void;
+  onSizeChange: (size: { width: number; height: number }) => void;
   onSaveRequest: () => void;
   boxNumber: number;
 }
@@ -19,17 +23,23 @@ export default function AutoResizeMathBox({
   content,
   color,
   position,
+  size: externalSize,
   onPositionChange,
+  onSizeChange,
   onSaveRequest,
   boxNumber
 }: AutoResizeMathBoxProps) {
-  const [size, setSize] = useState({ width: 200, height: 120 });
+  const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
+  const [isManuallyResized, setIsManuallyResized] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
+  // Use external size if manually resized, otherwise use auto-calculated size
+  const currentSize = isManuallyResized && externalSize ? externalSize : autoSize;
+
   // Auto-resize based on content using ResizeObserver
   const setupResizeObserver = useCallback(() => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || isManuallyResized) return;
 
     // Clean up previous observer
     if (resizeObserverRef.current) {
@@ -42,9 +52,9 @@ export default function AutoResizeMathBox({
         
         // Add padding for title bar (4rem) and content padding (24px)
         const newHeight = Math.max(120, height + 64 + 24);
-        const newWidth = Math.max(200, Math.min(800, width + 48)); // Max width constraint
+        const newWidth = Math.max(200, Math.min(800, width + 48));
         
-        setSize(prev => {
+        setAutoSize(prev => {
           // Only update if size actually changed to avoid infinite loops
           if (Math.abs(prev.width - newWidth) > 5 || Math.abs(prev.height - newHeight) > 5) {
             return { width: newWidth, height: newHeight };
@@ -55,22 +65,23 @@ export default function AutoResizeMathBox({
     });
 
     resizeObserverRef.current.observe(contentRef.current);
-  }, []);
+  }, [isManuallyResized]);
 
   // Set up ResizeObserver when content changes
   useEffect(() => {
-    // Wait for MathJax to render, then observe
-    const timer = setTimeout(() => {
-      setupResizeObserver();
-    }, 100);
+    if (!isManuallyResized) {
+      const timer = setTimeout(() => {
+        setupResizeObserver();
+      }, 100);
 
-    return () => {
-      clearTimeout(timer);
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-      }
-    };
-  }, [content, setupResizeObserver]);
+      return () => {
+        clearTimeout(timer);
+        if (resizeObserverRef.current) {
+          resizeObserverRef.current.disconnect();
+        }
+      };
+    }
+  }, [content, setupResizeObserver, isManuallyResized]);
 
   // Handle position updates
   const handleDragStop = useCallback((e: any, data: any) => {
@@ -79,6 +90,16 @@ export default function AutoResizeMathBox({
     onSaveRequest();
   }, [onPositionChange, onSaveRequest]);
 
+  // Handle manual resize
+  const handleResize = useCallback((e: any, data: any) => {
+    setIsManuallyResized(true);
+    onSizeChange({ width: data.size.width, height: data.size.height });
+  }, [onSizeChange]);
+
+  const handleResizeStop = useCallback(() => {
+    onSaveRequest();
+  }, [onSaveRequest]);
+
   return (
     <Draggable
       position={position}
@@ -86,65 +107,67 @@ export default function AutoResizeMathBox({
       grid={[10, 10]}
       handle=".drag-handle"
     >
-      <div 
-        className="absolute"
-        style={{
-          width: size.width,
-          height: size.height,
-          minWidth: 200,
-          minHeight: 120,
-          maxWidth: 800
-        }}
-      >
-        <div
-          className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
+      <div className="absolute">
+        <ResizableBox
+          width={currentSize.width}
+          height={currentSize.height}
+          minConstraints={[200, 120]}
+          maxConstraints={[800, 600]}
+          onResize={handleResize}
+          onResizeStop={handleResizeStop}
+          resizeHandles={['se', 'sw', 'ne', 'nw']}
+          className="relative group professional-resize-handles"
         >
-          {/* Title Header with Drag Handle and Box Number */}
-          <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm cursor-move hover:bg-white/20 transition-colors">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                {boxNumber}
+          <div
+            className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
+          >
+            {/* Title Header with Drag Handle and Box Number */}
+            <div className="drag-handle flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm cursor-move hover:bg-white/20 transition-colors">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                  {boxNumber}
+                </div>
+                <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
+              <div className="flex items-center space-x-1 opacity-60">
+                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+              </div>
             </div>
-            <div className="flex items-center space-x-1 opacity-60">
-              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+            
+            {/* Content Container */}
+            <div className="p-3 h-[calc(100%-4rem)] overflow-auto">
+              <div 
+                ref={contentRef}
+                className="text-sm leading-relaxed"
+                style={!isManuallyResized ? { 
+                  width: 'fit-content',
+                  maxWidth: '100%',
+                  display: 'inline-block'
+                } : {}}
+              >
+                {/* Render LaTeX or regular content */}
+                {content.includes('\\') || content.includes('$') ? (
+                  <LaTeXRenderer 
+                    content={content.replace(/^\$+|\$+$/g, '')} 
+                    className="text-base math-content"
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap">{content}</div>
+                )}
+              </div>
+            </div>
+            
+            {/* Size indicator - auto (green) or manual (blue) */}
+            <div className="absolute bottom-1 right-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <div className={`w-full h-full ${isManuallyResized ? 'bg-blue-400' : 'bg-green-400'} rounded-tl-lg transform rotate-45 scale-75`}></div>
             </div>
           </div>
-          
-          {/* Auto-sizing Content Container */}
-          <div className="p-3" style={{ minHeight: 'calc(100% - 4rem)' }}>
-            <div 
-              ref={contentRef}
-              className="text-sm leading-relaxed"
-              style={{ 
-                width: 'fit-content',
-                maxWidth: '100%',
-                display: 'inline-block'
-              }}
-            >
-              {/* Render LaTeX or regular content */}
-              {content.includes('\\') || content.includes('$') ? (
-                <LaTeXRenderer 
-                  content={content.replace(/^\$+|\$+$/g, '')} 
-                  className="text-base math-content"
-                />
-              ) : (
-                <div className="whitespace-pre-wrap">{content}</div>
-              )}
-            </div>
-          </div>
-          
-          {/* Auto-resize indicator */}
-          <div className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none">
-            <div className="w-full h-full bg-green-400 rounded-tl-lg transform rotate-45 scale-75"></div>
-          </div>
-        </div>
+        </ResizableBox>
       </div>
     </Draggable>
   );

@@ -216,6 +216,93 @@
   transform: scale(1.3) !important;
 }
 
+/* Professional resize handles with enhanced styling */
+.professional-resize-handles .react-resizable-handle {
+  position: absolute;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0.7;
+  width: 12px;
+  height: 12px;
+}
+
+.professional-resize-handles:hover .react-resizable-handle {
+  opacity: 1;
+}
+
+.professional-resize-handles .react-resizable-handle:hover {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed, #9333ea);
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.professional-resize-handles .react-resizable-handle:active {
+  background: linear-gradient(135deg, #4338ca, #6d28d9, #7e22ce);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.professional-resize-handles .react-resizable-handle-se {
+  right: -6px;
+  bottom: -6px;
+  cursor: se-resize;
+  background-image: radial-gradient(circle at 3px 3px, rgba(255,255,255,0.8) 1px, transparent 1px);
+  background-size: 6px 6px;
+}
+
+.professional-resize-handles .react-resizable-handle-sw {
+  left: -6px;
+  bottom: -6px;
+  cursor: sw-resize;
+}
+
+.professional-resize-handles .react-resizable-handle-ne {
+  right: -6px;
+  top: -6px;
+  cursor: ne-resize;
+}
+
+.professional-resize-handles .react-resizable-handle-nw {
+  left: -6px;
+  top: -6px;
+  cursor: nw-resize;
+}
+
+/* Page layout styles for multi-page cheat sheets */
+.page-container {
+  width: 8.5in;
+  min-height: 11in;
+  background: white;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  position: relative;
+  padding: 0.5in;
+}
+
+.page-separator {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 20px 0;
+}
+
+@media print {
+  .page-container {
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+    page-break-after: always;
+  }
+  
+  .page-separator {
+    display: none;
+  }
+}
+
 .react-resizable-handle {
   position: absolute;
   width: 20px;
