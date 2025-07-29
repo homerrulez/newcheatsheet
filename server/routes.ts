@@ -244,6 +244,8 @@ JSON Examples:
 
 LaTeX examples: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", "\\int_{a}^{b} f(x) dx", "\\sum_{i=1}^{n} x_i"
 
+IMPORTANT: Use proper LaTeX formatting. Avoid \\text{} commands that may cause rendering issues. Use \\mathrm{} for upright text instead.
+
 Always return valid JSON response.`;
     
     case "template":

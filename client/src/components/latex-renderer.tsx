@@ -37,15 +37,54 @@ export default function LaTeXRenderer({ content, displayMode = false, className 
   const renderMath = () => {
     if (elementRef.current && (window as any).katex) {
       try {
-        (window as any).katex.render(content, elementRef.current, {
+        // Clean and preprocess the content
+        let processedContent = content;
+        
+        // Remove outer dollar signs if present
+        processedContent = processedContent.replace(/^\$+|\$+$/g, '');
+        
+        // Handle display math mode markers
+        processedContent = processedContent.replace(/^\\\[|\\\]$/g, '');
+        processedContent = processedContent.replace(/^\\\(|\\\)$/g, '');
+        
+        // Clean up problematic LaTeX commands that cause rendering issues
+        processedContent = processedContent.replace(/\\text\{([^}]*)\}/g, '\\mathrm{$1}');
+        processedContent = processedContent.replace(/\\quad/g, '\\,');
+        processedContent = processedContent.replace(/\\cdot([ms])/g, '\\cdot\\mathrm{$1}');
+        
+        // Fix common formatting issues with units
+        processedContent = processedContent.replace(/Units:\s*/g, '\\,\\mathrm{(Units:\\,');
+        processedContent = processedContent.replace(/\(Units:\s*([^)]+)\)/g, '\\,\\mathrm{(Units:\\,$1)}');
+        
+        (window as any).katex.render(processedContent, elementRef.current, {
           displayMode,
           throwOnError: false,
           strict: false,
+          trust: true,
+          macros: {
+            "\\cdot": "\\cdot",
+            "\\times": "\\times", 
+            "\\div": "\\div",
+            "\\mathrm": "\\mathrm"
+          }
         });
       } catch (error) {
-        console.warn('KaTeX rendering failed:', error);
-        if (elementRef.current) {
-          elementRef.current.textContent = content;
+        console.warn('KaTeX rendering failed for:', content, error);
+        // Enhanced fallback: try simpler rendering
+        try {
+          if (elementRef.current) {
+            const simplifiedContent = content.replace(/\\text\{([^}]*)\}/g, '$1');
+            (window as any).katex.render(simplifiedContent, elementRef.current, {
+              displayMode: false,
+              throwOnError: false,
+              strict: false
+            });
+          }
+        } catch (fallbackError) {
+          console.warn('Fallback rendering also failed:', fallbackError);
+          if (elementRef.current) {
+            elementRef.current.textContent = content;
+          }
         }
       }
     }
