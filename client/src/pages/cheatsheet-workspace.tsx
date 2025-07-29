@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import Draggable from 'react-draggable';
-import { ResizableBox } from 'react-resizable';
-import 'react-resizable/css/styles.css';
 import { useParams, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -136,6 +134,24 @@ export default function CheatSheetWorkspace() {
       }));
       setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
+    } else if (response.action === 'modify' && response.boxNumber !== undefined) {
+      // Handle box modification commands
+      const boxIndex = response.boxNumber - 1;
+      if (boxIndex >= 0 && boxIndex < boxes.length) {
+        setBoxes(prev => prev.map((box, index) => 
+          index === boxIndex 
+            ? { ...box, title: response.title || box.title, content: response.content || box.content }
+            : box
+        ));
+        saveSheetMutation.mutate();
+      }
+    } else if (response.action === 'delete' && response.boxNumber !== undefined) {
+      // Handle box deletion commands
+      const boxIndex = response.boxNumber - 1;
+      if (boxIndex >= 0 && boxIndex < boxes.length) {
+        setBoxes(prev => prev.filter((_, index) => index !== boxIndex));
+        saveSheetMutation.mutate();
+      }
     }
   };
 
@@ -305,40 +321,44 @@ export default function CheatSheetWorkspace() {
                     bounds="parent"
                   >
                     <div className="absolute">
-                      <ResizableBox
-                        width={box.size?.width || 300}
-                        height={box.size?.height || 160}
-                        minConstraints={[200, 100]}
-                        maxConstraints={[600, 400]}
-                        onResize={(e, data) => updateBoxSize(box.id, { width: data.size.width, height: data.size.height })}
-                        resizeHandles={['se']}
-                        className="relative"
+                      <div
+                        className={`auto-fit-box bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden cursor-move`}
+                        style={{ 
+                          animationDelay: `${index * 0.1}s`,
+                          minWidth: '200px',
+                          minHeight: '100px',
+                          maxWidth: '600px'
+                        }}
                       >
-                        <div
-                          className={`w-full h-full bg-gradient-to-br ${box.color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden cursor-move`}
-                          style={{ animationDelay: `${index * 0.1}s` }}
-                        >
-                          {/* Title Header */}
-                          <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+                        {/* Title Header with Box Number */}
+                        <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-slate-800 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                              {index + 1}
+                            </div>
                             <h4 className="font-semibold text-slate-900 text-sm truncate">{box.title}</h4>
                           </div>
-                          
-                          {/* Content */}
-                          <div className="p-3 h-full overflow-auto">
-                            <div className="text-sm leading-relaxed">
-                              {/* Properly render LaTeX content */}
-                              {box.content.includes('\\') || box.content.includes('$') ? (
-                                <LaTeXRenderer 
-                                  content={box.content.replace(/^\$+|\$+$/g, '')} 
-                                  className="text-base"
-                                />
-                              ) : (
-                                <div className="whitespace-pre-wrap">{box.content}</div>
-                              )}
-                            </div>
+                        </div>
+                        
+                        {/* Auto-fit Content */}
+                        <div className="p-4">
+                          <div className="text-sm leading-relaxed auto-fit-content">
+                            {/* Properly render LaTeX content */}
+                            {box.content.includes('\\') || box.content.includes('$') ? (
+                              <LaTeXRenderer 
+                                content={box.content.replace(/^\$+|\$+$/g, '')} 
+                                className="text-base"
+                              />
+                            ) : (
+                              <div className="whitespace-pre-wrap break-words">{box.content}</div>
+                            )}
                           </div>
                         </div>
-                      </ResizableBox>
+                        
+                        {/* Resize Handle */}
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-purple-500 opacity-30 hover:opacity-60 cursor-se-resize rounded-tl-lg">
+                        </div>
+                      </div>
                     </div>
                   </Draggable>
                 ))
