@@ -305,10 +305,11 @@ export default function CheatSheetWorkspace() {
           {/* Cheat Sheet Content */}
           <div className="flex-1 relative bg-gray-50 overflow-auto">
             <div 
-              className="relative w-full h-full min-h-[800px]" 
+              className="relative w-full min-h-[2000px]" 
               style={{ 
                 backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
+                backgroundSize: '20px 20px',
+                height: `${Math.max(2000, ...boxes.map(box => (box.position?.y || 0) + (box.size?.height || 160) + 200))}px`
               }}
             >
               {boxes.length > 0 ? (
@@ -317,10 +318,9 @@ export default function CheatSheetWorkspace() {
                     key={box.id}
                     position={box.position || { x: 0, y: 0 }}
                     onStop={(e, data) => {
-                      updateBoxPosition(box.id, { x: data.x, y: data.y });
+                      updateBoxPosition(box.id, { x: Math.max(0, data.x), y: Math.max(0, data.y) });
                       debounceAndSave();
                     }}
-                    bounds="parent"
                     grid={[10, 10]}
                     handle=".drag-handle"
                   >
