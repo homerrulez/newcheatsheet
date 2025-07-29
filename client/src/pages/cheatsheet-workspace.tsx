@@ -125,41 +125,50 @@ export default function CheatSheetWorkspace() {
     });
   };
 
-  // Page-based layout system for professional cheat sheets
-  const calculatePagePosition = useCallback((index: number, boxSize: { width: number, height: number }, allBoxes: any[]) => {
-    const pageWidth = 612; // 8.5 inches at 72 DPI
-    const pageHeight = 792; // 11 inches at 72 DPI
-    const margin = 36; // 0.5 inch margins
+  // Grid-based layout system with snap-to-grid positioning
+  const GRID_CONFIG = {
+    pageWidth: 612,    // 8.5 inches at 72 DPI
+    pageHeight: 792,   // 11 inches at 72 DPI
+    margin: 36,        // 0.5 inch margins
+    columns: 3,        // Fixed 3 columns per page
+    boxWidth: 180,     // Fixed box width for grid alignment
+    boxHeight: 140,    // Fixed box height for grid alignment
+    gutter: 10         // Space between boxes
+  };
+
+  const calculateGridPosition = useCallback((index: number) => {
+    const { pageWidth, pageHeight, margin, columns, boxWidth, boxHeight, gutter } = GRID_CONFIG;
+    
+    // Calculate available content area
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
-    const boxPadding = 15;
     
-    // Default box size for layout calculations
-    const defaultWidth = Math.min(250, boxSize.width);
-    const defaultHeight = Math.min(150, boxSize.height);
+    // Calculate rows that fit per page
+    const rowsPerPage = Math.floor(contentHeight / (boxHeight + gutter));
+    const boxesPerPage = columns * rowsPerPage;
     
-    // Calculate boxes per row and column
-    const boxesPerRow = Math.floor(contentWidth / (defaultWidth + boxPadding));
-    const boxesPerColumn = Math.floor(contentHeight / (defaultHeight + boxPadding));
-    const boxesPerPage = boxesPerRow * boxesPerColumn;
-    
-    // Determine which page this box belongs to
+    // Determine page and position within page
     const pageNumber = Math.floor(index / boxesPerPage);
-    const boxIndexOnPage = index % boxesPerPage;
+    const indexOnPage = index % boxesPerPage;
+    const row = Math.floor(indexOnPage / columns);
+    const col = indexOnPage % columns;
     
-    // Calculate position within the page
-    const row = Math.floor(boxIndexOnPage / boxesPerRow);
-    const col = boxIndexOnPage % boxesPerRow;
+    // Calculate exact grid position
+    const x = margin + (col * (boxWidth + gutter));
+    const y = margin + (pageNumber * pageHeight) + (row * (boxHeight + gutter));
     
-    // Calculate actual position
-    const x = margin + (col * (defaultWidth + boxPadding));
-    const y = margin + (pageNumber * pageHeight) + (row * (defaultHeight + boxPadding));
-    
-    return { x, y, page: pageNumber };
+    return { 
+      x, 
+      y, 
+      page: pageNumber,
+      width: boxWidth,
+      height: boxHeight
+    };
   }, []);
 
   // Calculate total pages needed
-  const totalPages = Math.ceil(boxes.length / 12); // Assuming ~12 boxes per page
+  const boxesPerPage = GRID_CONFIG.columns * Math.floor((GRID_CONFIG.pageHeight - GRID_CONFIG.margin * 2) / (GRID_CONFIG.boxHeight + GRID_CONFIG.gutter));
+  const totalPages = Math.ceil(boxes.length / boxesPerPage);
 
   const handleAIResponse = (response: any) => {
     // Handle box operations (delete, edit, etc.)
@@ -191,29 +200,30 @@ export default function CheatSheetWorkspace() {
         }
       });
       
-      // Recalculate positions for remaining boxes to maintain page layout
+      // Recalculate positions for remaining boxes to maintain grid layout
       updatedBoxes = updatedBoxes.map((box, index) => {
-        const position = calculatePagePosition(index, { width: 250, height: 150 }, updatedBoxes);
+        const gridPos = calculateGridPosition(index);
         return {
           ...box,
-          position: { x: position.x, y: position.y }
+          position: { x: gridPos.x, y: gridPos.y },
+          size: { width: gridPos.width, height: gridPos.height }
         };
       });
       
       setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
-    // Handle new boxes creation with page-based positioning
+    // Handle new boxes creation with grid positioning
     else if (response.boxes && Array.isArray(response.boxes)) {
       const newBoxes = response.boxes.map((box: any, index: number) => {
-        const position = calculatePagePosition(boxes.length + index, { width: 250, height: 150 }, boxes);
+        const gridPos = calculateGridPosition(boxes.length + index);
         return {
           id: `box-${Date.now()}-${index}`,
           title: box.title || 'Formula',
           content: box.content || '',
           color: box.color || getRandomColor(),
-          position: { x: position.x, y: position.y }
-          // Size will auto-adjust via ResizeObserver in AutoResizeMathBox
+          position: { x: gridPos.x, y: gridPos.y },
+          size: { width: gridPos.width, height: gridPos.height }
         };
       });
       
@@ -266,21 +276,22 @@ export default function CheatSheetWorkspace() {
     });
   }, [toast]);
 
-  // Organize boxes into professional page layout
+  // Snap all boxes to grid positions
   const organizeBoxes = useCallback(() => {
     setBoxes(prev => prev.map((box, index) => {
-      const position = calculatePagePosition(index, { width: 250, height: 150 }, prev);
+      const gridPos = calculateGridPosition(index);
       return {
         ...box,
-        position: { x: position.x, y: position.y }
+        position: { x: gridPos.x, y: gridPos.y },
+        size: { width: gridPos.width, height: gridPos.height }
       };
     }));
     debounceAndSave();
     toast({
-      title: "Cheat sheet organized",
-      description: `Boxes arranged across ${totalPages} page${totalPages > 1 ? 's' : ''} for professional layout.`,
+      title: "Grid layout applied",
+      description: `${boxes.length} boxes organized in ${totalPages} page${totalPages > 1 ? 's' : ''} with 3-column grid.`,
     });
-  }, [calculatePagePosition, debounceAndSave, toast, totalPages]);
+  }, [calculateGridPosition, debounceAndSave, toast, totalPages, boxes.length]);
 
   const getRandomColor = () => {
     const colors = [
@@ -410,7 +421,7 @@ export default function CheatSheetWorkspace() {
                 <div className="flex items-center space-x-2 text-sm text-slate-600">
                   <span>{boxes.length} boxes</span>
                   <span>•</span>
-                  <span>Auto-sizing enabled</span>
+                  <span>3-column grid</span>
                 </div>
                 {boxes.length > 0 && (
                   <div className="flex space-x-2">
@@ -428,7 +439,7 @@ export default function CheatSheetWorkspace() {
                       onClick={organizeBoxes}
                       className="text-xs"
                     >
-                      Page Layout
+                      Snap to Grid
                     </Button>
                   </div>
                 )}
@@ -436,38 +447,34 @@ export default function CheatSheetWorkspace() {
             </div>
           </div>
 
-          {/* Cheat Sheet Content - Page Layout */}
-          <div className="flex-1 relative bg-gray-100 overflow-auto">
-            {/* Page containers for professional layout */}
+          {/* Cheat Sheet Content - Grid Layout */}
+          <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth snap-y snap-mandatory">
+            {/* Page containers with grid overlay */}
             {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => (
               <div
                 key={pageIndex}
-                className="page-container"
+                className="page-container snap-start"
                 style={{
                   marginTop: pageIndex === 0 ? '20px' : '40px'
                 }}
               >
                 {/* Page header */}
-                <div className="absolute top-2 right-4 text-xs text-gray-400">
+                <div className="absolute top-2 right-4 text-xs text-gray-400 z-10">
                   Page {pageIndex + 1} of {Math.max(1, totalPages)}
                 </div>
                 
-                {/* Page background grid */}
-                <div 
-                  className="absolute inset-0 opacity-20"
-                  style={{ 
-                    backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)',
-                    backgroundSize: '15px 15px'
-                  }}
-                ></div>
+                {/* Grid columns indicator */}
+                <div className="absolute top-2 left-4 text-xs text-gray-400 z-10">
+                  3-Column Grid Layout
+                </div>
               </div>
             ))}
             
-            {/* All boxes positioned absolutely across pages */}
+            {/* All boxes positioned absolutely with grid constraints */}
             <div 
               className="absolute inset-0"
               style={{ 
-                height: `${Math.max(1100, totalPages * 792 + 100)}px` // Height based on pages
+                height: `${Math.max(800, totalPages * 832)}px` // Height based on pages + margins
               }}
             >
               {boxes.length > 0 ? (
@@ -479,7 +486,7 @@ export default function CheatSheetWorkspace() {
                     content={box.content}
                     color={box.color}
                     position={box.position || { x: 0, y: 0 }}
-                    size={box.size}
+                    size={box.size || { width: GRID_CONFIG.boxWidth, height: GRID_CONFIG.boxHeight }}
                     onPositionChange={(position) => updateBoxPosition(box.id, position)}
                     onSizeChange={(size) => updateBoxSize(box.id, size)}
                     onSaveRequest={debounceAndSave}

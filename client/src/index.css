@@ -273,15 +273,45 @@
 }
 
 /* Page layout styles for multi-page cheat sheets */
+/* Grid-based page layout for cheat sheets */
 .page-container {
-  width: 8.5in;
-  min-height: 11in;
+  width: 612px; /* 8.5 inches at 72 DPI */
+  height: 792px; /* 11 inches at 72 DPI */
   background: white;
   margin: 20px auto;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border-radius: 8px;
   position: relative;
-  padding: 0.5in;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+}
+
+.page-container::before {
+  content: '';
+  position: absolute;
+  top: 36px; /* 0.5 inch margin */
+  left: 36px;
+  right: 36px;
+  bottom: 36px;
+  border: 1px dashed #cbd5e1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Grid overlay for visual alignment */
+.page-container::after {
+  content: '';
+  position: absolute;
+  top: 36px;
+  left: 36px;
+  width: calc(100% - 72px);
+  height: calc(100% - 72px);
+  background-image: 
+    linear-gradient(90deg, rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+  background-size: 190px 150px; /* Grid cell size (box width + gutter) */
+  pointer-events: none;
+  z-index: 0;
 }
 
 .page-separator {
