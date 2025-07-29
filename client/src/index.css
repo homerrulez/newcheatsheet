@@ -139,22 +139,6 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* Auto-fit box styles */
-.auto-fit-box {
-  position: relative;
-  display: inline-block;
-  width: auto;
-  height: auto;
-}
-
-.auto-fit-content {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-  width: 100%;
-  max-width: 500px;
-}
-
 /* React Resizable styles */
 .react-resizable {
   position: relative;

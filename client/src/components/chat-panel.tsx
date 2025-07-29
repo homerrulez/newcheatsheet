@@ -191,12 +191,6 @@ export default function ChatPanel({
                 50 Physics Formulas
               </button>
             </div>
-            <div className="text-xs text-slate-600 mb-1 mt-3">Box commands:</div>
-            <div className="text-xs text-slate-500 space-y-1">
-              <div>• "Change box 5 to physics instead"</div>
-              <div>• "Delete box 12"</div>
-              <div>• "Modify box 3 content to..."</div>
-            </div>
           </div>
         )}
         <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
