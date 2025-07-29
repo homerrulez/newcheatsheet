@@ -192,6 +192,8 @@ export default function CheatSheetWorkspace() {
   const totalPages = calculateTotalPages();
 
   const handleAIResponse = (response: any) => {
+    console.log('AI Response received:', response);
+    
     // Handle box operations (delete, edit, etc.)
     if (response.operations && Array.isArray(response.operations)) {
       let updatedBoxes = [...boxes];
@@ -228,8 +230,10 @@ export default function CheatSheetWorkspace() {
     }
     // Handle new boxes creation with smart positioning
     else if (response.boxes && Array.isArray(response.boxes)) {
+      console.log('Creating new boxes:', response.boxes);
       const newBoxes = response.boxes.map((box: any, index: number) => {
         const position = calculateDynamicPosition(boxes.length + index, []);
+        console.log(`Box ${index} position:`, position);
         return {
           id: `box-${Date.now()}-${index}`,
           title: box.title || 'Formula',
@@ -240,8 +244,12 @@ export default function CheatSheetWorkspace() {
         };
       });
       
+      console.log('New boxes array:', newBoxes);
       setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
+    }
+    else {
+      console.log('No boxes or operations found in response:', response);
     }
   };
 
