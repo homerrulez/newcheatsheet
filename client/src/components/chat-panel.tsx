@@ -5,8 +5,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getChatMessages, sendChatMessage } from '@/lib/openai';
 import { ChatMessage } from '@shared/schema';
-import { Bot, Send, User, Zap } from 'lucide-react';
+import { Bot, Send, User, Zap, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatPanelProps {
   workspaceId: string;
@@ -23,6 +24,7 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const [message, setMessage] = useState('');
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['/api/chat', workspaceType, workspaceId],
@@ -38,6 +40,16 @@ export default function ChatPanel({
       });
       onAIResponse?.(response);
       setMessage('');
+    },
+    onError: (error: any) => {
+      console.error('Chat error:', error);
+      toast({
+        title: "ChatGPT Error",
+        description: error.message?.includes('quota') 
+          ? "API quota exceeded. Please check your OpenAI billing or try again later."
+          : "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
