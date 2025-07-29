@@ -286,16 +286,21 @@ export default function CheatSheetWorkspace() {
     });
   }, [toast]);
 
-  // Since boxes are now in CSS Grid, this function is for manual reordering
+  // Function to reorganize boxes with efficient positioning
   const organizeBoxes = useCallback(() => {
-    // Re-order boxes by their content or other criteria if needed
-    setBoxes(prev => [...prev]);
+    // Re-position all boxes using the dynamic positioning algorithm
+    const reorganizedBoxes = boxes.map((box, index) => ({
+      ...box,
+      position: calculateDynamicPosition(index, boxes)
+    }));
+    
+    setBoxes(reorganizedBoxes);
     debounceAndSave();
     toast({
-      title: "Grid layout applied",
-      description: `${boxes.length} boxes organized in ${totalPages} page${totalPages > 1 ? 's' : ''} (${boxesPerPage} boxes per page, column-wise).`,
+      title: "Layout optimized",
+      description: `${boxes.length} boxes reorganized across ${totalPages} page${totalPages > 1 ? 's' : ''} with content-aware positioning.`,
     });
-  }, [debounceAndSave, toast, totalPages, boxes.length, boxesPerPage]);
+  }, [debounceAndSave, toast, totalPages, boxes.length, calculateDynamicPosition, boxes]);
 
   const getRandomColor = () => {
     const colors = [
@@ -425,7 +430,7 @@ export default function CheatSheetWorkspace() {
                 <div className="flex items-center space-x-2 text-sm text-slate-600">
                   <span>{boxes.length} boxes</span>
                   <span>•</span>
-                  <span>3-column grid</span>
+                  <span>Dynamic layout</span>
                 </div>
                 {boxes.length > 0 && (
                   <div className="flex space-x-2">
