@@ -298,7 +298,7 @@
   z-index: 1;
 }
 
-/* Grid overlay for visual alignment */
+/* 3-column grid overlay for visual alignment */
 .page-container::after {
   content: '';
   position: absolute;
@@ -307,11 +307,31 @@
   width: calc(100% - 72px);
   height: calc(100% - 72px);
   background-image: 
-    linear-gradient(90deg, rgba(148, 163, 184, 0.2) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
-  background-size: 190px 150px; /* Grid cell size (box width + gutter) */
+    linear-gradient(90deg, rgba(99, 102, 241, 0.15) 2px, transparent 2px),
+    linear-gradient(180deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+  background-size: 190px 150px; /* Exact grid cell size: 180px box + 10px gutter */
+  background-position: 0 0;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Add column separators for clearer 3-column visualization */
+.page-container .grid-separator {
+  position: absolute;
+  top: 36px;
+  bottom: 36px;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.page-container .grid-separator:nth-child(1) {
+  left: calc(36px + 190px - 1px); /* After first column */
+}
+
+.page-container .grid-separator:nth-child(2) {
+  left: calc(36px + 380px - 1px); /* After second column */
 }
 
 .page-separator {

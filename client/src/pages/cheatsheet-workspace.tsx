@@ -143,32 +143,39 @@ export default function CheatSheetWorkspace() {
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
     
-    // Calculate rows that fit per page
-    const rowsPerPage = Math.floor(contentHeight / (boxHeight + gutter));
+    // Calculate rows that fit per page (with some buffer)
+    const rowsPerPage = Math.floor((contentHeight - gutter) / (boxHeight + gutter));
     const boxesPerPage = columns * rowsPerPage;
     
     // Determine page and position within page
     const pageNumber = Math.floor(index / boxesPerPage);
     const indexOnPage = index % boxesPerPage;
-    const row = Math.floor(indexOnPage / columns);
-    const col = indexOnPage % columns;
     
-    // Calculate exact grid position
+    // Column-wise placement: fill column 1, then column 2, then column 3
+    const col = Math.floor(indexOnPage / rowsPerPage);
+    const row = indexOnPage % rowsPerPage;
+    
+    // Calculate exact grid position relative to page start
+    const pageStartY = pageNumber * (pageHeight + 40); // 40px for page margin
     const x = margin + (col * (boxWidth + gutter));
-    const y = margin + (pageNumber * pageHeight) + (row * (boxHeight + gutter));
+    const y = pageStartY + 20 + margin + (row * (boxHeight + gutter)); // 20px top margin
     
     return { 
       x, 
       y, 
       page: pageNumber,
       width: boxWidth,
-      height: boxHeight
+      height: boxHeight,
+      gridCol: col,
+      gridRow: row
     };
   }, []);
 
   // Calculate total pages needed
-  const boxesPerPage = GRID_CONFIG.columns * Math.floor((GRID_CONFIG.pageHeight - GRID_CONFIG.margin * 2) / (GRID_CONFIG.boxHeight + GRID_CONFIG.gutter));
-  const totalPages = Math.ceil(boxes.length / boxesPerPage);
+  const contentHeight = GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2);
+  const rowsPerPage = Math.floor((contentHeight - GRID_CONFIG.gutter) / (GRID_CONFIG.boxHeight + GRID_CONFIG.gutter));
+  const boxesPerPage = GRID_CONFIG.columns * rowsPerPage;
+  const totalPages = Math.max(1, Math.ceil(boxes.length / boxesPerPage));
 
   const handleAIResponse = (response: any) => {
     // Handle box operations (delete, edit, etc.)
@@ -266,15 +273,23 @@ export default function CheatSheetWorkspace() {
     [currentSheet, saveSheetMutation]
   );
 
-  // Trigger re-render to force ResizeObserver recalculation
+  // Auto-fit all boxes to grid positions and content sizing
   const autoFitAllBoxes = useCallback(() => {
-    // Force component re-render to trigger ResizeObserver
-    setBoxes(prev => [...prev]);
+    setBoxes(prev => prev.map((box, index) => {
+      const gridPos = calculateGridPosition(index);
+      return {
+        ...box,
+        position: { x: gridPos.x, y: gridPos.y },
+        size: { width: gridPos.width, height: gridPos.height }
+      };
+    }));
+    debounceAndSave();
+    
     toast({
-      title: "Auto-fit triggered",
-      description: "Boxes will automatically resize to fit their rendered content.",
+      title: "Auto-fit complete",
+      description: "All boxes snapped to grid positions and sized for optimal display.",
     });
-  }, [toast]);
+  }, [calculateGridPosition, debounceAndSave, toast]);
 
   // Snap all boxes to grid positions
   const organizeBoxes = useCallback(() => {
@@ -289,9 +304,9 @@ export default function CheatSheetWorkspace() {
     debounceAndSave();
     toast({
       title: "Grid layout applied",
-      description: `${boxes.length} boxes organized in ${totalPages} page${totalPages > 1 ? 's' : ''} with 3-column grid.`,
+      description: `${boxes.length} boxes organized in ${totalPages} page${totalPages > 1 ? 's' : ''} (${boxesPerPage} boxes per page, column-wise).`,
     });
-  }, [calculateGridPosition, debounceAndSave, toast, totalPages, boxes.length]);
+  }, [calculateGridPosition, debounceAndSave, toast, totalPages, boxes.length, boxesPerPage]);
 
   const getRandomColor = () => {
     const colors = [
@@ -465,8 +480,12 @@ export default function CheatSheetWorkspace() {
                 
                 {/* Grid columns indicator */}
                 <div className="absolute top-2 left-4 text-xs text-gray-400 z-10">
-                  3-Column Grid Layout
+                  3-Column Grid ({boxesPerPage} boxes/page)
                 </div>
+                
+                {/* Column separators */}
+                <div className="grid-separator"></div>
+                <div className="grid-separator"></div>
               </div>
             ))}
             
