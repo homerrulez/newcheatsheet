@@ -144,9 +144,11 @@ export default function CheatSheetWorkspace() {
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
     
-    // Position relative to the viewport, with page offset
+    // Position relative to the viewport, centered horizontally
+    const containerWidth = 800; // Available middle panel width (approximate)
     const pageOffset = 20; // Offset for page container
-    const pageStartX = pageOffset + margin;
+    const centerOffsetX = (containerWidth - pageWidth) / 2; // Center the page
+    const pageStartX = centerOffsetX + margin;
     const pageStartY = pageOffset + margin + 40; // Leave space for page header
     
     // Box sizing constraints  
@@ -461,14 +463,15 @@ export default function CheatSheetWorkspace() {
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
             {/* Page System with Visual Boundaries */}
             <div className="relative" style={{ minHeight: `${totalPages * 832}px` }}>
-              {/* Render page boundaries as visual guides */}
+              {/* Render page boundaries as visual guides - centered */}
               {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => (
                 <div
                   key={pageIndex}
                   className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
                   style={{
                     top: `${20 + pageIndex * (GRID_CONFIG.pageHeight + 40)}px`,
-                    left: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
                     width: `${GRID_CONFIG.pageWidth}px`,
                     height: `${GRID_CONFIG.pageHeight}px`,
                     zIndex: 0

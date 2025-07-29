@@ -90,7 +90,7 @@ export default function ChatPanel({
   };
 
   return (
-    <div className={cn("w-80 bg-white border-l border-slate-200 flex flex-col", className)}>
+    <div className={cn("w-[448px] bg-white border-l border-slate-200 flex flex-col", className)}>
       {/* Header */}
       <div className="p-4 border-b border-slate-200">
         <div className="flex items-center space-x-2 mb-3">
