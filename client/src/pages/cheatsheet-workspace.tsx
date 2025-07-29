@@ -124,6 +124,41 @@ export default function CheatSheetWorkspace() {
     });
   };
 
+  // Smart grid positioning system
+  const calculateGridPosition = useCallback((index: number, boxSize: { width: number, height: number }, allBoxes: any[]) => {
+    const gridPadding = 30;
+    const minBoxWidth = 300;
+    const minBoxHeight = 180;
+    
+    // Calculate how many boxes can fit per row based on average box width
+    const avgBoxWidth = Math.max(minBoxWidth, boxSize.width);
+    const canvasWidth = 1200; // Approximate canvas width
+    const boxesPerRow = Math.floor(canvasWidth / (avgBoxWidth + gridPadding));
+    
+    // Calculate row and column
+    const row = Math.floor(index / boxesPerRow);
+    const col = index % boxesPerRow;
+    
+    // Calculate cumulative heights for each row to prevent overlapping
+    let cumulativeY = gridPadding;
+    for (let r = 0; r < row; r++) {
+      let maxHeightInRow = minBoxHeight;
+      for (let c = 0; c < boxesPerRow; c++) {
+        const boxIndex = r * boxesPerRow + c;
+        if (boxIndex < allBoxes.length) {
+          const box = allBoxes[boxIndex];
+          maxHeightInRow = Math.max(maxHeightInRow, box.size?.height || minBoxHeight);
+        }
+      }
+      cumulativeY += maxHeightInRow + gridPadding;
+    }
+    
+    return {
+      x: col * (avgBoxWidth + gridPadding) + gridPadding,
+      y: cumulativeY
+    };
+  }, []);
+
   const handleAIResponse = (response: any) => {
     // Handle box operations (delete, edit, etc.)
     if (response.operations && Array.isArray(response.operations)) {
@@ -158,6 +193,12 @@ export default function CheatSheetWorkspace() {
         }
       });
       
+      // Recalculate positions for remaining boxes to maintain grid
+      updatedBoxes = updatedBoxes.map((box, index) => ({
+        ...box,
+        position: calculateGridPosition(index, box.size || { width: 300, height: 180 }, updatedBoxes)
+      }));
+      
       setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
@@ -170,11 +211,18 @@ export default function CheatSheetWorkspace() {
           title: box.title || 'Formula',
           content: box.content || '',
           color: box.color || getRandomColor(),
-          position: { x: (index % 4) * (optimalSize.width + 30), y: Math.floor(index / 4) * (optimalSize.height + 30) },
-          size: optimalSize
+          size: optimalSize,
+          position: { x: 0, y: 0 } // Will be calculated below
         };
       });
-      setBoxes(prev => [...prev, ...newBoxes]);
+      
+      // Calculate positions for all new boxes
+      const allNewBoxes = newBoxes.map((box, index) => ({
+        ...box,
+        position: calculateGridPosition(boxes.length + index, box.size, [...boxes, ...newBoxes])
+      }));
+      
+      setBoxes(prev => [...prev, ...allNewBoxes]);
       saveSheetMutation.mutate();
     }
   };
@@ -274,6 +322,19 @@ export default function CheatSheetWorkspace() {
       description: "All boxes have been resized to fit their content.",
     });
   }, [calculateOptimalSize, debounceAndSave, toast]);
+
+  // Organize boxes into clean grid layout
+  const organizeBoxes = useCallback(() => {
+    setBoxes(prev => prev.map((box, index) => ({
+      ...box,
+      position: calculateGridPosition(index, box.size || { width: 300, height: 180 }, prev)
+    })));
+    debounceAndSave();
+    toast({
+      title: "Boxes organized",
+      description: "All boxes have been arranged in a clean grid layout.",
+    });
+  }, [calculateGridPosition, debounceAndSave, toast]);
 
   const getRandomColor = () => {
     const colors = [
@@ -406,14 +467,24 @@ export default function CheatSheetWorkspace() {
                   <span>Auto-sizing enabled</span>
                 </div>
                 {boxes.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={autoFitAllBoxes}
-                    className="text-xs"
-                  >
-                    Auto-fit All
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={autoFitAllBoxes}
+                      className="text-xs"
+                    >
+                      Auto-fit All
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={organizeBoxes}
+                      className="text-xs"
+                    >
+                      Organize Grid
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
