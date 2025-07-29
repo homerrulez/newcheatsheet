@@ -144,10 +144,11 @@ export default function CheatSheetWorkspace() {
     const contentWidth = pageWidth - (margin * 2);
     const contentHeight = pageHeight - (margin * 2);
     
-    // Position relative to the viewport, centered horizontally
-    const containerWidth = 800; // Available middle panel width (approximate)
+    // Position relative to the viewport, with proper centering
     const pageOffset = 20; // Offset for page container
-    const centerOffsetX = (containerWidth - pageWidth) / 2; // Center the page
+    // Estimate middle panel width (total - left panel - right panel)
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448; // left panel - chat panel
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2); // Center the page
     const pageStartX = centerOffsetX + margin;
     const pageStartY = pageOffset + margin + 40; // Leave space for page header
     
@@ -464,36 +465,40 @@ export default function CheatSheetWorkspace() {
             {/* Page System with Visual Boundaries */}
             <div className="relative" style={{ minHeight: `${totalPages * 832}px` }}>
               {/* Render page boundaries as visual guides - centered */}
-              {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => (
-                <div
-                  key={pageIndex}
-                  className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
-                  style={{
-                    top: `${20 + pageIndex * (GRID_CONFIG.pageHeight + 40)}px`,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: `${GRID_CONFIG.pageWidth}px`,
-                    height: `${GRID_CONFIG.pageHeight}px`,
-                    zIndex: 0
-                  }}
-                >
-                  {/* Page header */}
-                  <div className="absolute top-2 right-4 text-xs text-gray-400">
-                    Page {pageIndex + 1} of {Math.max(1, totalPages)}
-                  </div>
-                  
-                  {/* Page margins guide */}
-                  <div 
-                    className="absolute border border-blue-200 border-dashed"
+              {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
+                const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+                const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - GRID_CONFIG.pageWidth) / 2);
+                
+                return (
+                  <div
+                    key={pageIndex}
+                    className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
                     style={{
-                      top: `${GRID_CONFIG.margin}px`,
-                      left: `${GRID_CONFIG.margin}px`,
-                      width: `${GRID_CONFIG.pageWidth - (GRID_CONFIG.margin * 2)}px`,
-                      height: `${GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2)}px`
+                      top: `${20 + pageIndex * (GRID_CONFIG.pageHeight + 40)}px`,
+                      left: `${centerOffsetX}px`,
+                      width: `${GRID_CONFIG.pageWidth}px`,
+                      height: `${GRID_CONFIG.pageHeight}px`,
+                      zIndex: 0
                     }}
-                  />
-                </div>
-              ))}
+                  >
+                    {/* Page header */}
+                    <div className="absolute top-2 right-4 text-xs text-gray-400">
+                      Page {pageIndex + 1} of {Math.max(1, totalPages)}
+                    </div>
+                    
+                    {/* Page margins guide */}
+                    <div 
+                      className="absolute border border-blue-200 border-dashed"
+                      style={{
+                        top: `${GRID_CONFIG.margin}px`,
+                        left: `${GRID_CONFIG.margin}px`,
+                        width: `${GRID_CONFIG.pageWidth - (GRID_CONFIG.margin * 2)}px`,
+                        height: `${GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2)}px`
+                      }}
+                    />
+                  </div>
+                );
+              })}
               
               {/* All boxes positioned within page boundaries */}
               <div className="absolute inset-0" style={{ zIndex: 10 }}>

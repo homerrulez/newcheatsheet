@@ -89,17 +89,29 @@ export default function AutoResizeMathBox({
     };
   }, []);
 
-  // Update size when content changes
+  // Update size when content changes or component mounts
   useEffect(() => {
     if (contentRef.current && !isManuallyResized) {
       const timer = setTimeout(() => {
         const newSize = calculateContentSize();
         setAutoSize(newSize);
         onSizeChange(newSize);
-      }, 100);
+      }, 150); // Slightly longer delay to ensure content is rendered
       return () => clearTimeout(timer);
     }
   }, [content, calculateContentSize, onSizeChange, isManuallyResized]);
+
+  // Initial size calculation on mount
+  useEffect(() => {
+    if (contentRef.current && !externalSize) {
+      const initialTimer = setTimeout(() => {
+        const newSize = calculateContentSize();
+        setAutoSize(newSize);
+        onSizeChange(newSize);
+      }, 300); // Longer delay for initial load
+      return () => clearTimeout(initialTimer);
+    }
+  }, []);
 
   // Use auto size unless manually resized
   const boxSize = isManuallyResized && externalSize ? externalSize : autoSize;
