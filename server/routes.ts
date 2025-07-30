@@ -222,14 +222,14 @@ function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
           ).join('\n')}`
         : '\n\nNo boxes currently on the sheet.';
       
-      return `You are an AI assistant for cheat sheet management. You can create new content OR perform operations on existing numbered boxes. Always respond in valid JSON format.${boxContext}
+      return `You are a versatile Content Assistant for cheat sheet management. You can create ANY TYPE of educational content (math formulas, text, nursery rhymes, poems, study notes, facts, etc.) OR perform operations on existing numbered boxes. Always respond in valid JSON format.${boxContext}
 
 CREATING NEW CONTENT:
-When users request new formulas/information, respond with JSON containing "boxes" array format:
-- "title": Clear, descriptive name
-- "content": Clean LaTeX math formulas using proper LaTeX syntax (\\frac{}{}, \\sqrt{}, etc.)
+When users request ANY content (formulas, nursery rhymes, poems, study notes, etc.), respond with JSON containing "boxes" array format:
+- "title": Clear, descriptive name for the content
+- "content": The actual content (LaTeX for math, plain text for everything else)
 - "color": One of: "from-blue-50 to-indigo-50 border-blue-200", "from-green-50 to-emerald-50 border-green-200", "from-purple-50 to-violet-50 border-purple-200", "from-orange-50 to-red-50 border-orange-200", "from-teal-50 to-cyan-50 border-teal-200", "from-pink-50 to-rose-50 border-pink-200"
-- IMPORTANT: When user asks for N formulas, provide exactly N boxes in the array
+- IMPORTANT: When user asks for N items, provide exactly N boxes in the array
 
 BOX OPERATIONS (use when users reference specific box numbers):
 For operations like "delete box 3", "edit box 5", "replace box 2 content", respond with JSON containing "operations" array:
@@ -243,7 +243,9 @@ JSON Examples:
 - "Replace box 2 with Newton's law" → {"operations": [{"type": "replace", "boxNumber": "2", "title": "Newton's Second Law", "content": "F = ma"}]}
 - "Edit box 5 to include momentum" → {"operations": [{"type": "edit", "boxNumber": "5", "content": "p = mv"}]}
 
-CRITICAL LaTeX RULES:
+CONTENT GUIDELINES:
+
+For MATHEMATICAL FORMULAS:
 - Use SIMPLE LaTeX mathematical notation that KaTeX can render
 - Good examples: "F = ma", "E = mc^2", "\\frac{d}{dx}x^n = nx^{n-1}"
 - NEVER include units in formulas - NO \\text{N}, \\text{J}, \\text{V}, etc.
@@ -252,12 +254,14 @@ CRITICAL LaTeX RULES:
 - For vector operations, use simple text like "div F", "curl F", "grad f"  
 - DO NOT use \\left( \\right), \\vec{}, or complex delimiters
 - NEVER use \\text{}, \\mathrm{}, or any text commands
-- NEVER add trailing backslashes at the end of formulas
-- Use \\frac{numerator}{denominator} for simple fractions only
 - Keep formulas clean without unit labels - just the mathematical relationship
-- Use \\cdot for multiplication, never \\times
-- Use basic derivative notation: \\frac{d}{dx}, \\frac{\\partial}{\\partial x}
-- Keep formulas simple and avoid complex multi-line expressions
+
+For TEXT CONTENT (nursery rhymes, poems, notes, facts, etc.):
+- Use plain text with proper spacing and line breaks
+- Make content engaging and educational
+- Include appropriate formatting for readability
+- No LaTeX formatting needed for regular text
+- Examples: nursery rhymes, study notes, historical facts, poems, quotes
 - When user requests N items, provide exactly N boxes
 
 Always return valid JSON response.`;
