@@ -180,14 +180,11 @@ export default function AutoResizeMathBox({
                     style={{ cursor: 'text' }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {content.includes('\\') || content.includes('$') ? (
-                      <LaTeXRenderer 
-                        content={content.replace(/^\$+|\$+$/g, '')} 
-                        className="text-base math-content"
-                      />
-                    ) : (
-                      <div className="whitespace-pre-wrap">{content}</div>
-                    )}
+                    <LaTeXRenderer 
+                      content={content} 
+                      className="text-base math-content"
+                      displayMode={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -212,14 +209,11 @@ export default function AutoResizeMathBox({
                 ref={contentRef}
                 className="text-sm leading-relaxed h-full overflow-visible"
               >
-                {content.includes('\\') || content.includes('$') ? (
-                  <LaTeXRenderer 
-                    content={content.replace(/^\$+|\$+$/g, '')} 
-                    className="text-base math-content"
-                  />
-                ) : (
-                  <div className="whitespace-pre-wrap">{content}</div>
-                )}
+                <LaTeXRenderer 
+                  content={content} 
+                  className="text-base math-content"
+                  displayMode={false}
+                />
               </div>
             </div>
             

@@ -51,13 +51,15 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
             try {
               katex.render(mathContent, containerRef.current!, {
                 displayMode: displayMode,
-                throwOnError: false, // Keep false to prevent crashes
+                throwOnError: false,
                 strict: false,
                 trust: true,
                 errorColor: '#d63384',
+                output: 'html',
+                fleqn: false,
                 macros: {
                   "\\cdot": "\\cdot",
-                  "\\times": "\\times",
+                  "\\times": "\\times", 
                   "\\div": "\\div"
                 }
               });
