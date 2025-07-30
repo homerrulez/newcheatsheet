@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Draggable from 'react-draggable';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
-import { useParams, Link } from 'wouter';
+import { useParams, Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,12 +10,14 @@ import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft } 
 import ChatPanel from '@/components/chat-panel';
 import LaTeXRenderer from '@/components/latex-renderer';
 import AutoResizeMathBox from '@/components/auto-resize-math-box';
+import WorkspaceSidebar from '@/components/workspace-sidebar';
 import { CheatSheet, CheatSheetBox } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 export default function CheatSheetWorkspace() {
   const { id } = useParams();
+  const [, navigate] = useLocation();
   const [currentSheet, setCurrentSheet] = useState<CheatSheet | null>(null);
   const [boxes, setBoxes] = useState<CheatSheetBox[]>([]);
   const queryClient = useQueryClient();
@@ -54,7 +56,7 @@ export default function CheatSheetWorkspace() {
       queryClient.invalidateQueries({ queryKey: ['/api/cheatsheets'] });
       setCurrentSheet(newSheet);
       setBoxes([]);
-      window.history.pushState({}, '', `/cheatsheet/${newSheet.id}`);
+      navigate(`/cheatsheet/${newSheet.id}`);
     },
   });
 
@@ -387,58 +389,14 @@ export default function CheatSheetWorkspace() {
 
       {/* Three-pane layout */}
       <div className="flex h-[calc(100vh-73px)]">
-        {/* Left Panel: Sheet History */}
-        <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
-          <div className="p-4 border-b border-slate-200">
-            <h3 className="font-semibold text-slate-900 mb-3">Cheat Sheet History</h3>
-            <Button
-              onClick={() => createSheetMutation.mutate()}
-              disabled={createSheetMutation.isPending}
-              className="w-full bg-purple-50 text-purple-700 hover:bg-purple-100 text-sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Sheet
-            </Button>
-          </div>
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-2">
-              {Array.isArray(cheatSheets) && cheatSheets.map((sheet: CheatSheet) => (
-                <div
-                  key={sheet.id}
-                  onClick={() => {
-                    setCurrentSheet(sheet);
-                    setBoxes(Array.isArray(sheet.boxes) ? sheet.boxes : []);
-                    window.history.pushState({}, '', `/cheatsheet/${sheet.id}`);
-                  }}
-                  className={`p-3 rounded-lg cursor-pointer border transition-colors ${
-                    currentSheet?.id === sheet.id 
-                      ? 'bg-purple-50 border-purple-200' 
-                      : 'hover:bg-slate-50 border-slate-100'
-                  }`}
-                >
-                  <div className="font-medium text-slate-900 text-sm mb-1">
-                    {sheet.title || 'Untitled Sheet'}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {Array.isArray(sheet.boxes) ? sheet.boxes.length : 0} boxes
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1 flex items-center">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {sheet.updatedAt ? formatTimeAgo(sheet.updatedAt) : 'Just created'}
-                  </div>
-                </div>
-              ))}
-              
-              {(!Array.isArray(cheatSheets) || cheatSheets.length === 0) && (
-                <div className="text-center text-slate-500 py-8">
-                  <Grid3X3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No cheat sheets yet</p>
-                  <p className="text-xs">Create your first sheet</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+        {/* Left Panel: Workspace History */}
+        <WorkspaceSidebar
+          workspaceType="cheatsheet"
+          currentWorkspaceId={currentSheet?.id}
+          onNewWorkspace={() => {
+            createSheetMutation.mutate();
+          }}
+        />
 
         {/* Middle Panel: Cheat Sheet Content */}
         <div className="flex-1 flex flex-col bg-white">
