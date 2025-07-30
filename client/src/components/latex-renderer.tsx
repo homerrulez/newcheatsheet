@@ -28,7 +28,14 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
             .replace(/  /g, '&nbsp;&nbsp;')
             .trim();
           
-          containerRef.current.innerHTML = `<span style="font-family: inherit; font-size: inherit; line-height: 1.6; white-space: pre-wrap;">${formattedText}</span>`;
+          // Handle different content types for optimal display
+          if (content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i)) {
+            // Image content - create responsive image display
+            containerRef.current.innerHTML = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><img src="${content}" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Content image" /></div>`;
+          } else {
+            // Text content - preserve formatting
+            containerRef.current.innerHTML = `<span style="font-family: inherit; font-size: inherit; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;">${formattedText}</span>`;
+          }
           return;
         }
         

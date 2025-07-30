@@ -35,59 +35,108 @@ export default function AutoResizeMathBox({
   boxNumber,
   isGridMode = false,
   minWidth = 160,
-  maxWidth = 400,
+  maxWidth = 800,
   minHeight = 100,
-  maxHeight = 300
+  maxHeight = 600
 }: AutoResizeMathBoxProps) {
   const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
   const [isManuallyResized, setIsManuallyResized] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Content-aware size calculation
+  // Universal content-aware size calculation
   const calculateContentSize = useCallback(() => {
     if (!contentRef.current) return { width: 200, height: 120 };
     
     const contentElement = contentRef.current;
-    const titleHeight = 48; // Fixed title height
-    const padding = 24; // Total padding (12px each side)
+    const titleHeight = 48;
+    const padding = 24;
+    const minWidth = 160;
+    const maxWidth = 800; // Increased max width for larger content
+    const minHeight = 100;
+    const maxHeight = 600; // Increased max height for larger content
     
-    // Create a temporary element to measure natural content size
+    // Detect content type for specialized sizing
+    const hasImages = contentElement.querySelector('img') || content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i);
+    const hasLongText = content.length > 200;
+    const isMultiLine = content.includes('\n') || content.includes('<br>');
+    const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^');
+    
+    // Create temporary element for accurate measurement
     const measureElement = document.createElement('div');
-    measureElement.style.position = 'absolute';
-    measureElement.style.visibility = 'hidden';
-    measureElement.style.whiteSpace = 'nowrap';
-    measureElement.style.fontSize = window.getComputedStyle(contentElement).fontSize;
-    measureElement.style.fontFamily = window.getComputedStyle(contentElement).fontFamily;
-    measureElement.style.lineHeight = window.getComputedStyle(contentElement).lineHeight;
+    measureElement.style.cssText = `
+      position: absolute;
+      visibility: hidden;
+      top: -9999px;
+      left: -9999px;
+      width: auto;
+      height: auto;
+      max-width: ${maxWidth - padding}px;
+      font-size: ${window.getComputedStyle(contentElement).fontSize};
+      font-family: ${window.getComputedStyle(contentElement).fontFamily};
+      line-height: ${window.getComputedStyle(contentElement).lineHeight};
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    `;
     measureElement.innerHTML = contentElement.innerHTML;
     document.body.appendChild(measureElement);
     
-    const naturalWidth = measureElement.scrollWidth;
+    let optimalWidth, optimalHeight;
+    
+    if (hasImages) {
+      // Image content: generous sizing to accommodate visual content
+      const img = measureElement.querySelector('img');
+      if (img) {
+        optimalWidth = Math.min(maxWidth, Math.max(300, img.naturalWidth + padding));
+        optimalHeight = Math.min(maxHeight, Math.max(200, img.naturalHeight + titleHeight + padding));
+      } else {
+        optimalWidth = 400;
+        optimalHeight = 300;
+      }
+    } else if (hasLongText) {
+      // Long text: prioritize readability with comfortable width
+      const idealWidth = Math.min(500, Math.max(300, Math.sqrt(content.length) * 25));
+      measureElement.style.width = `${idealWidth - padding}px`;
+      optimalWidth = idealWidth;
+      optimalHeight = Math.min(maxHeight, Math.max(150, measureElement.scrollHeight + titleHeight + padding));
+    } else if (isMultiLine) {
+      // Multi-line content: balanced proportions
+      const naturalWidth = Math.min(400, measureElement.scrollWidth);
+      measureElement.style.width = `${naturalWidth}px`;
+      optimalWidth = naturalWidth + padding;
+      optimalHeight = Math.min(maxHeight, Math.max(120, measureElement.scrollHeight + titleHeight + padding));
+    } else if (isMathFormula) {
+      // Math formulas: compact but ensure visibility
+      const naturalWidth = Math.min(350, measureElement.scrollWidth);
+      optimalWidth = Math.max(200, naturalWidth + padding);
+      measureElement.style.width = `${optimalWidth - padding}px`;
+      optimalHeight = Math.min(maxHeight, Math.max(100, measureElement.scrollHeight + titleHeight + padding));
+    } else {
+      // Short text/single line: compact sizing
+      const naturalWidth = Math.min(300, measureElement.scrollWidth);
+      optimalWidth = Math.max(minWidth, naturalWidth + padding);
+      measureElement.style.width = `${optimalWidth - padding}px`;
+      optimalHeight = Math.min(maxHeight, Math.max(minHeight, measureElement.scrollHeight + titleHeight + padding));
+    }
+    
     document.body.removeChild(measureElement);
     
-    // Calculate width: natural width + padding, with reasonable constraints
-    let optimalWidth = Math.max(180, naturalWidth + padding);
-    optimalWidth = Math.min(400, optimalWidth);
+    // Apply constraints
+    optimalWidth = Math.max(minWidth, Math.min(maxWidth, optimalWidth));
+    optimalHeight = Math.max(minHeight, Math.min(maxHeight, optimalHeight));
     
-    // Now measure height for the calculated width
-    contentElement.style.width = `${optimalWidth - padding}px`;
-    const heightForWidth = contentElement.scrollHeight;
-    
-    let optimalHeight = Math.max(100, heightForWidth + titleHeight + padding);
-    
-    // Maintain reasonable proportions
+    // Ensure reasonable aspect ratios
     const ratio = optimalWidth / optimalHeight;
-    if (ratio > 3.5) { // Very wide - increase height slightly
-      optimalHeight = Math.max(optimalHeight, optimalWidth / 3.2);
-    } else if (ratio < 0.3) { // Very tall - increase width slightly  
-      optimalWidth = Math.max(optimalWidth, optimalHeight * 0.4);
+    if (ratio > 4) { // Too wide
+      optimalHeight = Math.max(optimalHeight, optimalWidth / 3.5);
+    } else if (ratio < 0.4) { // Too tall
+      optimalWidth = Math.max(optimalWidth, optimalHeight * 0.5);
     }
     
     return { 
       width: Math.round(optimalWidth), 
       height: Math.round(optimalHeight) 
     };
-  }, []);
+  }, [content]);
 
   // Update size when content changes or component mounts
   useEffect(() => {
@@ -148,7 +197,7 @@ export default function AutoResizeMathBox({
             width={boxSize.width}
             height={boxSize.height}
             minConstraints={[150, 80]}
-            maxConstraints={[600, 400]}
+            maxConstraints={[800, 600]}
             onResize={handleResize}
             onResizeStop={handleResizeStop}
             resizeHandles={['se']}
@@ -176,13 +225,13 @@ export default function AutoResizeMathBox({
                 <div className="p-3" style={{ height: `${boxSize.height - 48}px` }}>
                   <div 
                     ref={contentRef}
-                    className="text-sm leading-relaxed h-full overflow-visible"
+                    className="text-sm leading-relaxed h-full overflow-hidden flex items-center justify-center"
                     style={{ cursor: 'text' }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <LaTeXRenderer 
                       content={content} 
-                      className="text-base math-content"
+                      className="text-base math-content w-full h-full flex items-center justify-center"
                       displayMode={false}
                     />
                   </div>
@@ -207,11 +256,11 @@ export default function AutoResizeMathBox({
             <div className="p-3" style={{ height: `${boxSize.height - 48}px` }}>
               <div 
                 ref={contentRef}
-                className="text-sm leading-relaxed h-full overflow-visible"
+                className="text-sm leading-relaxed h-full overflow-hidden flex items-center justify-center"
               >
                 <LaTeXRenderer 
                   content={content} 
-                  className="text-base math-content"
+                  className="text-base math-content w-full h-full flex items-center justify-center"
                   displayMode={false}
                 />
               </div>
