@@ -13,12 +13,12 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
 
   useEffect(() => {
     if (containerRef.current && content) {
+      // Process content for reliable rendering
+      let mathContent = content.trim();
+      
       try {
         // Clear previous content
         containerRef.current.innerHTML = '';
-        
-        // Process content for reliable rendering
-        let mathContent = content.trim();
         
         // Remove surrounding dollar signs
         mathContent = mathContent.replace(/^\$+|\$+$/g, '');
@@ -49,6 +49,14 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
         console.log('Successfully rendered LaTeX:', mathContent, 'Original:', content);
       } catch (error) {
         console.error('LaTeX rendering failed:', error, 'Content:', content, 'Processed:', mathContent);
+        
+        // Count failures to track patterns
+        const failureKey = `latex_failure_${content.substring(0, 20)}`;
+        const failureCount = parseInt(sessionStorage.getItem(failureKey) || '0') + 1;
+        sessionStorage.setItem(failureKey, failureCount.toString());
+        
+        console.error(`LaTeX failure #${failureCount} for content pattern:`, content.substring(0, 30));
+        
         // Enhanced fallback: try rendering without problematic commands
         try {
           if (containerRef.current) {
@@ -58,7 +66,7 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
               .replace(/\\[a-zA-Z]+/g, '')
               .replace(/[{}]/g, '');
             
-            containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 16px;">${plainText}</span>`;
+            containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 16px; color: #d63384;">${plainText} [Render Failed]</span>`;
           }
         } catch (fallbackError) {
           console.error('Fallback rendering also failed:', fallbackError);
