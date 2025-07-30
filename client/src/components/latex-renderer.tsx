@@ -46,12 +46,25 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           }
         });
         
-        console.log('Successfully rendered LaTeX:', mathContent);
+        console.log('Successfully rendered LaTeX:', mathContent, 'Original:', content);
       } catch (error) {
-        console.warn('LaTeX rendering failed:', error, 'Content:', content);
-        // Fallback to plain text display
-        if (containerRef.current) {
-          containerRef.current.textContent = content;
+        console.error('LaTeX rendering failed:', error, 'Content:', content, 'Processed:', mathContent);
+        // Enhanced fallback: try rendering without problematic commands
+        try {
+          if (containerRef.current) {
+            // Try stripping all LaTeX commands and rendering as plain text with some formatting
+            const plainText = content
+              .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
+              .replace(/\\[a-zA-Z]+/g, '')
+              .replace(/[{}]/g, '');
+            
+            containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 16px;">${plainText}</span>`;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback rendering also failed:', fallbackError);
+          if (containerRef.current) {
+            containerRef.current.textContent = content;
+          }
         }
       }
     }
