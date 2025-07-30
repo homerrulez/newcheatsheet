@@ -254,43 +254,76 @@ export default function CheatSheetWorkspace() {
     return positions;
   }, []);
 
-  // Auto-arrange boxes when content changes
+  // Simple grid-based auto-arrange that actually works
   const autoArrangeBoxes = useCallback(() => {
     if (boxes.length === 0) return;
     
-    const optimalLayout = calculateOptimalLayout(boxes);
+    console.log('Auto-arranging', boxes.length, 'boxes');
+    
+    // Calculate page layout constants
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
+    const pageStartX = centerOffsetX + LAYOUT_CONFIG.margin;
+    const pageStartY = 60 + LAYOUT_CONFIG.margin; // Header space + margin
+    
+    // Simple grid layout - 3 columns
+    const boxWidth = 200;
+    const boxHeight = 120;
+    const spacing = 20;
+    const columns = 3;
     
     setBoxes(currentBoxes => 
       currentBoxes.map((box, index) => {
-        const layout = optimalLayout[index];
+        const row = Math.floor(index / columns);
+        const col = index % columns;
+        
+        const x = pageStartX + (col * (boxWidth + spacing));
+        const y = pageStartY + (row * (boxHeight + spacing));
+        
+        console.log(`Box ${index}: positioned at (${x}, ${y})`);
+        
         return {
           ...box,
-          position: layout ? { x: layout.x, y: layout.y } : box.position || { x: 50, y: 50 },
-          size: layout ? { width: layout.width, height: layout.height } : box.size || { width: 200, height: 120 }
+          position: { x, y },
+          size: { width: boxWidth, height: boxHeight }
         };
       })
     );
-  }, [calculateOptimalLayout]);
+  }, [boxes.length]);
   
-  // Calculate total pages based on optimal layout
+  // Calculate total pages based on simple grid layout
   const calculateTotalPages = () => {
     if (boxes.length === 0) return 1;
     
-    const optimalLayout = calculateOptimalLayout(boxes);
-    const maxY = Math.max(...optimalLayout.map(pos => pos.y + pos.height));
+    const columns = 3;
+    const boxHeight = 120;
+    const spacing = 20;
+    const rowsNeeded = Math.ceil(boxes.length / columns);
+    const totalHeight = rowsNeeded * (boxHeight + spacing);
     
-    return Math.max(1, Math.ceil((maxY + 100) / (LAYOUT_CONFIG.pageHeight + 40)));
+    return Math.max(1, Math.ceil(totalHeight / LAYOUT_CONFIG.pageHeight));
   };
   
   const totalPages = calculateTotalPages();
   
-  // Auto-arrange when boxes change - only for new boxes
+  // Auto-arrange when new boxes are added
   useEffect(() => {
-    if (boxes.length > 0 && boxes.some(box => !box.position || (box.position.x === 0 && box.position.y === 0))) {
-      const timer = setTimeout(autoArrangeBoxes, 300);
-      return () => clearTimeout(timer);
+    if (boxes.length > 0) {
+      // Check if any boxes need positioning (new boxes have default position)
+      const needsPositioning = boxes.some(box => 
+        !box.position || 
+        (box.position.x === 0 && box.position.y === 0) ||
+        box.position.x < 50 // Very close to origin likely means unpositioned
+      );
+      
+      if (needsPositioning) {
+        const timer = setTimeout(() => {
+          autoArrangeBoxes();
+        }, 500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [boxes.length, autoArrangeBoxes]);
+  }, [boxes.length, boxes, autoArrangeBoxes]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);
@@ -344,8 +377,8 @@ export default function CheatSheetWorkspace() {
             title: box.title || 'Formula',
             content: box.content || '',
             color: box.color || getRandomColor(),
-            position: { x: 0, y: 0 }, // Will be set by auto-arrange
-            size: { width: 240, height: 120 } // Will be set by auto-arrange
+            position: { x: 0, y: 0 }, // Trigger auto-arrange
+            size: { width: 200, height: 120 }
           };
         });
         
