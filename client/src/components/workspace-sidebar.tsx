@@ -31,8 +31,9 @@ export default function WorkspaceSidebar({
   const { data: workspaces = [], isLoading } = useQuery({
     queryKey: [`/api/${workspaceType}s`],
     queryFn: async () => {
-      const response = await apiRequest(`/api/${workspaceType}s`);
-      return Array.isArray(response) ? response : [];
+      const response = await apiRequest('GET', `/api/${workspaceType}s`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
