@@ -25,13 +25,20 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
         mathContent = mathContent.replace(/^\\\[|\\\]$/g, '');
         mathContent = mathContent.replace(/^\\\(|\\\)$/g, '');
         
-        // Convert common problematic patterns to safe equivalents
+        // Clean up problematic LaTeX patterns
+        mathContent = mathContent.replace(/\\+$/, ''); // Remove trailing backslashes
+        mathContent = mathContent.replace(/\\\s*$/, ''); // Remove trailing backslash with space
+        mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
         mathContent = mathContent.replace(/\\mathrm\{([^}]*)\}/g, '\\text{$1}');
         mathContent = mathContent.replace(/\\text\{Units:\s*([^}]*)\}/g, '\\text{(Units: $1)}');
         mathContent = mathContent.replace(/\\text\{([^}]*)\}/g, function(match, p1) {
           // Keep units and other text as simple text
           return p1;
         });
+        
+        // Fix common physics notation issues
+        mathContent = mathContent.replace(/\\Phi/g, '\\phi'); // Use lowercase phi
+        mathContent = mathContent.replace(/\\Delta/g, '\\Delta'); // Ensure Delta is properly formatted
         
         // Render the math with KaTeX
         katex.render(mathContent, containerRef.current, {
