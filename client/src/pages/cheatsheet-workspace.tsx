@@ -260,25 +260,21 @@ export default function CheatSheetWorkspace() {
     
     console.log('Auto-arranging', boxes.length, 'boxes');
     
-    // Calculate page layout constants
-    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
-    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
-    const pageStartX = centerOffsetX + LAYOUT_CONFIG.margin;
-    const pageStartY = 60 + LAYOUT_CONFIG.margin; // Header space + margin
-    
-    // Simple grid layout - 3 columns
+    // Fixed positioning - much simpler
+    const startX = 100; // Fixed start position
+    const startY = 150; // Fixed start position  
     const boxWidth = 200;
     const boxHeight = 120;
-    const spacing = 20;
+    const spacing = 30; // More spacing
     const columns = 3;
     
-    setBoxes(currentBoxes => 
-      currentBoxes.map((box, index) => {
+    setBoxes(currentBoxes => {
+      const updatedBoxes = currentBoxes.map((box, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
         
-        const x = pageStartX + (col * (boxWidth + spacing));
-        const y = pageStartY + (row * (boxHeight + spacing));
+        const x = startX + (col * (boxWidth + spacing));
+        const y = startY + (row * (boxHeight + spacing));
         
         console.log(`Box ${index}: positioned at (${x}, ${y})`);
         
@@ -287,9 +283,12 @@ export default function CheatSheetWorkspace() {
           position: { x, y },
           size: { width: boxWidth, height: boxHeight }
         };
-      })
-    );
-  }, [boxes.length]);
+      });
+      
+      console.log('Updated boxes:', updatedBoxes.map(b => `${b.title}: (${b.position?.x}, ${b.position?.y})`));
+      return updatedBoxes;
+    });
+  }, []);
   
   // Calculate total pages based on simple grid layout
   const calculateTotalPages = () => {
@@ -306,24 +305,13 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Auto-arrange when new boxes are added
+  // Force auto-arrange immediately when boxes are added
   useEffect(() => {
     if (boxes.length > 0) {
-      // Check if any boxes need positioning (new boxes have default position)
-      const needsPositioning = boxes.some(box => 
-        !box.position || 
-        (box.position.x === 0 && box.position.y === 0) ||
-        box.position.x < 50 // Very close to origin likely means unpositioned
-      );
-      
-      if (needsPositioning) {
-        const timer = setTimeout(() => {
-          autoArrangeBoxes();
-        }, 500);
-        return () => clearTimeout(timer);
-      }
+      console.log('Triggering auto-arrange for', boxes.length, 'boxes');
+      autoArrangeBoxes();
     }
-  }, [boxes.length, boxes, autoArrangeBoxes]);
+  }, [boxes.length]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);
