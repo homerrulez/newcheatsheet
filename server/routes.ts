@@ -246,7 +246,8 @@ JSON Examples:
 CRITICAL LaTeX RULES:
 - Use SIMPLE LaTeX mathematical notation that KaTeX can render
 - Good examples: "\\frac{d}{dx}x^n = nx^{n-1}", "\\int x^n dx = \\frac{x^{n+1}}{n+1}", "E = mc^2"
-- AVOID complex vector calculus notation like \\nabla \\cdot, \\nabla \\times
+- AVOID complex vector calculus notation like \\nabla \\cdot, \\nabla \\times, directional derivatives
+- For vector operations, use simple text like "div F", "curl F", "grad f"
 - DO NOT use \\left( \\right), \\vec{}, or complex delimiters
 - NEVER use \\text{}, \\mathrm{}, or any text commands
 - NEVER add trailing backslashes at the end of formulas

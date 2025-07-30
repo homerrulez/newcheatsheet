@@ -49,10 +49,13 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           mathContent = mathContent.replace(/\\left\{/g, '\\{');
           mathContent = mathContent.replace(/\\right\}/g, '\\}');
           
-          // Handle vector notation issues
+          // Handle vector notation issues more aggressively
           mathContent = mathContent.replace(/\\vec\{([^}]*)\}/g, '\\mathbf{$1}'); // Use mathbf instead of vec
-          mathContent = mathContent.replace(/\\mathbf\{F\}/g, 'F'); // Simplify vector F to just F
-          mathContent = mathContent.replace(/\\nabla/g, '\\nabla'); // Ensure nabla is properly formatted
+          mathContent = mathContent.replace(/\\mathbf\{([^}]*)\}/g, '$1'); // Remove mathbf entirely
+          mathContent = mathContent.replace(/\\nabla_([a-zA-Z])/g, '\\nabla_$1'); // Fix subscript nabla
+          mathContent = mathContent.replace(/\\nabla\s*\\cdot/g, 'div'); // Replace nabla dot with div
+          mathContent = mathContent.replace(/\\nabla\s*\\times/g, 'curl'); // Replace nabla cross with curl
+          mathContent = mathContent.replace(/\\nabla/g, '\\nabla'); // Keep simple nabla
           
           // Clean up extra spaces but preserve essential LaTeX structure
           mathContent = mathContent.replace(/\s+/g, ' ').trim();
@@ -92,12 +95,16 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
                   let simplifiedMath = mathContent
                     .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1)/($2)') // Convert fractions
                     .replace(/\\partial/g, '∂') // Replace partial symbol
+                    .replace(/\\nabla\s*\\cdot/g, 'div') // Replace nabla dot
+                    .replace(/\\nabla\s*\\times/g, 'curl') // Replace nabla cross
                     .replace(/\\nabla/g, '∇') // Replace nabla
                     .replace(/\\cdot/g, '·') // Replace cdot
                     .replace(/\\mathbf\{([^}]*)\}/g, '$1') // Remove mathbf
                     .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1') // Remove other commands
                     .replace(/\\[a-zA-Z]+/g, '') // Remove standalone commands
-                    .replace(/[{}]/g, ''); // Remove braces
+                    .replace(/[{}]/g, '') // Remove braces
+                    .replace(/\s+/g, ' ') // Clean up spaces
+                    .trim();
                   
                   containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 14px; color: #666; font-style: italic;">${simplifiedMath}</span>`;
                 }
