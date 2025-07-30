@@ -37,10 +37,15 @@ export default function ChatPanel({
   const sendMessageMutation = useMutation({
     mutationFn: (msg: string) => sendChatMessage(workspaceId, workspaceType, msg, currentBoxes),
     onSuccess: (response) => {
+      console.log('Chat mutation success, calling onAIResponse with:', response);
       queryClient.invalidateQueries({
         queryKey: ['/api/chat', workspaceType, workspaceId],
       });
-      onAIResponse?.(response);
+      if (onAIResponse) {
+        onAIResponse(response);
+      } else {
+        console.warn('onAIResponse callback is not defined');
+      }
       setMessage('');
     },
     onError: (error: any) => {

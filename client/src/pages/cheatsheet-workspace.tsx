@@ -191,67 +191,75 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
 
-  const handleAIResponse = (response: any) => {
+  const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received:', response);
+    console.log('Current boxes state:', boxes);
     
     // Handle box operations (delete, edit, etc.)
     if (response.operations && Array.isArray(response.operations)) {
-      let updatedBoxes = [...boxes];
-      
-      response.operations.forEach((operation: any) => {
-        const boxNumber = parseInt(operation.boxNumber);
-        const boxIndex = boxNumber - 1; // Convert to 0-based index
+      setBoxes(currentBoxes => {
+        let updatedBoxes = [...currentBoxes];
         
-        switch (operation.type) {
-          case 'delete':
-            if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
-              updatedBoxes.splice(boxIndex, 1);
-            }
-            break;
-          case 'edit':
-          case 'replace':
-            if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
-              const existingBox = updatedBoxes[boxIndex];
-              updatedBoxes[boxIndex] = {
-                ...existingBox,
-                title: operation.title || existingBox.title,
-                content: operation.content || existingBox.content
-                // Size will auto-adjust via ResizeObserver
-              };
-            }
-            break;
-        }
+        response.operations.forEach((operation: any) => {
+          const boxNumber = parseInt(operation.boxNumber);
+          const boxIndex = boxNumber - 1; // Convert to 0-based index
+          
+          switch (operation.type) {
+            case 'delete':
+              if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
+                updatedBoxes.splice(boxIndex, 1);
+              }
+              break;
+            case 'edit':
+            case 'replace':
+              if (boxIndex >= 0 && boxIndex < updatedBoxes.length) {
+                const existingBox = updatedBoxes[boxIndex];
+                updatedBoxes[boxIndex] = {
+                  ...existingBox,
+                  title: operation.title || existingBox.title,
+                  content: operation.content || existingBox.content
+                };
+              }
+              break;
+          }
+        });
+        
+        return updatedBoxes;
       });
-      
-      // No need to recalculate positions - CSS Grid handles layout automatically
-      
-      setBoxes(updatedBoxes);
       saveSheetMutation.mutate();
     }
     // Handle new boxes creation with smart positioning
     else if (response.boxes && Array.isArray(response.boxes)) {
       console.log('Creating new boxes:', response.boxes);
-      const newBoxes = response.boxes.map((box: any, index: number) => {
-        const position = calculateDynamicPosition(boxes.length + index, []);
-        console.log(`Box ${index} position:`, position);
-        return {
-          id: `box-${Date.now()}-${index}`,
-          title: box.title || 'Formula',
-          content: box.content || '',
-          color: box.color || getRandomColor(),
-          position,
-          size: { width: 240, height: 120 } // Initial size, will auto-adjust
-        };
+      
+      setBoxes(currentBoxes => {
+        const newBoxes = response.boxes.map((box: any, index: number) => {
+          const position = calculateDynamicPosition(currentBoxes.length + index, []);
+          console.log(`Box ${index} position:`, position);
+          return {
+            id: `box-${Date.now()}-${index}`,
+            title: box.title || 'Formula',
+            content: box.content || '',
+            color: box.color || getRandomColor(),
+            position,
+            size: { width: 240, height: 120 } // Initial size, will auto-adjust
+          };
+        });
+        
+        console.log('New boxes array:', newBoxes);
+        console.log('Previous boxes:', currentBoxes);
+        const updatedBoxes = [...currentBoxes, ...newBoxes];
+        console.log('Final boxes array:', updatedBoxes);
+        
+        return updatedBoxes;
       });
       
-      console.log('New boxes array:', newBoxes);
-      setBoxes(prev => [...prev, ...newBoxes]);
       saveSheetMutation.mutate();
     }
     else {
       console.log('No boxes or operations found in response:', response);
     }
-  };
+  }, [calculateDynamicPosition, saveSheetMutation]);
 
   const updateBoxPosition = useCallback((boxId: string, newPosition: { x: number, y: number }) => {
     setBoxes(prev => prev.map(box => 
