@@ -29,19 +29,30 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           mathContent = mathContent.replace(/^\\\[|\\\]$/g, '');
           mathContent = mathContent.replace(/^\\\(|\\\)$/g, '');
           
-          // Smart LaTeX cleaning - preserve math commands, remove problematic text
+          // Enhanced LaTeX cleaning for complex mathematical expressions
           mathContent = mathContent.replace(/\\+$/, ''); // Remove trailing backslashes
           mathContent = mathContent.replace(/\\\s*$/, ''); // Remove trailing backslash with space
           mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
           
-          // Remove only problematic text commands, preserve math
+          // Remove problematic text commands that break KaTeX
           mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove text commands
           mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove mathrm commands
           mathContent = mathContent.replace(/\([^)]*Units[^)]*\)/g, ''); // Remove units in parentheses
           
-          // Fix common notation issues
+          // Fix common notation issues that cause KaTeX errors
           mathContent = mathContent.replace(/\\Phi/g, '\\phi');
           mathContent = mathContent.replace(/\\_/g, '_'); // Fix escaped underscores
+          mathContent = mathContent.replace(/\\left\(/g, '('); // Simplify left/right delimiters
+          mathContent = mathContent.replace(/\\right\)/g, ')');
+          mathContent = mathContent.replace(/\\left\[/g, '[');
+          mathContent = mathContent.replace(/\\right\]/g, ']');
+          mathContent = mathContent.replace(/\\left\{/g, '\\{');
+          mathContent = mathContent.replace(/\\right\}/g, '\\}');
+          
+          // Handle vector notation issues
+          mathContent = mathContent.replace(/\\vec\{([^}]*)\}/g, '\\mathbf{$1}'); // Use mathbf instead of vec
+          mathContent = mathContent.replace(/\\mathbf\{F\}/g, 'F'); // Simplify vector F to just F
+          mathContent = mathContent.replace(/\\nabla/g, '\\nabla'); // Ensure nabla is properly formatted
           
           // Clean up extra spaces but preserve essential LaTeX structure
           mathContent = mathContent.replace(/\s+/g, ' ').trim();
@@ -54,13 +65,16 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
                 throwOnError: false,
                 strict: false,
                 trust: true,
-                errorColor: '#d63384',
+                errorColor: '#666',
                 output: 'html',
                 fleqn: false,
                 macros: {
                   "\\cdot": "\\cdot",
                   "\\times": "\\times", 
-                  "\\div": "\\div"
+                  "\\div": "\\div",
+                  "\\grad": "\\nabla",
+                  "\\curl": "\\nabla \\times",
+                  "\\divergence": "\\nabla \\cdot"
                 }
               });
               
@@ -72,14 +86,20 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
                 // Retry with slight delay
                 setTimeout(() => attemptRender(attempt + 1), 50 * attempt);
               } else {
-                // Final fallback after 3 attempts
+                // Final fallback after 3 attempts - show simplified math
                 if (containerRef.current) {
-                  const plainText = content
-                    .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
-                    .replace(/\\[a-zA-Z]+/g, '')
-                    .replace(/[{}]/g, '');
+                  // Create a more readable fallback by simplifying the LaTeX
+                  let simplifiedMath = mathContent
+                    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1)/($2)') // Convert fractions
+                    .replace(/\\partial/g, '∂') // Replace partial symbol
+                    .replace(/\\nabla/g, '∇') // Replace nabla
+                    .replace(/\\cdot/g, '·') // Replace cdot
+                    .replace(/\\mathbf\{([^}]*)\}/g, '$1') // Remove mathbf
+                    .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1') // Remove other commands
+                    .replace(/\\[a-zA-Z]+/g, '') // Remove standalone commands
+                    .replace(/[{}]/g, ''); // Remove braces
                   
-                  containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 16px; color: #d63384;">${plainText} [Failed after 3 attempts]</span>`;
+                  containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 14px; color: #666; font-style: italic;">${simplifiedMath}</span>`;
                 }
               }
             }
