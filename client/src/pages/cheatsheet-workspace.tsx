@@ -127,71 +127,173 @@ export default function CheatSheetWorkspace() {
     });
   };
 
-  // Grid-based layout system with dynamic content-aware sizing
-  const GRID_CONFIG = {
+  // Tetris-like auto-fitting layout system
+  const LAYOUT_CONFIG = {
     pageWidth: 612,    // 8.5 inches at 72 DPI
     pageHeight: 792,   // 11 inches at 72 DPI
     margin: 36,        // 0.5 inch margins
-    columns: 3,        // Fixed 3 columns per page
     minBoxWidth: 160,  // Minimum box width
-    maxBoxWidth: 200,  // Maximum box width per grid cell
+    maxBoxWidth: 400,  // Maximum box width for large content
     minBoxHeight: 100, // Minimum box height
-    maxBoxHeight: 300, // Maximum box height to prevent overflow
-    gutter: 10         // Space between boxes
+    maxBoxHeight: 600, // Maximum box height for large content
+    gutter: 10,        // Space between boxes
+    contentWidth: 612 - 72, // Available content width
+    contentHeight: 792 - 72  // Available content height per page
   };
 
-  // Dynamic positioning that keeps boxes within page boundaries
-  const calculateDynamicPosition = useCallback((index: number, allBoxes: any[]) => {
-    const { pageWidth, pageHeight, margin } = GRID_CONFIG;
-    const contentWidth = pageWidth - (margin * 2);
-    const contentHeight = pageHeight - (margin * 2);
+  // Tetris-like optimal positioning algorithm
+  const calculateOptimalLayout = useCallback((allBoxes: CheatSheetBox[]) => {
+    const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight } = LAYOUT_CONFIG;
     
-    // Position relative to the viewport, with proper centering
-    const pageOffset = 20; // Offset for page container
-    // Estimate middle panel width (total - left panel - right panel)
-    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448; // left panel - chat panel
-    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2); // Center the page
+    // Calculate viewport positioning
+    const pageOffset = 20;
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
     const pageStartX = centerOffsetX + margin;
-    const pageStartY = pageOffset + margin + 40; // Leave space for page header
+    const pageStartY = pageOffset + margin + 40;
     
-    // Box sizing constraints  
-    const boxWidth = 200;
-    const boxHeight = 120;
-    const spacing = 15;
+    // Analyze content to determine optimal box sizes
+    const analyzeBoxContent = (box: CheatSheetBox) => {
+      const content = box.content || '';
+      const hasImages = content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i);
+      const hasLongText = content.length > 200;
+      const isMultiLine = content.includes('\n') || content.includes('<br>');
+      const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^');
+      
+      let optimalWidth, optimalHeight;
+      
+      if (hasImages) {
+        optimalWidth = Math.min(300, Math.max(200, content.length * 2));
+        optimalHeight = Math.min(250, Math.max(150, 200));
+      } else if (hasLongText) {
+        optimalWidth = Math.min(280, Math.max(220, Math.sqrt(content.length) * 15));
+        optimalHeight = Math.min(200, Math.max(120, content.length / 8));
+      } else if (isMultiLine) {
+        const lines = content.split(/\n|<br>/).length;
+        optimalWidth = Math.min(240, Math.max(180, content.length * 1.5));
+        optimalHeight = Math.min(180, Math.max(100, lines * 25 + 60));
+      } else if (isMathFormula) {
+        optimalWidth = Math.min(220, Math.max(160, content.length * 3));
+        optimalHeight = Math.min(150, Math.max(100, 120));
+      } else {
+        optimalWidth = Math.min(200, Math.max(160, content.length * 2));
+        optimalHeight = Math.min(120, Math.max(100, 100));
+      }
+      
+      return {
+        width: Math.round(optimalWidth),
+        height: Math.round(optimalHeight),
+        area: optimalWidth * optimalHeight,
+        aspectRatio: optimalWidth / optimalHeight
+      };
+    };
     
-    // Calculate available space within page boundaries
-    const availableWidth = pageWidth - (margin * 2) - spacing;
-    const availableHeight = pageHeight - (margin * 2) - 80; // Reserve space for headers
+    // Sort boxes by area (largest first) for better packing
+    const boxesWithSizes = allBoxes.map(box => ({
+      ...box,
+      optimalSize: analyzeBoxContent(box)
+    })).sort((a, b) => b.optimalSize.area - a.optimalSize.area);
     
-    const boxesPerRow = Math.max(1, Math.floor(availableWidth / (boxWidth + spacing)));
-    const rowsPerPage = Math.max(1, Math.floor(availableHeight / (boxHeight + spacing)));
-    const boxesPerPage = boxesPerRow * rowsPerPage;
+    // Track occupied spaces on each page
+    const pages: Array<Array<{x: number, y: number, width: number, height: number}>> = [[]];
+    const positions: Array<{x: number, y: number, width: number, height: number}> = [];
     
-    // Determine which page and position within that page
-    const pageNumber = Math.floor(index / boxesPerPage);
-    const indexOnPage = index % boxesPerPage;
-    const row = Math.floor(indexOnPage / boxesPerRow);
-    const col = indexOnPage % boxesPerRow;
+    // Find best position for a box using tetris-like placement
+    const findBestPosition = (boxSize: {width: number, height: number}, pageIndex: number = 0) => {
+      const page = pages[pageIndex] || [];
+      const { width: boxWidth, height: boxHeight } = boxSize;
+      
+      // Try to place box at various positions
+      for (let y = 0; y <= contentHeight - boxHeight; y += gutter) {
+        for (let x = 0; x <= contentWidth - boxWidth; x += gutter) {
+          // Check if position conflicts with existing boxes
+          const conflicts = page.some(occupiedSpace => 
+            !(x >= occupiedSpace.x + occupiedSpace.width + gutter ||
+              x + boxWidth + gutter <= occupiedSpace.x ||
+              y >= occupiedSpace.y + occupiedSpace.height + gutter ||
+              y + boxHeight + gutter <= occupiedSpace.y)
+          );
+          
+          if (!conflicts) {
+            // Found a good position
+            return { x: pageStartX + x, y: pageStartY + (pageIndex * (pageHeight + 40)) + y };
+          }
+        }
+      }
+      
+      // If no position found, try next page
+      if (!pages[pageIndex + 1]) {
+        pages[pageIndex + 1] = [];
+      }
+      return findBestPosition(boxSize, pageIndex + 1);
+    };
     
-    // Calculate absolute position
-    const x = pageStartX + (col * (boxWidth + spacing));
-    const y = pageStartY + (pageNumber * (pageHeight + 40)) + (row * (boxHeight + spacing));
+    // Place each box optimally
+    boxesWithSizes.forEach((box, index) => {
+      const { width, height } = box.optimalSize;
+      const position = findBestPosition({ width, height });
+      const pageIndex = Math.floor((position.y - pageStartY) / (pageHeight + 40));
+      
+      // Add to occupied spaces
+      if (!pages[pageIndex]) pages[pageIndex] = [];
+      pages[pageIndex].push({
+        x: position.x - pageStartX,
+        y: (position.y - pageStartY) % (pageHeight + 40),
+        width,
+        height
+      });
+      
+      positions[allBoxes.indexOf(box)] = {
+        x: position.x,
+        y: position.y,
+        width,
+        height
+      };
+    });
     
-    return { x, y };
+    return positions;
   }, []);
 
-  // Calculate total pages based on box positions
+  // Auto-arrange boxes when content changes
+  const autoArrangeBoxes = useCallback(() => {
+    if (boxes.length === 0) return;
+    
+    const optimalLayout = calculateOptimalLayout(boxes);
+    
+    setBoxes(currentBoxes => 
+      currentBoxes.map((box, index) => ({
+        ...box,
+        position: { 
+          x: optimalLayout[index]?.x || 0, 
+          y: optimalLayout[index]?.y || 0 
+        },
+        size: {
+          width: optimalLayout[index]?.width || 200,
+          height: optimalLayout[index]?.height || 120
+        }
+      }))
+    );
+  }, [boxes.length, calculateOptimalLayout]);
+  
+  // Calculate total pages based on optimal layout
   const calculateTotalPages = () => {
     if (boxes.length === 0) return 1;
     
-    const maxY = Math.max(...boxes.map(box => 
-      (box.position?.y || 0) + (box.size?.height || 140)
-    ));
+    const optimalLayout = calculateOptimalLayout(boxes);
+    const maxY = Math.max(...optimalLayout.map(pos => pos.y + pos.height));
     
-    return Math.max(1, Math.ceil((maxY + 100) / (GRID_CONFIG.pageHeight + 40)));
+    return Math.max(1, Math.ceil((maxY + 100) / (LAYOUT_CONFIG.pageHeight + 40)));
   };
   
   const totalPages = calculateTotalPages();
+  
+  // Auto-arrange when boxes change
+  useEffect(() => {
+    if (boxes.length > 0) {
+      const timer = setTimeout(autoArrangeBoxes, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [boxes.length, autoArrangeBoxes]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);
@@ -240,14 +342,13 @@ export default function CheatSheetWorkspace() {
         console.log('Current boxes before adding new ones:', currentBoxes.length);
         
         const newBoxes = response.boxes.map((box: any, index: number) => {
-          const position = calculateDynamicPosition(currentBoxes.length + index, currentBoxes);
           return {
             id: `box-${Date.now()}-${index}`,
             title: box.title || 'Formula',
             content: box.content || '',
             color: box.color || getRandomColor(),
-            position,
-            size: { width: 240, height: 120 }
+            position: { x: 0, y: 0 }, // Will be set by auto-arrange
+            size: { width: 240, height: 120 } // Will be set by auto-arrange
           };
         });
         
@@ -263,7 +364,7 @@ export default function CheatSheetWorkspace() {
     else {
       console.log('No boxes or operations found in response:', response);
     }
-  }, [calculateDynamicPosition, saveSheetMutation]);
+  }, [saveSheetMutation]);
 
   const updateBoxPosition = useCallback((boxId: string, newPosition: { x: number, y: number }) => {
     setBoxes(prev => prev.map(box => 
@@ -310,21 +411,16 @@ export default function CheatSheetWorkspace() {
     });
   }, [toast]);
 
-  // Function to reorganize boxes with efficient positioning
+  // Function to reorganize boxes with optimal tetris-like positioning
   const organizeBoxes = useCallback(() => {
-    // Re-position all boxes using the dynamic positioning algorithm
-    const reorganizedBoxes = boxes.map((box, index) => ({
-      ...box,
-      position: calculateDynamicPosition(index, boxes)
-    }));
-    
-    setBoxes(reorganizedBoxes);
+    // Re-arrange boxes using the optimal layout algorithm
+    autoArrangeBoxes();
     debounceAndSave();
     toast({
       title: "Layout optimized",
-      description: `${boxes.length} boxes reorganized across ${totalPages} page${totalPages > 1 ? 's' : ''} with content-aware positioning.`,
+      description: `${boxes.length} boxes reorganized across ${totalPages} page${totalPages > 1 ? 's' : ''} with tetris-like positioning.`,
     });
-  }, [debounceAndSave, toast, totalPages, boxes.length, calculateDynamicPosition, boxes]);
+  }, [debounceAndSave, toast, totalPages, boxes.length, autoArrangeBoxes]);
 
   const getRandomColor = () => {
     const colors = [
@@ -443,17 +539,17 @@ export default function CheatSheetWorkspace() {
               {/* Render page boundaries as visual guides - centered */}
               {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
                 const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
-                const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - GRID_CONFIG.pageWidth) / 2);
+                const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
                 
                 return (
                   <div
                     key={pageIndex}
                     className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
                     style={{
-                      top: `${20 + pageIndex * (GRID_CONFIG.pageHeight + 40)}px`,
+                      top: `${20 + pageIndex * (LAYOUT_CONFIG.pageHeight + 40)}px`,
                       left: `${centerOffsetX}px`,
-                      width: `${GRID_CONFIG.pageWidth}px`,
-                      height: `${GRID_CONFIG.pageHeight}px`,
+                      width: `${LAYOUT_CONFIG.pageWidth}px`,
+                      height: `${LAYOUT_CONFIG.pageHeight}px`,
                       zIndex: 0
                     }}
                   >
@@ -466,10 +562,10 @@ export default function CheatSheetWorkspace() {
                     <div 
                       className="absolute border border-blue-200 border-dashed"
                       style={{
-                        top: `${GRID_CONFIG.margin}px`,
-                        left: `${GRID_CONFIG.margin}px`,
-                        width: `${GRID_CONFIG.pageWidth - (GRID_CONFIG.margin * 2)}px`,
-                        height: `${GRID_CONFIG.pageHeight - (GRID_CONFIG.margin * 2)}px`
+                        top: `${LAYOUT_CONFIG.margin}px`,
+                        left: `${LAYOUT_CONFIG.margin}px`,
+                        width: `${LAYOUT_CONFIG.pageWidth - (LAYOUT_CONFIG.margin * 2)}px`,
+                        height: `${LAYOUT_CONFIG.pageHeight - (LAYOUT_CONFIG.margin * 2)}px`
                       }}
                     />
                   </div>
@@ -486,7 +582,7 @@ export default function CheatSheetWorkspace() {
                       title={box.title}
                       content={box.content}
                       color={box.color}
-                      position={box.position || calculateDynamicPosition(index, boxes)}
+                      position={box.position || { x: 0, y: 0 }}
                       size={box.size}
                       onPositionChange={(position) => updateBoxPosition(box.id, position)}
                       onSizeChange={(size) => updateBoxSize(box.id, size)}
