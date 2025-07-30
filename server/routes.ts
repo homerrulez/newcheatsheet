@@ -243,14 +243,15 @@ JSON Examples:
 - "Edit box 5 to include momentum" → {"operations": [{"type": "edit", "boxNumber": "5", "content": "p = mv"}]}
 
 CRITICAL LaTeX RULES:
-- Use simple, clean LaTeX that renders as actual math symbols
+- Use ONLY basic mathematical symbols and operations
 - Good examples: "F = ma", "E = mc^2", "a^2 + b^2 = c^2", "\\frac{mv^2}{2}", "\\sqrt{x^2 + y^2}"
-- For units, use simple text after the formula: "F = ma \\text{ (Units: N)}"
+- DO NOT include any units or text descriptions in the LaTeX content
+- NEVER use \\text{}, \\mathrm{}, or any text commands
 - NEVER add trailing backslashes at the end of formulas
-- Use \\cdot instead of \\times for multiplication
-- Use lowercase Greek letters: \\phi, \\theta, \\alpha (not \\Phi, \\Theta)
-- AVOID complex \\text{} or \\mathrm{} commands that break rendering
-- Focus on the mathematical content that will display as proper symbols
+- Use \\cdot for multiplication, never \\times
+- Use basic symbols: +, -, =, ^, _, \\frac{}{}, \\sqrt{}, \\cdot
+- Keep formulas pure math without explanatory text
+- Example: "E = mc^2" NOT "E = mc^2 \\text{(Units: J)}"
 
 Always return valid JSON response.`;
     

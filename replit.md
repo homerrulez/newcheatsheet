@@ -10,12 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 30, 2025 - LaTeX Rendering Race Condition Investigation
-- **Issue**: Random 4-10% of physics equation boxes showing raw LaTeX instead of rendered math
-- **Pattern**: Different box numbers fail each time, suggesting timing/race condition not systematic LaTeX errors
-- **Solution**: Added retry logic with random delays and enhanced error tracking
-- **Changes**: Implemented 3-attempt rendering with staggered timing to prevent simultaneous KaTeX calls
-- **Status**: → In Progress - Testing if race condition fix resolves random failures
+### July 30, 2025 - LaTeX Rendering Error Root Cause Fix
+- **Issue**: 10%+ of physics equation boxes showing "[Failed after 3 attempts]" due to LaTeX syntax errors
+- **Root Cause**: ChatGPT generating LaTeX with \\text{}, \\mathrm{}, and complex commands that KaTeX rejects
+- **Solution**: Aggressive content preprocessing to strip all problematic LaTeX commands
+- **Changes**: Enhanced cleaning removes all text commands, units, and non-basic LaTeX syntax
+- **Status**: → Testing aggressive preprocessing approach to eliminate syntax errors
 
 ### July 29, 2025 - ChatGPT Error Handling Improvements
 - **Issue**: ChatGPT messages were silently failing due to API quota exceeded

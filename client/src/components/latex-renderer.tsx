@@ -29,29 +29,38 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           mathContent = mathContent.replace(/^\\\[|\\\]$/g, '');
           mathContent = mathContent.replace(/^\\\(|\\\)$/g, '');
           
-          // Clean up problematic LaTeX patterns
+          // Aggressive LaTeX cleaning for problematic patterns
           mathContent = mathContent.replace(/\\+$/, ''); // Remove trailing backslashes
           mathContent = mathContent.replace(/\\\s*$/, ''); // Remove trailing backslash with space
           mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
-          mathContent = mathContent.replace(/\\mathrm\{([^}]*)\}/g, '\\text{$1}');
-          mathContent = mathContent.replace(/\\text\{Units:\s*([^}]*)\}/g, '\\text{(Units: $1)}');
-          mathContent = mathContent.replace(/\\text\{([^}]*)\}/g, function(match, p1) {
-            // Keep units and other text as simple text
-            return p1;
-          });
           
-          // Fix common physics notation issues
-          mathContent = mathContent.replace(/\\Phi/g, '\\phi'); // Use lowercase phi
-          mathContent = mathContent.replace(/\\Delta/g, '\\Delta'); // Ensure Delta is properly formatted
+          // Handle text and units more aggressively
+          mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove all text commands
+          mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove all mathrm commands
+          mathContent = mathContent.replace(/\([^)]*Units[^)]*\)/g, ''); // Remove units in parentheses
+          mathContent = mathContent.replace(/Units[^,})\]]*[,})\]]/g, ''); // Remove Units: text
+          
+          // Fix problematic symbols and commands
+          mathContent = mathContent.replace(/\\Phi/g, '\\phi');
+          mathContent = mathContent.replace(/\\Delta/g, '\\Delta');
+          mathContent = mathContent.replace(/\\_/g, '_'); // Fix escaped underscores
+          mathContent = mathContent.replace(/\\,/g, ' '); // Replace \, with space
+          
+          // Remove any remaining backslash-letter combinations that might cause issues
+          mathContent = mathContent.replace(/\\[a-zA-Z]+(?![{_^])/g, ''); // Remove standalone commands
+          
+          // Clean up extra spaces and normalize
+          mathContent = mathContent.replace(/\s+/g, ' ').trim();
           
           // Render the math with KaTeX - add retry logic
           const attemptRender = (attempt = 1) => {
             try {
               katex.render(mathContent, containerRef.current!, {
                 displayMode: displayMode,
-                throwOnError: true, // Change to true to catch specific errors
+                throwOnError: false, // Keep false to prevent crashes
                 strict: false,
                 trust: true,
+                errorColor: '#d63384',
                 macros: {
                   "\\cdot": "\\cdot",
                   "\\times": "\\times",
