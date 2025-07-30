@@ -17,6 +17,21 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
       const renderTimeout = setTimeout(() => {
         if (!containerRef.current) return;
         
+        // Check if content is mathematical notation or regular text
+        const isMathContent = content.includes('\\') || content.includes('=') || content.includes('^') || content.includes('_') || content.includes('frac') || content.match(/[∫∑∏∇αβγδεζηθικλμνξοπρστυφχψω]/);
+        
+        // If it's regular text, just display it normally with proper formatting
+        if (!isMathContent) {
+          // Preserve line breaks and spaces in text content
+          const formattedText = content
+            .replace(/\n/g, '<br>')
+            .replace(/  /g, '&nbsp;&nbsp;')
+            .trim();
+          
+          containerRef.current.innerHTML = `<span style="font-family: inherit; font-size: inherit; line-height: 1.6; white-space: pre-wrap;">${formattedText}</span>`;
+          return;
+        }
+        
         // Process content for reliable rendering
         let mathContent = content.trim();
         
