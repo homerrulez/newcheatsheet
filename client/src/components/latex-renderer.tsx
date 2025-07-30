@@ -35,9 +35,15 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
           
           // Remove problematic text commands that break KaTeX
-          mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove text commands
+          mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove text commands (units)
           mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove mathrm commands
           mathContent = mathContent.replace(/\([^)]*Units[^)]*\)/g, ''); // Remove units in parentheses
+          
+          // Remove unit annotations in parentheses with various spacing patterns
+          mathContent = mathContent.replace(/\s*,\s*\([^)]*\)/g, ''); // Remove ", (N)" style units
+          mathContent = mathContent.replace(/\s*\\\,\s*\([^)]*\)/g, ''); // Remove "\, (N)" style units  
+          mathContent = mathContent.replace(/\s*\\,\s*\([^)]*\)/g, ''); // Remove "\, (N)" style units
+          mathContent = mathContent.replace(/\s*\([^)]*\)\s*$/g, ''); // Remove trailing unit parentheses
           
           // Fix common notation issues that cause KaTeX errors
           mathContent = mathContent.replace(/\\Phi/g, '\\phi');

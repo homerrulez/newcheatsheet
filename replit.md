@@ -11,11 +11,12 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### July 30, 2025 - LaTeX Rendering Error Root Cause Fix
-- **Issue**: 10%+ of physics equation boxes showing "[Failed after 3 attempts]" due to LaTeX syntax errors
-- **Root Cause**: ChatGPT generating LaTeX with \\text{}, \\mathrm{}, and complex commands that KaTeX rejects
-- **Solution**: Aggressive content preprocessing to strip all problematic LaTeX commands
-- **Changes**: Enhanced cleaning removes all text commands, units, and non-basic LaTeX syntax
-- **Status**: ✓ Mostly Completed - 48/50 boxes render perfectly, 2 complex vector calculus formulas still show fallback text
+- **Issue**: ALL 50 physics equation boxes contain problematic LaTeX syntax causing render failures
+- **Root Cause**: ChatGPT generating LaTeX with \\text{N}, \\text{J} unit annotations that KaTeX rejects
+- **Analysis**: Every box contains \\text{} unit commands and escaped backslashes causing pre-rendered LaTeX
+- **Solution**: Enhanced preprocessing removes unit annotations like ", (\\text{N})" and all text commands
+- **Changes**: Strengthened LaTeX cleaning to handle unit parentheses and improved ChatGPT prompts
+- **Status**: 🔄 In Progress - Enhanced preprocessing for unit-heavy physics formulas
 
 ### July 29, 2025 - ChatGPT Error Handling Improvements
 - **Issue**: ChatGPT messages were silently failing due to API quota exceeded

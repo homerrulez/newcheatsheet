@@ -245,13 +245,16 @@ JSON Examples:
 
 CRITICAL LaTeX RULES:
 - Use SIMPLE LaTeX mathematical notation that KaTeX can render
-- Good examples: "\\frac{d}{dx}x^n = nx^{n-1}", "\\int x^n dx = \\frac{x^{n+1}}{n+1}", "E = mc^2"
-- AVOID complex vector calculus notation like \\nabla \\cdot, \\nabla \\times, directional derivatives
-- For vector operations, use simple text like "div F", "curl F", "grad f"
+- Good examples: "F = ma", "E = mc^2", "\\frac{d}{dx}x^n = nx^{n-1}"
+- NEVER include units in formulas - NO \\text{N}, \\text{J}, \\text{V}, etc.
+- DO NOT add unit annotations like ", (N)" or "\\, (\\text{J})" after formulas
+- AVOID complex vector calculus notation like \\nabla \\cdot, \\nabla \\times
+- For vector operations, use simple text like "div F", "curl F", "grad f"  
 - DO NOT use \\left( \\right), \\vec{}, or complex delimiters
 - NEVER use \\text{}, \\mathrm{}, or any text commands
 - NEVER add trailing backslashes at the end of formulas
 - Use \\frac{numerator}{denominator} for simple fractions only
+- Keep formulas clean without unit labels - just the mathematical relationship
 - Use \\cdot for multiplication, never \\times
 - Use basic derivative notation: \\frac{d}{dx}, \\frac{\\partial}{\\partial x}
 - Keep formulas simple and avoid complex multi-line expressions
