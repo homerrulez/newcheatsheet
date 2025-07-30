@@ -227,7 +227,7 @@ function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
 CREATING NEW CONTENT:
 When users request new formulas/information, respond with JSON containing "boxes" array format:
 - "title": Clear, descriptive name
-- "content": LaTeX formatted content (use \\frac{}{}, \\sqrt{}, \\int, \\sum, etc.)
+- "content": Clean LaTeX math formulas that will render as actual mathematical symbols
 - "color": One of: "from-blue-50 to-indigo-50 border-blue-200", "from-green-50 to-emerald-50 border-green-200", "from-purple-50 to-violet-50 border-purple-200", "from-orange-50 to-red-50 border-orange-200", "from-teal-50 to-cyan-50 border-teal-200", "from-pink-50 to-rose-50 border-pink-200"
 
 BOX OPERATIONS (use when users reference specific box numbers):
@@ -242,9 +242,12 @@ JSON Examples:
 - "Replace box 2 with Newton's law" → {"operations": [{"type": "replace", "boxNumber": "2", "title": "Newton's Second Law", "content": "F = ma"}]}
 - "Edit box 5 to include momentum" → {"operations": [{"type": "edit", "boxNumber": "5", "content": "p = mv"}]}
 
-LaTeX examples: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", "\\int_{a}^{b} f(x) dx", "\\sum_{i=1}^{n} x_i"
-
-IMPORTANT: Use proper LaTeX formatting. Avoid \\text{} commands that may cause rendering issues. Use \\mathrm{} for upright text instead.
+CRITICAL LaTeX RULES:
+- Use simple, clean LaTeX that renders as actual math symbols
+- Good examples: "F = ma", "E = mc^2", "a^2 + b^2 = c^2", "\\frac{mv^2}{2}", "\\sqrt{x^2 + y^2}"
+- For units, use simple text after the formula: "F = ma \\text{ (Units: N)}"
+- AVOID complex \\text{} or \\mathrm{} commands that break rendering
+- Focus on the mathematical content that will display as proper symbols
 
 Always return valid JSON response.`;
     

@@ -240,7 +240,7 @@ export default function CheatSheetWorkspace() {
           content: box.content || '',
           color: box.color || getRandomColor(),
           position,
-          size: { width: 200, height: 120 } // Initial size, will auto-adjust
+          size: { width: 240, height: 120 } // Initial size, will auto-adjust
         };
       });
       

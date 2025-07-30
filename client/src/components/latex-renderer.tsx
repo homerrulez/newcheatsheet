@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface LaTeXRendererProps {
   content: string;
@@ -6,89 +8,66 @@ interface LaTeXRendererProps {
   className?: string;
 }
 
-export default function LaTeXRenderer({ content, displayMode = false, className = "" }: LaTeXRendererProps) {
-  const elementRef = useRef<HTMLSpanElement>(null);
+export default function LaTeXRenderer({ content, displayMode = true, className = "" }: LaTeXRendererProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (elementRef.current && typeof window !== 'undefined') {
-      // Dynamically load KaTeX if not already loaded
-      if (!(window as any).katex) {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
-        script.onload = () => {
-          const autoRenderScript = document.createElement('script');
-          autoRenderScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js';
-          autoRenderScript.onload = () => renderMath();
-          document.head.appendChild(autoRenderScript);
-        };
-        document.head.appendChild(script);
-
-        // Also load CSS
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
-        document.head.appendChild(link);
-      } else {
-        renderMath();
-      }
-    }
-  }, [content, displayMode]);
-
-  const renderMath = () => {
-    if (elementRef.current && (window as any).katex) {
+    if (containerRef.current && content) {
       try {
-        // Clean and preprocess the content
-        let processedContent = content;
+        // Clear previous content
+        containerRef.current.innerHTML = '';
         
-        // Remove outer dollar signs if present
-        processedContent = processedContent.replace(/^\$+|\$+$/g, '');
+        // Process content for reliable rendering
+        let mathContent = content.trim();
         
-        // Handle display math mode markers
-        processedContent = processedContent.replace(/^\\\[|\\\]$/g, '');
-        processedContent = processedContent.replace(/^\\\(|\\\)$/g, '');
+        // Remove surrounding dollar signs
+        mathContent = mathContent.replace(/^\$+|\$+$/g, '');
+        mathContent = mathContent.replace(/^\\\[|\\\]$/g, '');
+        mathContent = mathContent.replace(/^\\\(|\\\)$/g, '');
         
-        // Clean up problematic LaTeX commands that cause rendering issues
-        processedContent = processedContent.replace(/\\text\{([^}]*)\}/g, '\\mathrm{$1}');
-        processedContent = processedContent.replace(/\\quad/g, '\\,');
-        processedContent = processedContent.replace(/\\cdot([ms])/g, '\\cdot\\mathrm{$1}');
+        // Convert common problematic patterns to safe equivalents
+        mathContent = mathContent.replace(/\\mathrm\{([^}]*)\}/g, '\\text{$1}');
+        mathContent = mathContent.replace(/\\text\{Units:\s*([^}]*)\}/g, '\\text{(Units: $1)}');
+        mathContent = mathContent.replace(/\\text\{([^}]*)\}/g, function(match, p1) {
+          // Keep units and other text as simple text
+          return p1;
+        });
         
-        // Fix common formatting issues with units
-        processedContent = processedContent.replace(/Units:\s*/g, '\\,\\mathrm{(Units:\\,');
-        processedContent = processedContent.replace(/\(Units:\s*([^)]+)\)/g, '\\,\\mathrm{(Units:\\,$1)}');
-        
-        (window as any).katex.render(processedContent, elementRef.current, {
-          displayMode,
+        // Render the math with KaTeX
+        katex.render(mathContent, containerRef.current, {
+          displayMode: displayMode,
           throwOnError: false,
           strict: false,
           trust: true,
           macros: {
             "\\cdot": "\\cdot",
-            "\\times": "\\times", 
-            "\\div": "\\div",
-            "\\mathrm": "\\mathrm"
+            "\\times": "\\times",
+            "\\div": "\\div"
           }
         });
+        
+        console.log('Successfully rendered LaTeX:', mathContent);
       } catch (error) {
-        console.warn('KaTeX rendering failed for:', content, error);
-        // Enhanced fallback: try simpler rendering
-        try {
-          if (elementRef.current) {
-            const simplifiedContent = content.replace(/\\text\{([^}]*)\}/g, '$1');
-            (window as any).katex.render(simplifiedContent, elementRef.current, {
-              displayMode: false,
-              throwOnError: false,
-              strict: false
-            });
-          }
-        } catch (fallbackError) {
-          console.warn('Fallback rendering also failed:', fallbackError);
-          if (elementRef.current) {
-            elementRef.current.textContent = content;
-          }
+        console.warn('LaTeX rendering failed:', error, 'Content:', content);
+        // Fallback to plain text display
+        if (containerRef.current) {
+          containerRef.current.textContent = content;
         }
       }
     }
-  };
+  }, [content, displayMode]);
 
-  return <span ref={elementRef} className={className}>{content}</span>;
+  return (
+    <div 
+      ref={containerRef} 
+      className={`latex-content ${className}`}
+      style={{ 
+        minHeight: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center'
+      }}
+    />
+  );
 }
