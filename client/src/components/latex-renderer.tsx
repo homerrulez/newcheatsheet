@@ -29,27 +29,21 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           mathContent = mathContent.replace(/^\\\[|\\\]$/g, '');
           mathContent = mathContent.replace(/^\\\(|\\\)$/g, '');
           
-          // Aggressive LaTeX cleaning for problematic patterns
+          // Smart LaTeX cleaning - preserve math commands, remove problematic text
           mathContent = mathContent.replace(/\\+$/, ''); // Remove trailing backslashes
           mathContent = mathContent.replace(/\\\s*$/, ''); // Remove trailing backslash with space
           mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
           
-          // Handle text and units more aggressively
-          mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove all text commands
-          mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove all mathrm commands
+          // Remove only problematic text commands, preserve math
+          mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove text commands
+          mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove mathrm commands
           mathContent = mathContent.replace(/\([^)]*Units[^)]*\)/g, ''); // Remove units in parentheses
-          mathContent = mathContent.replace(/Units[^,})\]]*[,})\]]/g, ''); // Remove Units: text
           
-          // Fix problematic symbols and commands
+          // Fix common notation issues
           mathContent = mathContent.replace(/\\Phi/g, '\\phi');
-          mathContent = mathContent.replace(/\\Delta/g, '\\Delta');
           mathContent = mathContent.replace(/\\_/g, '_'); // Fix escaped underscores
-          mathContent = mathContent.replace(/\\,/g, ' '); // Replace \, with space
           
-          // Remove any remaining backslash-letter combinations that might cause issues
-          mathContent = mathContent.replace(/\\[a-zA-Z]+(?![{_^])/g, ''); // Remove standalone commands
-          
-          // Clean up extra spaces and normalize
+          // Clean up extra spaces but preserve essential LaTeX structure
           mathContent = mathContent.replace(/\s+/g, ' ').trim();
           
           // Render the math with KaTeX - add retry logic

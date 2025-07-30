@@ -192,12 +192,12 @@ export default function CheatSheetWorkspace() {
   const totalPages = calculateTotalPages();
 
   const handleAIResponse = useCallback((response: any) => {
-    console.log('AI Response received:', response);
-    console.log('Current boxes state:', boxes);
+    console.log('AI Response received in handleAIResponse:', response);
     
     // Handle box operations (delete, edit, etc.)
     if (response.operations && Array.isArray(response.operations)) {
       setBoxes(currentBoxes => {
+        console.log('Processing operations, current boxes:', currentBoxes.length);
         let updatedBoxes = [...currentBoxes];
         
         response.operations.forEach((operation: any) => {
@@ -226,35 +226,37 @@ export default function CheatSheetWorkspace() {
         
         return updatedBoxes;
       });
-      saveSheetMutation.mutate();
+      
+      // Trigger save after state update
+      setTimeout(() => saveSheetMutation.mutate(), 100);
     }
     // Handle new boxes creation with smart positioning
     else if (response.boxes && Array.isArray(response.boxes)) {
-      console.log('Creating new boxes:', response.boxes);
+      console.log('Creating new boxes from response:', response.boxes.length, 'boxes');
       
       setBoxes(currentBoxes => {
+        console.log('Current boxes before adding new ones:', currentBoxes.length);
+        
         const newBoxes = response.boxes.map((box: any, index: number) => {
-          const position = calculateDynamicPosition(currentBoxes.length + index, []);
-          console.log(`Box ${index} position:`, position);
+          const position = calculateDynamicPosition(currentBoxes.length + index, currentBoxes);
           return {
             id: `box-${Date.now()}-${index}`,
             title: box.title || 'Formula',
             content: box.content || '',
             color: box.color || getRandomColor(),
             position,
-            size: { width: 240, height: 120 } // Initial size, will auto-adjust
+            size: { width: 240, height: 120 }
           };
         });
         
-        console.log('New boxes array:', newBoxes);
-        console.log('Previous boxes:', currentBoxes);
         const updatedBoxes = [...currentBoxes, ...newBoxes];
-        console.log('Final boxes array:', updatedBoxes);
+        console.log('Final boxes count after adding:', updatedBoxes.length);
         
         return updatedBoxes;
       });
       
-      saveSheetMutation.mutate();
+      // Trigger save after state update
+      setTimeout(() => saveSheetMutation.mutate(), 100);
     }
     else {
       console.log('No boxes or operations found in response:', response);

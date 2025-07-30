@@ -227,8 +227,9 @@ function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
 CREATING NEW CONTENT:
 When users request new formulas/information, respond with JSON containing "boxes" array format:
 - "title": Clear, descriptive name
-- "content": Clean LaTeX math formulas that will render as actual mathematical symbols
+- "content": Clean LaTeX math formulas using proper LaTeX syntax (\\frac{}{}, \\sqrt{}, etc.)
 - "color": One of: "from-blue-50 to-indigo-50 border-blue-200", "from-green-50 to-emerald-50 border-green-200", "from-purple-50 to-violet-50 border-purple-200", "from-orange-50 to-red-50 border-orange-200", "from-teal-50 to-cyan-50 border-teal-200", "from-pink-50 to-rose-50 border-pink-200"
+- IMPORTANT: When user asks for N formulas, provide exactly N boxes in the array
 
 BOX OPERATIONS (use when users reference specific box numbers):
 For operations like "delete box 3", "edit box 5", "replace box 2 content", respond with JSON containing "operations" array:
@@ -243,15 +244,16 @@ JSON Examples:
 - "Edit box 5 to include momentum" → {"operations": [{"type": "edit", "boxNumber": "5", "content": "p = mv"}]}
 
 CRITICAL LaTeX RULES:
-- Use ONLY basic mathematical symbols and operations
-- Good examples: "F = ma", "E = mc^2", "a^2 + b^2 = c^2", "\\frac{mv^2}{2}", "\\sqrt{x^2 + y^2}"
+- Use proper LaTeX mathematical notation
+- Good examples: "\\frac{d}{dx}x^n = nx^{n-1}", "\\int x^n dx = \\frac{x^{n+1}}{n+1}", "\\sqrt{x^2 + y^2}"
 - DO NOT include any units or text descriptions in the LaTeX content
 - NEVER use \\text{}, \\mathrm{}, or any text commands
 - NEVER add trailing backslashes at the end of formulas
+- Use \\frac{numerator}{denominator} for fractions
 - Use \\cdot for multiplication, never \\times
-- Use basic symbols: +, -, =, ^, _, \\frac{}{}, \\sqrt{}, \\cdot
+- Use proper derivative notation: \\frac{d}{dx}, \\frac{\\partial}{\\partial x}
 - Keep formulas pure math without explanatory text
-- Example: "E = mc^2" NOT "E = mc^2 \\text{(Units: J)}"
+- When user requests N items, provide exactly N boxes
 
 Always return valid JSON response.`;
     
