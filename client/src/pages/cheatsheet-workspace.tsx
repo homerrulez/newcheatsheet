@@ -203,15 +203,15 @@ export default function CheatSheetWorkspace() {
       const page = pages[pageIndex] || [];
       const { width: boxWidth, height: boxHeight } = boxSize;
       
-      // Try to place box at various positions
-      for (let y = 0; y <= contentHeight - boxHeight; y += gutter) {
-        for (let x = 0; x <= contentWidth - boxWidth; x += gutter) {
-          // Check if position conflicts with existing boxes
+      // Try to place box at various positions with better spacing
+      for (let y = 0; y <= contentHeight - boxHeight; y += 20) {
+        for (let x = 0; x <= contentWidth - boxWidth; x += 20) {
+          // Check if position conflicts with existing boxes (with better margins)
           const conflicts = page.some(occupiedSpace => 
-            !(x >= occupiedSpace.x + occupiedSpace.width + gutter ||
-              x + boxWidth + gutter <= occupiedSpace.x ||
-              y >= occupiedSpace.y + occupiedSpace.height + gutter ||
-              y + boxHeight + gutter <= occupiedSpace.y)
+            !(x >= occupiedSpace.x + occupiedSpace.width + 15 ||
+              x + boxWidth + 15 <= occupiedSpace.x ||
+              y >= occupiedSpace.y + occupiedSpace.height + 15 ||
+              y + boxHeight + 15 <= occupiedSpace.y)
           );
           
           if (!conflicts) {
@@ -261,19 +261,16 @@ export default function CheatSheetWorkspace() {
     const optimalLayout = calculateOptimalLayout(boxes);
     
     setBoxes(currentBoxes => 
-      currentBoxes.map((box, index) => ({
-        ...box,
-        position: { 
-          x: optimalLayout[index]?.x || 0, 
-          y: optimalLayout[index]?.y || 0 
-        },
-        size: {
-          width: optimalLayout[index]?.width || 200,
-          height: optimalLayout[index]?.height || 120
-        }
-      }))
+      currentBoxes.map((box, index) => {
+        const layout = optimalLayout[index];
+        return {
+          ...box,
+          position: layout ? { x: layout.x, y: layout.y } : box.position || { x: 50, y: 50 },
+          size: layout ? { width: layout.width, height: layout.height } : box.size || { width: 200, height: 120 }
+        };
+      })
     );
-  }, [boxes.length, calculateOptimalLayout]);
+  }, [calculateOptimalLayout]);
   
   // Calculate total pages based on optimal layout
   const calculateTotalPages = () => {
@@ -287,10 +284,10 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Auto-arrange when boxes change
+  // Auto-arrange when boxes change - only for new boxes
   useEffect(() => {
-    if (boxes.length > 0) {
-      const timer = setTimeout(autoArrangeBoxes, 100);
+    if (boxes.length > 0 && boxes.some(box => !box.position || (box.position.x === 0 && box.position.y === 0))) {
+      const timer = setTimeout(autoArrangeBoxes, 300);
       return () => clearTimeout(timer);
     }
   }, [boxes.length, autoArrangeBoxes]);

@@ -18,16 +18,17 @@ Preferred communication style: Simple, everyday language.
 - **Changes**: Strengthened LaTeX cleaning to handle unit parentheses and improved ChatGPT prompts
 - **Status**: ✓ Completed - Enhanced preprocessing handles all content types with universal auto-fitting
 
-### July 30, 2025 - Universal Content Auto-Fitting System
-- **Issue**: Boxes couldn't properly fit different content types (text, math, images) without manual adjustment
-- **Solution**: Implemented intelligent content detection and specialized sizing algorithms
+### July 30, 2025 - Tetris-Like Auto-Fitting Layout System
+- **Issue**: Boxes were overlapping and creating messy layouts instead of optimal space utilization
+- **Solution**: Implemented intelligent tetris-like positioning algorithm with collision detection
 - **Changes**: 
-  - Added content type detection for images, long text, multi-line content, and math formulas
-  - Increased maximum box dimensions to 800x600px for larger content
-  - Enhanced LaTeX renderer with image support and responsive text formatting
-  - Implemented specialized sizing logic for each content type
-  - Added proper centering and overflow handling for all content types
-- **Status**: ✓ Completed - Universal auto-fitting for any content type (math, text, images, etc.)
+  - Created sophisticated content analysis for optimal box sizing
+  - Built tetris-like positioning algorithm that finds best placement without overlaps
+  - Added collision detection with proper spacing margins
+  - Implemented space-efficient packing that maximizes page utilization
+  - Enhanced auto-arrange to only trigger for new boxes to prevent layout disruption
+  - Increased maximum box dimensions to 800x600px for large content
+- **Status**: 🔄 In Progress - Refining collision detection and spacing for clean layouts
 
 ### July 29, 2025 - ChatGPT Error Handling Improvements
 - **Issue**: ChatGPT messages were silently failing due to API quota exceeded
