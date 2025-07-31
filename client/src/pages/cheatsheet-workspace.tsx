@@ -332,18 +332,18 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Auto-arrange when boxes change
-  useEffect(() => {
-    if (boxes.length > 0) {
-      console.log('Triggering auto-arrange for', boxes.length, 'boxes');
-      
-      // Simple delay to ensure state is ready
-      const timer = setTimeout(() => {
-        autoArrangeBoxes();
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [boxes.length, autoArrangeBoxes]);
+  // Auto-arrange disabled since we're using direct positioning in render
+  // useEffect(() => {
+  //   if (boxes.length > 0) {
+  //     console.log('Triggering auto-arrange for', boxes.length, 'boxes');
+  //     
+  //     // Simple delay to ensure state is ready
+  //     const timer = setTimeout(() => {
+  //       autoArrangeBoxes();
+  //     }, 200);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [boxes.length, autoArrangeBoxes]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);
@@ -635,38 +635,91 @@ export default function CheatSheetWorkspace() {
                 );
               })}
               
-              {/* All boxes positioned within page boundaries */}
-              <div className="relative w-full h-full" style={{ zIndex: 10 }}>
-                {boxes.length > 0 ? (
-                  boxes.map((box, index) => (
-                    <AutoResizeMathBox
-                      key={box.id}
-                      id={box.id}
-                      title={box.title}
-                      content={box.content}
-                      color={box.color}
-                      position={box.position || { x: 0, y: 0 }}
-                      size={box.size}
-                      onPositionChange={(position) => updateBoxPosition(box.id, position)}
-                      onSizeChange={(size) => updateBoxSize(box.id, size)}
-                      onSaveRequest={debounceAndSave}
-                      boxNumber={index + 1}
-                      isGridMode={false}
-                    />
-                  ))
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center py-16 max-w-md">
-                      <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
-                      <p className="text-slate-600 mb-4">Ask the AI assistant to add formulas and content boxes</p>
-                      <div className="text-sm text-slate-500">
-                        Try: "Give me 50 essential math formulas" or "Add calculus derivatives"
-                      </div>
+              {/* Render boxes INSIDE each page guide for proper positioning context */}
+              {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
+                const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+                const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
+                
+                // Get boxes for this page
+                const boxesPerPage = 15; // Assuming 3x5 grid per page
+                const pageBoxes = boxes.slice(pageIndex * boxesPerPage, (pageIndex + 1) * boxesPerPage);
+                
+                return (
+                  <div
+                    key={`page-boxes-${pageIndex}`}
+                    className="absolute"
+                    style={{
+                      top: `${20 + pageIndex * (LAYOUT_CONFIG.pageHeight + 40)}px`,
+                      left: `${centerOffsetX}px`,
+                      width: `${LAYOUT_CONFIG.pageWidth}px`,
+                      height: `${LAYOUT_CONFIG.pageHeight}px`,
+                      zIndex: 20
+                    }}
+                  >
+                    {/* Positioning container with relative positioning */}
+                    <div className="relative w-full h-full">
+                      {pageBoxes.map((box, boxIndex) => {
+                        const absoluteIndex = pageIndex * boxesPerPage + boxIndex;
+                        const pos = box.position || { x: 0, y: 0 };
+                        
+                        // Debug: render colored div at calculated position
+                        const debugPos = {
+                          x: LAYOUT_CONFIG.margin + (boxIndex % 3) * 200,
+                          y: LAYOUT_CONFIG.margin + Math.floor(boxIndex / 3) * 150
+                        };
+                        
+                        return (
+                          <div key={`box-container-${box.id}`}>
+                            {/* Debug positioning marker */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                left: `${debugPos.x}px`,
+                                top: `${debugPos.y}px`,
+                                width: '10px',
+                                height: '10px',
+                                backgroundColor: `hsl(${(absoluteIndex * 50) % 360}, 70%, 50%)`,
+                                borderRadius: '50%',
+                                zIndex: 100,
+                                border: '2px solid white'
+                              }}
+                            />
+                            
+                            <AutoResizeMathBox
+                              key={box.id}
+                              id={box.id}
+                              title={box.title}
+                              content={box.content}
+                              color={box.color}
+                              position={debugPos}
+                              size={box.size}
+                              onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                              onSizeChange={(size) => updateBoxSize(box.id, size)}
+                              onSaveRequest={debounceAndSave}
+                              boxNumber={absoluteIndex + 1}
+                              isGridMode={false}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
+              
+              {/* Empty state when no boxes */}
+              {boxes.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center py-16 max-w-md">
+                    <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Empty Cheat Sheet</h3>
+                    <p className="text-slate-600 mb-4">Ask the AI assistant to add formulas and content boxes</p>
+                    <div className="text-sm text-slate-500">
+                      Try: "Give me 50 essential math formulas" or "Add calculus derivatives"
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
