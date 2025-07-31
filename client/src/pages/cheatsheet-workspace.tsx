@@ -260,28 +260,10 @@ export default function CheatSheetWorkspace() {
     
     console.log('Auto-arranging', boxes.length, 'boxes');
     
-    // Find the actual scrollable content area (not the page boundary guides)
-    const scrollContainer = document.querySelector('.overflow-auto');
-    const pageGuide = document.querySelector('.border-dashed.bg-white\\/50');
-    
-    if (!scrollContainer) {
-      console.log('Scroll container not found, retrying...');
-      setTimeout(() => autoArrangeBoxes(), 200);
-      return;
-    }
-    
-    let baseX = 50; // Start position within canvas
-    let baseY = 80; // Start position within canvas
-    
-    // If we have page guides, position relative to them
-    if (pageGuide) {
-      const guideRect = pageGuide.getBoundingClientRect();
-      const containerRect = scrollContainer.getBoundingClientRect();
-      
-      // Calculate position relative to the scroll container
-      baseX = (guideRect.left - containerRect.left) + 40; // 40px margin from page edge
-      baseY = (guideRect.top - containerRect.top) + 60; // 60px margin from page top
-    }
+    // Use simple absolute positioning that works with Draggable
+    // The boxes are positioned within the scroll container which uses absolute positioning
+    const baseX = 100; // Start position for first column
+    const baseY = 100; // Start position for first row
     
     const boxWidth = 180;
     const boxHeight = 120;
@@ -292,6 +274,9 @@ export default function CheatSheetWorkspace() {
     console.log('Canvas positioning:', { baseX, baseY, columns });
     
     setBoxes(currentBoxes => {
+      console.log('Starting positioning for', currentBoxes.length, 'boxes');
+      console.log('Grid config:', { baseX, baseY, boxWidth, boxHeight, spacingX, spacingY, columns });
+      
       const updatedBoxes = currentBoxes.map((box, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
@@ -300,7 +285,7 @@ export default function CheatSheetWorkspace() {
         const x = baseX + (col * (boxWidth + spacingX));
         const y = baseY + (row * (boxHeight + spacingY));
         
-        console.log(`Box ${index} (${box.title}): canvas position (${x}, ${y})`);
+        console.log(`Box ${index}: "${box.title.substring(0, 20)}..." -> row=${row}, col=${col} -> position (${x}, ${y})`);
         
         return {
           ...box,
@@ -309,7 +294,7 @@ export default function CheatSheetWorkspace() {
         };
       });
       
-      console.log('Canvas positioning complete:', updatedBoxes.length, 'boxes positioned');
+      console.log('FINAL POSITIONS:', updatedBoxes.map((b, i) => `${i}: (${b.position?.x}, ${b.position?.y})`));
       return updatedBoxes;
     });
   }, []);
@@ -329,27 +314,18 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Auto-arrange when boxes change, waiting for proper DOM elements
+  // Auto-arrange when boxes change
   useEffect(() => {
     if (boxes.length > 0) {
       console.log('Triggering auto-arrange for', boxes.length, 'boxes');
       
-      // Wait for the scroll container to be ready
-      const checkAndArrange = () => {
-        const scrollContainer = document.querySelector('.overflow-auto');
-        if (scrollContainer) {
-          autoArrangeBoxes();
-        } else {
-          console.log('Scroll container not ready, waiting...');
-          setTimeout(checkAndArrange, 100);
-        }
-      };
-      
-      // Immediate check and arrange
-      const timer = setTimeout(checkAndArrange, 300);
+      // Simple delay to ensure state is ready
+      const timer = setTimeout(() => {
+        autoArrangeBoxes();
+      }, 200);
       return () => clearTimeout(timer);
     }
-  }, [boxes.length]);
+  }, [boxes.length, autoArrangeBoxes]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);
