@@ -581,44 +581,60 @@ export default function CheatSheetWorkspace() {
     });
   }, [toast]);
 
-  // Smart layout using masonry system with content-aware sizing
+  // Fixed Smart layout using simple grid positioning
   const applySmartLayout = useCallback(() => {
     if (boxes.length === 0) return;
     
-    console.log('Applying smart masonry layout to', boxes.length, 'boxes');
+    console.log('Applying smart grid layout to', boxes.length, 'boxes');
     
-    // Calculate optimal positions using masonry layout
-    const layoutPositions = calculateMasonryLayout(boxes);
+    // Clear existing positions to force recalculation
+    setBoxPositions({});
+    
+    // Simple grid layout that actually works
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
+    const columns = 3;
+    const boxWidth = 200;
+    const boxHeight = 140;
+    const spacingX = 20;
+    const spacingY = 20;
+    
+    const newPositions: Record<string, { x: number; y: number }> = {};
     
     // Update box positions and sizes
-    setBoxes(currentBoxes => {
-      return currentBoxes.map((box, index) => {
-        const layout = layoutPositions[index];
-        if (layout) {
-          // Update position state
-          setBoxPositions(prev => ({ 
-            ...prev, 
-            [box.id]: { x: layout.x, y: layout.y } 
-          }));
-          
-          return {
-            ...box,
-            position: { x: layout.x, y: layout.y },
-            size: { width: layout.width, height: layout.height }
-          };
-        }
-        return box;
-      });
+    const updatedBoxes = currentBoxes.map((box, index) => {
+      const pageIndex = Math.floor(index / 9); // 9 boxes per page (3x3)
+      const positionInPage = index % 9;
+      const row = Math.floor(positionInPage / columns);
+      const col = positionInPage % columns;
+      
+      const pageYBase = 60 + (pageIndex * (LAYOUT_CONFIG.pageHeight + 40));
+      const x = centerOffsetX + LAYOUT_CONFIG.margin + (col * (boxWidth + spacingX));
+      const y = pageYBase + LAYOUT_CONFIG.margin + (row * (boxHeight + spacingY));
+      
+      const position = { x, y };
+      newPositions[box.id] = position;
+      
+      return {
+        ...box,
+        position,
+        size: { width: boxWidth, height: boxHeight }
+      };
     });
+    
+    setBoxPositions(newPositions);
+    setBoxes(updatedBoxes);
+    
+    console.log('Smart layout applied with positions:', newPositions);
     
     // Save changes
     setTimeout(() => saveSheetMutation.mutate(), 100);
     
     toast({
-      title: "Smart layout applied",
-      description: `${boxes.length} boxes arranged with content-aware masonry layout.`,
+      title: "Smart Layout Applied",
+      description: `Arranged ${boxes.length} boxes in a ${columns}-column grid across ${Math.ceil(boxes.length / 9)} pages`,
     });
-  }, [boxes, calculateMasonryLayout, saveSheetMutation, setBoxPositions, toast]);
+  }, [boxes, LAYOUT_CONFIG, saveSheetMutation, toast]);
 
   const getRandomColor = () => {
     const colors = [
@@ -805,8 +821,8 @@ export default function CheatSheetWorkspace() {
                   const pageYBase = 60 + (pageIndex * (LAYOUT_CONFIG.pageHeight + 40));
                   
                   const fallbackPos = {
-                    x: centerOffsetX + LAYOUT_CONFIG.margin + ((boxIndex % 3) * 180),
-                    y: pageYBase + LAYOUT_CONFIG.margin + (Math.floor((boxIndex % 8) / 3) * 130)
+                    x: centerOffsetX + LAYOUT_CONFIG.margin + ((boxIndex % 3) * 200),
+                    y: pageYBase + LAYOUT_CONFIG.margin + (Math.floor((boxIndex % 6) / 3) * 160) + (Math.random() * 20)
                   };
                   
                   let actualPos = statePos || fallbackPos;
@@ -817,8 +833,11 @@ export default function CheatSheetWorkspace() {
                     const contentAnalysis = analyzeBoxContent(box);
                     actualSize = { width: contentAnalysis.width, height: contentAnalysis.height };
                     // Enforce page barriers on initial positioning
-                    actualPos = enforcePageBoundaries(actualPos, actualSize);
+                    actualPos = enforcePageBoundaries(fallbackPos, actualSize);
                     setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
+                  } else {
+                    // Also enforce boundaries on existing positions
+                    actualPos = enforcePageBoundaries(statePos, actualSize);
                   }
                   
                   return (
