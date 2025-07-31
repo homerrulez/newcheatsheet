@@ -394,6 +394,86 @@ export default function CheatSheetWorkspace() {
     });
   }, []);
   
+  // Page boundary enforcement for new box creation
+  const findNextAvailablePosition = useCallback((contentAnalysis: any) => {
+    const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight, columns } = LAYOUT_CONFIG;
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
+    const columnWidth = (contentWidth - (columns - 1) * gutter) / columns;
+    
+    // Track column heights per page for placement algorithm
+    const pageColumnHeights: Record<number, number[]> = {};
+    
+    // Initialize all pages and analyze existing boxes
+    const totalPages = Math.max(1, Math.ceil(boxes.length / boxesPerPage));
+    for (let p = 0; p < totalPages + 1; p++) {
+      pageColumnHeights[p] = new Array(columns).fill(0);
+    }
+    
+    // Calculate existing box positions to update column heights
+    boxes.forEach(box => {
+      const pos = boxPositions[box.id];
+      if (pos) {
+        // Determine which page this box is on
+        const pageYBase = 60; // Base offset for first page
+        const pageIndex = Math.floor((pos.y - pageYBase) / (pageHeight + 40));
+        const relativeY = pos.y - (pageYBase + pageIndex * (pageHeight + 40));
+        
+        // Determine which column this box is in
+        const relativeX = pos.x - (centerOffsetX + margin);
+        const columnIndex = Math.floor(relativeX / (columnWidth + gutter));
+        
+        if (pageColumnHeights[pageIndex] && columnIndex >= 0 && columnIndex < columns) {
+          const boxHeight = box.size?.height || contentAnalysis.height;
+          pageColumnHeights[pageIndex][columnIndex] = Math.max(
+            pageColumnHeights[pageIndex][columnIndex],
+            relativeY + boxHeight + gutter
+          );
+        }
+      }
+    });
+    
+    // Find best position on any page
+    for (let pageIndex = 0; pageIndex <= totalPages; pageIndex++) {
+      const columnHeights = pageColumnHeights[pageIndex];
+      
+      // Find shortest column on this page
+      let shortestColumn = 0;
+      let shortestHeight = columnHeights[0];
+      
+      for (let col = 1; col < columns; col++) {
+        if (columnHeights[col] < shortestHeight) {
+          shortestHeight = columnHeights[col];
+          shortestColumn = col;
+        }
+      }
+      
+      // Check if box fits on this page
+      const wouldFitY = shortestHeight + contentAnalysis.height;
+      
+      if (wouldFitY <= contentHeight - margin) {
+        // Found a suitable position
+        const pageYBase = 60 + pageIndex * (pageHeight + 40);
+        return {
+          x: centerOffsetX + margin + shortestColumn * (columnWidth + gutter),
+          y: pageYBase + shortestHeight,
+          pageIndex
+        };
+      }
+    }
+    
+    // Fallback to new page if nothing fits
+    const newPageIndex = totalPages;
+    const pageYBase = 60 + newPageIndex * (pageHeight + 40);
+    return {
+      x: centerOffsetX + margin,
+      y: pageYBase,
+      pageIndex: newPageIndex
+    };
+  }, [boxes, boxPositions, boxesPerPage]);
+
+
+
   // Calculate total pages based on simple grid layout
   const calculateTotalPages = () => {
     if (boxes.length === 0) return 1;
@@ -461,21 +541,27 @@ export default function CheatSheetWorkspace() {
       // Trigger save after state update
       setTimeout(() => saveSheetMutation.mutate(), 100);
     }
-    // Handle new boxes creation with smart positioning
+    // Handle new boxes creation with page boundary enforcement
     else if (response.boxes && Array.isArray(response.boxes)) {
-      console.log('Creating new boxes from response:', response.boxes.length, 'boxes');
+      console.log('Creating new boxes with page boundary enforcement:', response.boxes.length, 'boxes');
       
       setBoxes(currentBoxes => {
         console.log('Current boxes before adding new ones:', currentBoxes.length);
         
         const newBoxes = response.boxes.map((box: any, index: number) => {
+          // Analyze content for optimal sizing
+          const contentAnalysis = analyzeBoxContent(box);
+          
+          // Find next available position within page boundaries
+          const position = findNextAvailablePosition(contentAnalysis);
+          
           return {
             id: `box-${Date.now()}-${index}`,
             title: box.title || 'Formula',
             content: box.content || '',
             color: box.color || getRandomColor(),
-            position: { x: 0, y: 0 }, // Trigger auto-arrange
-            size: { width: 200, height: 120 }
+            position: { x: position.x, y: position.y },
+            size: { width: contentAnalysis.width, height: contentAnalysis.height }
           };
         });
         
@@ -505,6 +591,41 @@ export default function CheatSheetWorkspace() {
 
   // Auto-resize is now handled by ResizeObserver in AutoResizeMathBox component
   // This function is kept for compatibility but is no longer used for auto-sizing
+
+  // ChatGPT positioning commands handler  
+  const handleChatGPTPositioning = useCallback((command: string, boxId?: string, targetPage?: number, position?: string) => {
+    const { pageWidth, pageHeight, margin, contentWidth, contentHeight } = LAYOUT_CONFIG;
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
+    
+    if (!boxId) return false;
+    
+    const targetPageIndex = (targetPage || 1) - 1; // Convert to 0-based index
+    const pageYBase = 60 + targetPageIndex * (pageHeight + 40);
+    
+    let newX = centerOffsetX + margin;
+    let newY = pageYBase + margin;
+    
+    // Parse position commands
+    if (position?.includes('top-right')) {
+      newX = centerOffsetX + contentWidth - 200; // Assume 200px box width
+      newY = pageYBase + margin;
+    } else if (position?.includes('bottom-left')) {
+      newX = centerOffsetX + margin;
+      newY = pageYBase + contentHeight - 150; // Assume 150px box height
+    } else if (position?.includes('center')) {
+      newX = centerOffsetX + contentWidth / 2 - 100;
+      newY = pageYBase + contentHeight / 2 - 75;
+    }
+    
+    // Apply position
+    setBoxPositions(prev => ({
+      ...prev,
+      [boxId]: { x: newX, y: newY }
+    }));
+    
+    return true;
+  }, []);
 
   const debounceAndSave = useCallback(
     (() => {
@@ -570,6 +691,8 @@ export default function CheatSheetWorkspace() {
       description: `${boxes.length} boxes arranged with content-aware masonry layout.`,
     });
   }, [boxes, calculateMasonryLayout, saveSheetMutation, setBoxPositions, toast]);
+
+
 
   const getRandomColor = () => {
     const colors = [
