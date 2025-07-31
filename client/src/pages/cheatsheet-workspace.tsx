@@ -263,8 +263,34 @@ export default function CheatSheetWorkspace() {
     
     // Use simple absolute positioning that works with Draggable
     // The boxes are positioned within the scroll container which uses absolute positioning
-    const baseX = 100; // Start position for first column
-    const baseY = 100; // Start position for first row
+    // Calculate positions relative to the scroll container, not absolute positioning
+    const scrollContainer = document.querySelector('.overflow-auto');
+    if (!scrollContainer) {
+      console.log('Scroll container not found');
+      return;
+    }
+    
+    // Get page guide bounds to position relative to the page content
+    const pageGuide = scrollContainer.querySelector('.border-dashed.bg-white\\/50');
+    let baseX = 50; // Fallback
+    let baseY = 80; // Fallback
+    
+    if (pageGuide) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const pageRect = pageGuide.getBoundingClientRect();
+      
+      // Position relative to the page guide within the scroll container
+      baseX = pageRect.left - containerRect.left + 40; // 40px margin from page edge
+      baseY = pageRect.top - containerRect.top + scrollContainer.scrollTop + 60; // Account for scroll
+      
+      console.log('Container positioning:', {
+        containerRect,
+        pageRect,
+        scrollTop: scrollContainer.scrollTop,
+        baseX,
+        baseY
+      });
+    }
     
     const boxWidth = 180;
     const boxHeight = 120;
@@ -567,10 +593,7 @@ export default function CheatSheetWorkspace() {
             </div>
           </div>
 
-          {/* Draggable Control Test */}
-          <div className="p-4 bg-yellow-100 border-b">
-            <DraggableTest />
-          </div>
+
 
           {/* Cheat Sheet Content - Page-Constrained Layout */}
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
@@ -613,7 +636,7 @@ export default function CheatSheetWorkspace() {
               })}
               
               {/* All boxes positioned within page boundaries */}
-              <div className="absolute inset-0" style={{ zIndex: 10 }}>
+              <div className="relative w-full h-full" style={{ zIndex: 10 }}>
                 {boxes.length > 0 ? (
                   boxes.map((box, index) => (
                     <AutoResizeMathBox
