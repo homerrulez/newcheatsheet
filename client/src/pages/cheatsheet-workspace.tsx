@@ -273,9 +273,8 @@ export default function CheatSheetWorkspace() {
     
     console.log('Canvas positioning:', { baseX, baseY, columns });
     
-    // Force re-render by creating completely new box objects with new IDs
     setBoxes(currentBoxes => {
-      const updatedBoxes = currentBoxes.map((box, index) => {
+      return currentBoxes.map((box, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
         
@@ -284,13 +283,10 @@ export default function CheatSheetWorkspace() {
         
         return {
           ...box,
-          id: `${box.id}_positioned_${Date.now()}_${index}`, // Force new key
           position: { x, y },
           size: { width: boxWidth, height: boxHeight }
         };
       });
-      
-      return updatedBoxes;
     });
   }, []);
   

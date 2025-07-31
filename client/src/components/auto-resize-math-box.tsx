@@ -41,6 +41,7 @@ export default function AutoResizeMathBox({
 }: AutoResizeMathBoxProps) {
   const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
   const [isManuallyResized, setIsManuallyResized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Universal content-aware size calculation
@@ -165,7 +166,12 @@ export default function AutoResizeMathBox({
   // Use auto size unless manually resized
   const boxSize = isManuallyResized && externalSize ? externalSize : autoSize;
 
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
   const handleDragStop = useCallback((e: any, data: any) => {
+    setIsDragging(false);
     onPositionChange({ x: data.x, y: data.y });
     onSaveRequest();
   }, [onPositionChange, onSaveRequest]);
@@ -181,7 +187,9 @@ export default function AutoResizeMathBox({
 
   return (
     <Draggable
-      defaultPosition={position}
+      position={isDragging ? undefined : position}
+      defaultPosition={isDragging ? position : undefined}
+      onStart={handleDragStart}
       onStop={handleDragStop}
       grid={[10, 10]}
       handle=".drag-handle"
