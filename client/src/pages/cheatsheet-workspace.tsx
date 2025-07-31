@@ -254,22 +254,33 @@ export default function CheatSheetWorkspace() {
     return positions;
   }, []);
 
-  // Simple grid-based auto-arrange that actually works
+  // Fixed grid-based auto-arrange with proper positioning
   const autoArrangeBoxes = useCallback(() => {
     if (boxes.length === 0) return;
     
     console.log('Auto-arranging', boxes.length, 'boxes');
     
-    // Use simpler, more reliable positioning that works regardless of window size
-    const pageStartX = 350; // Fixed position that works for the main content area
-    const pageStartY = 150; // Fixed position below header
+    // Wait for DOM to be ready and find the actual page container
+    const pageContainer = document.querySelector('.page') || document.querySelector('[data-page]');
+    if (!pageContainer) {
+      console.log('Page container not found, retrying...');
+      setTimeout(() => autoArrangeBoxes(), 200);
+      return;
+    }
     
-    const boxWidth = 200;
+    const containerRect = pageContainer.getBoundingClientRect();
+    console.log('Page container bounds:', containerRect);
+    
+    // Calculate positioning relative to the page container
+    const pageStartX = containerRect.left + 20; // 20px margin from left edge of page
+    const pageStartY = containerRect.top + 20; // 20px margin from top edge of page
+    
+    const boxWidth = 180;
     const boxHeight = 120;
-    const spacing = 30;
-    const columns = 3;
+    const spacing = 25;
+    const columns = Math.floor((containerRect.width - 40) / (boxWidth + spacing)) || 3; // Fit columns to container width
     
-    console.log('Page positioning:', { pageStartX, pageStartY, windowWidth: window.innerWidth });
+    console.log('Grid layout:', { pageStartX, pageStartY, columns, containerWidth: containerRect.width });
     
     setBoxes(currentBoxes => {
       const updatedBoxes = currentBoxes.map((box, index) => {
@@ -279,7 +290,7 @@ export default function CheatSheetWorkspace() {
         const x = pageStartX + (col * (boxWidth + spacing));
         const y = pageStartY + (row * (boxHeight + spacing));
         
-        console.log(`Box ${index}: positioned at (${x}, ${y})`);
+        console.log(`Box ${index} (${box.title}): positioned at (${x}, ${y})`);
         
         return {
           ...box,
@@ -288,7 +299,7 @@ export default function CheatSheetWorkspace() {
         };
       });
       
-      console.log('Updated boxes:', updatedBoxes.map(b => `${b.title}: (${b.position?.x}, ${b.position?.y})`));
+      console.log('Updated boxes positioning complete:', updatedBoxes.length, 'boxes positioned');
       return updatedBoxes;
     });
   }, []);
@@ -308,14 +319,24 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Force auto-arrange immediately when boxes are added or when dependencies change
+  // Force auto-arrange when boxes are added, with proper DOM readiness check
   useEffect(() => {
     if (boxes.length > 0) {
       console.log('Triggering auto-arrange for', boxes.length, 'boxes');
-      // Add a small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        autoArrangeBoxes();
-      }, 100);
+      
+      // Check if page container exists, if not wait for it
+      const checkAndArrange = () => {
+        const pageContainer = document.querySelector('.page') || document.querySelector('[data-page]');
+        if (pageContainer) {
+          autoArrangeBoxes();
+        } else {
+          console.log('Page container not ready, waiting...');
+          setTimeout(checkAndArrange, 100);
+        }
+      };
+      
+      // Add delay to ensure DOM is fully rendered
+      const timer = setTimeout(checkAndArrange, 200);
       return () => clearTimeout(timer);
     }
   }, [boxes.length, autoArrangeBoxes]);
