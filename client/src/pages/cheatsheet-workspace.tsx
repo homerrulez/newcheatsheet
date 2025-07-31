@@ -101,11 +101,7 @@ export default function CheatSheetWorkspace() {
         }))
       };
       
-      return apiRequest(`/api/cheatsheets/${currentSheet.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedSheet),
-      });
+      return apiRequest(`/api/cheatsheets/${currentSheet.id}`, 'PUT', updatedSheet);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/cheatsheets'] });
@@ -452,7 +448,6 @@ export default function CheatSheetWorkspace() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex">
       {/* Sidebar */}
       <WorkspaceSidebar
-        sheets={cheatSheets}
         currentSheetId={id || ''}
         workspaceType="cheatsheet"
       />
@@ -552,15 +547,19 @@ export default function CheatSheetWorkspace() {
               >
                 <div className="absolute z-10">
                   <AutoResizeMathBox
-                    box={box}
+                    id={box.id}
+                    title={box.title}
+                    content={box.content}
+                    color={box.color}
+                    size={box.size}
                     boxNumber={index + 1}
-                    onContentChange={(newContent) => {
+                    onContentChange={(newContent: string) => {
                       setBoxes(prev => prev.map(b => 
                         b.id === box.id ? { ...b, content: newContent } : b
                       ));
                       setTimeout(() => saveSheetMutation.mutate(), 100);
                     }}
-                    onTitleChange={(newTitle) => {
+                    onTitleChange={(newTitle: string) => {
                       setBoxes(prev => prev.map(b => 
                         b.id === box.id ? { ...b, title: newTitle } : b
                       ));
@@ -570,7 +569,7 @@ export default function CheatSheetWorkspace() {
                       setBoxes(prev => prev.filter(b => b.id !== box.id));
                       setTimeout(() => saveSheetMutation.mutate(), 100);
                     }}
-                    onResize={(size) => {
+                    onResize={(size: { width: number; height: number }) => {
                       updateBoxSize(box.id, size);
                       setTimeout(() => saveSheetMutation.mutate(), 100);
                     }}
@@ -585,7 +584,6 @@ export default function CheatSheetWorkspace() {
             <ChatPanel
               workspaceId={id || ''}
               workspaceType="cheatsheet"
-              context={`Cheat Sheet: ${currentSheet?.title || 'Untitled'}\nBoxes: ${boxes.length} total\n\nCurrent boxes:\n${boxes.map((box, idx) => `${idx + 1}. ${box.title}: ${box.content?.substring(0, 100)}${box.content && box.content.length > 100 ? '...' : ''}`).join('\n')}`}
               onAIResponse={handleAIResponse}
             />
           </div>
