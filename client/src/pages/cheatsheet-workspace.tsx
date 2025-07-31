@@ -618,22 +618,26 @@ export default function CheatSheetWorkspace() {
               {/* All boxes positioned within page boundaries */}
               <div className="absolute inset-0" style={{ zIndex: 10 }}>
                 {boxes.length > 0 ? (
-                  boxes.map((box, index) => (
-                    <AutoResizeMathBox
-                      key={box.id}
-                      id={box.id}
-                      title={box.title}
-                      content={box.content}
-                      color={box.color}
-                      position={box.position || { x: 0, y: 0 }}
-                      size={box.size}
-                      onPositionChange={(position) => updateBoxPosition(box.id, position)}
-                      onSizeChange={(size) => updateBoxSize(box.id, size)}
-                      onSaveRequest={debounceAndSave}
-                      boxNumber={index + 1}
-                      isGridMode={false} // Enable full draggability
-                    />
-                  ))
+                  boxes.map((box, index) => {
+                    const pos = box.position || { x: 0, y: 0 };
+                    console.log(`RENDER Box ${index}: "${box.title.substring(0, 15)}" at position (${pos.x}, ${pos.y})`);
+                    return (
+                      <AutoResizeMathBox
+                        key={box.id}
+                        id={box.id}
+                        title={box.title}
+                        content={box.content}
+                        color={box.color}
+                        position={pos}
+                        size={box.size}
+                        onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                        onSizeChange={(size) => updateBoxSize(box.id, size)}
+                        onSaveRequest={debounceAndSave}
+                        boxNumber={index + 1}
+                        isGridMode={false} // Enable full draggability
+                      />
+                    );
+                  })
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center py-16 max-w-md">

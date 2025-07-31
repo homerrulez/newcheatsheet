@@ -179,6 +179,8 @@ export default function AutoResizeMathBox({
     onSaveRequest();
   }, [onSaveRequest]);
 
+  console.log(`AutoResizeMathBox ${title.substring(0, 15)} rendering at:`, position);
+  
   return (
     <Draggable
       position={position}
@@ -203,7 +205,7 @@ export default function AutoResizeMathBox({
             resizeHandles={['se']}
             className="relative group"
           >
-            <div className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}>
+            <div className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`} style={{ border: `3px solid hsl(${(boxNumber * 50) % 360}, 70%, 50%)` }}>
               {/* Make entire box draggable */}
               <div className="drag-handle w-full h-full cursor-move">
                 {/* Title Header */}
