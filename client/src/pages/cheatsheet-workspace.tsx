@@ -21,8 +21,18 @@ export default function CheatSheetWorkspace() {
   const [, navigate] = useLocation();
   const [currentSheet, setCurrentSheet] = useState<CheatSheet | null>(null);
   const [boxes, setBoxes] = useState<CheatSheetBox[]>([]);
+  const [boxPositions, setBoxPositions] = useState<Record<string, { x: number; y: number }>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const updateBoxPosition = useCallback((id: string, position: { x: number; y: number }) => {
+    setBoxPositions(prev => ({ ...prev, [id]: position }));
+    setBoxes(currentBoxes => 
+      currentBoxes.map(box => 
+        box.id === id ? { ...box, position } : box
+      )
+    );
+  }, []);
 
   // Fetch cheat sheets list
   const { data: cheatSheets = [] } = useQuery({
@@ -38,7 +48,24 @@ export default function CheatSheetWorkspace() {
   useEffect(() => {
     if (cheatSheet) {
       setCurrentSheet(cheatSheet as CheatSheet);
-      setBoxes(Array.isArray((cheatSheet as CheatSheet).boxes) ? (cheatSheet as CheatSheet).boxes as CheatSheetBox[] : []);
+      const loadedBoxes = Array.isArray((cheatSheet as CheatSheet).boxes) ? (cheatSheet as CheatSheet).boxes as CheatSheetBox[] : [];
+      setBoxes(loadedBoxes);
+      
+      // Initialize positions for loaded boxes if not already set
+      const newPositions: Record<string, { x: number; y: number }> = {};
+      loadedBoxes.forEach((box, index) => {
+        if (box.position) {
+          newPositions[box.id] = box.position;
+        } else {
+          // Calculate initial grid position
+          const boxIndex = index % 15; // 15 boxes per page
+          newPositions[box.id] = {
+            x: 40 + (boxIndex % 3) * 200,
+            y: 60 + Math.floor(boxIndex / 3) * 150
+          };
+        }
+      });
+      setBoxPositions(prev => ({ ...prev, ...newPositions }));
     } else if (!id && Array.isArray(cheatSheets) && cheatSheets.length > 0) {
       const firstSheet = cheatSheets[0] as CheatSheet;
       setCurrentSheet(firstSheet);
@@ -416,17 +443,11 @@ export default function CheatSheetWorkspace() {
     }
   }, [saveSheetMutation]);
 
-  const updateBoxPosition = useCallback((boxId: string, newPosition: { x: number, y: number }) => {
-    setBoxes(prev => prev.map(box => 
-      box.id === boxId 
-        ? { ...box, position: newPosition }
-        : box
-    ));
-  }, []);
 
-  const updateBoxSize = useCallback((boxId: string, size: { width: number, height: number }) => {
+
+  const updateBoxSize = useCallback((id: string, size: { width: number, height: number }) => {
     setBoxes(prev => prev.map(box => 
-      box.id === boxId 
+      box.id === id 
         ? { ...box, size: { width: Math.max(200, size.width), height: Math.max(100, size.height) } }
         : box
     ));
@@ -662,36 +683,29 @@ export default function CheatSheetWorkspace() {
                         const absoluteIndex = pageIndex * boxesPerPage + boxIndex;
                         const pos = box.position || { x: 0, y: 0 };
                         
-                        // Debug: render colored div at calculated position
-                        const debugPos = {
+                        // Use state-based position or initialize with grid position  
+                        const statePos = boxPositions[box.id];
+                        const fallbackPos = {
                           x: LAYOUT_CONFIG.margin + (boxIndex % 3) * 200,
                           y: LAYOUT_CONFIG.margin + Math.floor(boxIndex / 3) * 150
                         };
                         
+                        // Initialize position if not set
+                        if (!statePos) {
+                          setBoxPositions(prev => ({ ...prev, [box.id]: fallbackPos }));
+                        }
+                        
+                        const actualPos = statePos || fallbackPos;
+                        
                         return (
                           <div key={`box-container-${box.id}`}>
-                            {/* Debug positioning marker */}
-                            <div
-                              style={{
-                                position: 'absolute',
-                                left: `${debugPos.x}px`,
-                                top: `${debugPos.y}px`,
-                                width: '10px',
-                                height: '10px',
-                                backgroundColor: `hsl(${(absoluteIndex * 50) % 360}, 70%, 50%)`,
-                                borderRadius: '50%',
-                                zIndex: 100,
-                                border: '2px solid white'
-                              }}
-                            />
-                            
                             <AutoResizeMathBox
                               key={box.id}
                               id={box.id}
                               title={box.title}
                               content={box.content}
                               color={box.color}
-                              position={debugPos}
+                              position={actualPos}
                               size={box.size}
                               onPositionChange={(position) => updateBoxPosition(box.id, position)}
                               onSizeChange={(size) => updateBoxSize(box.id, size)}
