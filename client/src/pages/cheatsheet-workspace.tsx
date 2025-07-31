@@ -619,23 +619,35 @@ export default function CheatSheetWorkspace() {
               <div className="absolute inset-0" style={{ zIndex: 10 }}>
                 {boxes.length > 0 ? (
                   boxes.map((box, index) => {
-                    const pos = box.position || { x: 0, y: 0 };
-                    console.log(`RENDER Box ${index}: "${box.title.substring(0, 15)}" at position (${pos.x}, ${pos.y})`);
+                    // HARDCODE TEST POSITIONS
+                    const testPos = { 
+                      x: 100 + (index % 3) * 250, 
+                      y: 100 + Math.floor(index / 3) * 150 
+                    };
+                    console.log(`HARDCODED Box ${index}: "${box.title.substring(0, 15)}" at position (${testPos.x}, ${testPos.y})`);
                     return (
-                      <AutoResizeMathBox
+                      <div
                         key={box.id}
-                        id={box.id}
-                        title={box.title}
-                        content={box.content}
-                        color={box.color}
-                        position={pos}
-                        size={box.size}
-                        onPositionChange={(position) => updateBoxPosition(box.id, position)}
-                        onSizeChange={(size) => updateBoxSize(box.id, size)}
-                        onSaveRequest={debounceAndSave}
-                        boxNumber={index + 1}
-                        isGridMode={false} // Enable full draggability
-                      />
+                        style={{
+                          position: 'absolute',
+                          left: `${testPos.x}px`,
+                          top: `${testPos.y}px`,
+                          width: '200px',
+                          height: '120px',
+                          border: `3px solid hsl(${(index * 50) % 360}, 70%, 50%)`,
+                          backgroundColor: 'white',
+                          borderRadius: '8px',
+                          padding: '8px',
+                          zIndex: 10 + index
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', fontSize: '12px' }}>
+                          {index + 1}: {box.title}
+                        </div>
+                        <div style={{ fontSize: '10px', marginTop: '4px' }}>
+                          Position: ({testPos.x}, {testPos.y})
+                        </div>
+                      </div>
                     );
                   })
                 ) : (
