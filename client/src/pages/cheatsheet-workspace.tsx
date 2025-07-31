@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Draggable from 'react-draggable';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
@@ -25,6 +25,7 @@ export default function CheatSheetWorkspace() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Temporary updateBoxPosition without boundaries - will be updated after LAYOUT_CONFIG
   const updateBoxPosition = useCallback((id: string, position: { x: number; y: number }) => {
     setBoxPositions(prev => ({ ...prev, [id]: position }));
     setBoxes(currentBoxes => 
@@ -159,23 +160,61 @@ export default function CheatSheetWorkspace() {
   const [layoutDensity, setLayoutDensity] = useState<'compact' | 'balanced' | 'spacious'>('balanced');
   const [boxesPerPage, setBoxesPerPage] = useState(12);
   
-  const LAYOUT_CONFIG = {
-    pageWidth: 620,
-    pageHeight: 800,
-    margin: 30,
-    minBoxWidth: 160,
-    maxBoxWidth: 420,
-    minBoxHeight: 90,
-    maxBoxHeight: 380,
-    gutter: 12,
-    get contentWidth() { return this.pageWidth - (2 * this.margin); },
-    get contentHeight() { return this.pageHeight - (2 * this.margin); },
-    get columns() { 
-      // Dynamic columns based on content width and density
-      const densityFactors = { compact: 4, balanced: 3, spacious: 2 };
-      return Math.max(2, densityFactors[layoutDensity] || 3);
-    }
-  };
+  // Viewport-responsive page barrier system (zoom/resolution independent)
+  const LAYOUT_CONFIG = useMemo(() => {
+    const availableWidth = window.innerWidth - 256 - 448; // Account for sidebars
+    const availableHeight = window.innerHeight - 100; // Account for header/toolbar
+    
+    return {
+      pageWidth: Math.max(400, Math.min(700, availableWidth * 0.85)), // Responsive but within bounds
+      pageHeight: Math.max(500, Math.min(900, availableHeight * 0.8)),
+      margin: 20,
+      minBoxWidth: 160,
+      maxBoxWidth: 420,
+      minBoxHeight: 90,
+      maxBoxHeight: 380,
+      gutter: 16,
+      get contentWidth() { return this.pageWidth - (2 * this.margin); },
+      get contentHeight() { return this.pageHeight - (2 * this.margin); },
+      get columns() { 
+        const densityFactors = { compact: 4, balanced: 3, spacious: 2 };
+        return Math.max(2, Math.min(4, densityFactors[layoutDensity] || 3));
+      }
+    };
+  }, [layoutDensity, window.innerWidth, window.innerHeight]);
+
+  // Page barrier enforcement function
+  const enforcePageBoundaries = useCallback((position: { x: number; y: number }, size: { width: number; height: number }) => {
+    const { pageWidth, pageHeight, margin } = LAYOUT_CONFIG;
+    
+    // Get current page based on Y position
+    const pageIndex = Math.floor(position.y / (pageHeight + 40));
+    const pageStartY = pageIndex * (pageHeight + 40) + 60; // Account for page spacing and header
+    const pageEndY = pageStartY + pageHeight;
+    
+    // Constrain to current page boundaries
+    const constrainedX = Math.max(margin, Math.min(position.x, pageWidth - size.width - margin));
+    const constrainedY = Math.max(pageStartY + margin, Math.min(position.y, pageEndY - size.height - margin));
+    
+    return { x: constrainedX, y: constrainedY };
+  }, [LAYOUT_CONFIG]);
+
+  // Updated updateBoxPosition with boundary enforcement
+  const updateBoxPositionWithBoundaries = useCallback((id: string, position: { x: number; y: number }) => {
+    // Find the box to get its size for boundary enforcement
+    const currentBox = boxes.find(box => box.id === id);
+    const boxSize = currentBox?.size || { width: 200, height: 120 };
+    
+    // Enforce page boundaries - boxes cannot leave their assigned page
+    const constrainedPosition = enforcePageBoundaries(position, boxSize);
+    
+    setBoxPositions(prev => ({ ...prev, [id]: constrainedPosition }));
+    setBoxes(currentBoxes => 
+      currentBoxes.map(box => 
+        box.id === id ? { ...box, position: constrainedPosition } : box
+      )
+    );
+  }, [boxes, enforcePageBoundaries]);
 
   // Advanced content-aware size analysis
   const analyzeBoxContent = useCallback((box: CheatSheetBox) => {
@@ -298,16 +337,21 @@ export default function CheatSheetWorkspace() {
           }
         }
         
-        // Check if box fits on current page
+        // Check if box fits within page barriers
         const wouldFitY = shortestHeight + height;
         
         if (wouldFitY <= contentHeight || pageIndex === 0) {
-          // Place box on current page
-          const pageYBase = pageOffset + margin + 40 + (pageIndex * (pageHeight + 40));
+          // Place box within page barrier boundaries
+          const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+          const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
+          const pageYBase = 60 + (pageIndex * (pageHeight + 40)); // Match page barrier positioning
           
           const finalWidth = Math.min(width, columnWidth);
           const x = centerOffsetX + margin + shortestColumn * (columnWidth + gutter);
-          const y = pageYBase + columnHeights[shortestColumn];
+          const y = pageYBase + margin + columnHeights[shortestColumn];
+          
+          // Enforce page barriers - ensure box stays within boundaries
+          const constrainedPosition = enforcePageBoundaries({ x, y }, { width: finalWidth, height });
           
           // Update column height
           columnHeights[shortestColumn] += height + gutter;
@@ -315,7 +359,12 @@ export default function CheatSheetWorkspace() {
           // Store position using original box order
           const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
           if (originalIndex !== -1) {
-            positions[originalIndex] = { x, y, width: finalWidth, height };
+            positions[originalIndex] = { 
+              x: constrainedPosition.x, 
+              y: constrainedPosition.y, 
+              width: finalWidth, 
+              height 
+            };
           }
           
           placed = true;
@@ -699,7 +748,7 @@ export default function CheatSheetWorkspace() {
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
             {/* Page System with Visual Boundaries */}
             <div className="relative" style={{ minHeight: `${totalPages * (LAYOUT_CONFIG.pageHeight + 40) + 40}px` }}>
-              {/* Render page boundaries as visual guides - centered */}
+              {/* Page barriers - viewport responsive containers */}
               {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
                 const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
                 const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
@@ -707,30 +756,38 @@ export default function CheatSheetWorkspace() {
                 return (
                   <div
                     key={pageIndex}
-                    className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
+                    className="absolute border-2 border-dashed border-blue-400 bg-white shadow-sm rounded-lg page-barrier"
                     style={{
-                      top: `${20 + pageIndex * (LAYOUT_CONFIG.pageHeight + 40)}px`,
+                      top: `${60 + pageIndex * (LAYOUT_CONFIG.pageHeight + 40)}px`,
                       left: `${centerOffsetX}px`,
                       width: `${LAYOUT_CONFIG.pageWidth}px`,
                       height: `${LAYOUT_CONFIG.pageHeight}px`,
-                      zIndex: 0
+                      zIndex: 0,
+                      position: 'absolute'
                     }}
                   >
-                    {/* Page header */}
-                    <div className="absolute top-2 right-4 text-xs text-gray-400">
-                      Page {pageIndex + 1} of {Math.max(1, totalPages)}
+                    {/* Page header with barrier info */}
+                    <div className="absolute top-2 left-4 text-xs text-blue-600 font-medium">
+                      📄 Page {pageIndex + 1} Barrier ({LAYOUT_CONFIG.pageWidth}×{LAYOUT_CONFIG.pageHeight})
+                    </div>
+                    <div className="absolute top-2 right-4 text-xs text-gray-500">
+                      Zoom: {Math.round((window.devicePixelRatio || 1) * 100)}%
                     </div>
                     
-                    {/* Page margins guide */}
+                    {/* Content area boundary */}
                     <div 
-                      className="absolute border border-blue-200 border-dashed"
+                      className="absolute border border-green-300 border-dashed bg-green-50/30"
                       style={{
                         top: `${LAYOUT_CONFIG.margin}px`,
                         left: `${LAYOUT_CONFIG.margin}px`,
-                        width: `${LAYOUT_CONFIG.pageWidth - (LAYOUT_CONFIG.margin * 2)}px`,
-                        height: `${LAYOUT_CONFIG.pageHeight - (LAYOUT_CONFIG.margin * 2)}px`
+                        width: `${LAYOUT_CONFIG.contentWidth}px`,
+                        height: `${LAYOUT_CONFIG.contentHeight}px`
                       }}
-                    />
+                    >
+                      <div className="absolute top-1 left-1 text-xs text-green-600">
+                        Content Area
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -738,20 +795,29 @@ export default function CheatSheetWorkspace() {
               {/* Single container for all boxes with absolute positioning */}
               <div className="absolute inset-0" style={{ zIndex: 20 }}>
                 {boxes.map((box, boxIndex) => {
-                  // Use masonry layout positions or fallback positions
+                  // Use masonry layout positions or page-aware fallback positions
                   const statePos = boxPositions[box.id];
+                  
+                  // Calculate page-aware fallback position within barriers
+                  const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+                  const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
+                  const pageIndex = Math.floor(boxIndex / 8); // Distribute across pages
+                  const pageYBase = 60 + (pageIndex * (LAYOUT_CONFIG.pageHeight + 40));
+                  
                   const fallbackPos = {
-                    x: 50 + (boxIndex % 3) * 200,
-                    y: 80 + Math.floor(boxIndex / 3) * 150
+                    x: centerOffsetX + LAYOUT_CONFIG.margin + ((boxIndex % 3) * 180),
+                    y: pageYBase + LAYOUT_CONFIG.margin + (Math.floor((boxIndex % 8) / 3) * 130)
                   };
                   
                   let actualPos = statePos || fallbackPos;
                   let actualSize = box.size || { width: 200, height: 120 };
                   
-                  // Apply content-aware sizing for new boxes
+                  // Apply content-aware sizing and enforce barriers for new boxes
                   if (!statePos) {
                     const contentAnalysis = analyzeBoxContent(box);
                     actualSize = { width: contentAnalysis.width, height: contentAnalysis.height };
+                    // Enforce page barriers on initial positioning
+                    actualPos = enforcePageBoundaries(actualPos, actualSize);
                     setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
                   }
                   
@@ -765,7 +831,7 @@ export default function CheatSheetWorkspace() {
                         color={box.color}
                         position={actualPos}
                         size={actualSize}
-                        onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                        onPositionChange={(position) => updateBoxPositionWithBoundaries(box.id, position)}
                         onSizeChange={(size) => updateBoxSize(box.id, size)}
                         onSaveRequest={debounceAndSave}
                         boxNumber={boxIndex + 1}
