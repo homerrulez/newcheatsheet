@@ -44,25 +44,22 @@ export default function AutoResizeMathBox({
   const [isDragging, setIsDragging] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Universal content-aware size calculation
+  // Advanced content-aware size calculation with ResizeObserver
   const calculateContentSize = useCallback(() => {
     if (!contentRef.current) return { width: 200, height: 120 };
     
     const contentElement = contentRef.current;
     const titleHeight = 48;
     const padding = 24;
-    const minWidth = 160;
-    const maxWidth = 800; // Increased max width for larger content
-    const minHeight = 100;
-    const maxHeight = 600; // Increased max height for larger content
     
-    // Detect content type for specialized sizing
+    // Detect content characteristics for specialized sizing
     const hasImages = contentElement.querySelector('img') || content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i);
     const hasLongText = content.length > 200;
-    const isMultiLine = content.includes('\n') || content.includes('<br>');
-    const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^');
+    const isMultiLine = content.includes('\n') || content.includes('<br>') || content.split(' ').length > 15;
+    const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^') || content.includes('frac');
+    const isComplexMath = content.includes('\\sum') || content.includes('\\int') || content.includes('\\sqrt') || content.includes('matrix');
     
-    // Create temporary element for accurate measurement
+    // Create measurement container with proper styling
     const measureElement = document.createElement('div');
     measureElement.style.cssText = `
       position: absolute;
@@ -72,7 +69,12 @@ export default function AutoResizeMathBox({
       width: auto;
       height: auto;
       max-width: ${maxWidth - padding}px;
+      font-family: ${window.getComputedStyle(contentElement).fontFamily};
       font-size: ${window.getComputedStyle(contentElement).fontSize};
+      line-height: ${window.getComputedStyle(contentElement).lineHeight};
+      padding: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
       font-family: ${window.getComputedStyle(contentElement).fontFamily};
       line-height: ${window.getComputedStyle(contentElement).lineHeight};
       white-space: pre-wrap;

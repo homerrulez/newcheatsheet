@@ -6,7 +6,7 @@ import { useParams, Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft } from 'lucide-react';
+import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft, RotateCcw } from 'lucide-react';
 import ChatPanel from '@/components/chat-panel';
 import LaTeXRenderer from '@/components/latex-renderer';
 import AutoResizeMathBox from '@/components/auto-resize-math-box';
@@ -169,8 +169,58 @@ export default function CheatSheetWorkspace() {
     contentHeight: 792 - 72  // Available content height per page
   };
 
-  // Tetris-like optimal positioning algorithm
-  const calculateOptimalLayout = useCallback((allBoxes: CheatSheetBox[]) => {
+  // Advanced content-aware size analysis
+  const analyzeBoxContent = useCallback((box: CheatSheetBox) => {
+    const content = box.content || '';
+    const hasImages = content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i);
+    const hasLongText = content.length > 200;
+    const isMultiLine = content.includes('\n') || content.includes('<br>') || content.split(' ').length > 15;
+    const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^') || content.includes('frac');
+    const isComplexMath = content.includes('\\sum') || content.includes('\\int') || content.includes('\\sqrt') || content.includes('matrix');
+    
+    let optimalWidth, optimalHeight, shape;
+    
+    if (hasImages) {
+      // Wide rectangles for image content
+      optimalWidth = Math.min(400, Math.max(280, content.length * 2));
+      optimalHeight = Math.min(300, Math.max(200, 240));
+      shape = 'wide';
+    } else if (isComplexMath) {
+      // Wide boxes for complex mathematical expressions
+      optimalWidth = Math.min(360, Math.max(240, content.length * 3));
+      optimalHeight = Math.min(200, Math.max(140, 160));
+      shape = 'wide';
+    } else if (hasLongText && isMultiLine) {
+      // Tall rectangles for long text content
+      const lines = content.split(/\n|<br>|\. /).length;
+      optimalWidth = Math.min(280, Math.max(200, Math.sqrt(content.length) * 12));
+      optimalHeight = Math.min(400, Math.max(180, lines * 30 + 60));
+      shape = 'tall';
+    } else if (isMathFormula) {
+      // Square-ish for simple math formulas
+      optimalWidth = Math.min(240, Math.max(180, content.length * 2.5));
+      optimalHeight = Math.min(180, Math.max(120, 140));
+      shape = 'square';
+    } else {
+      // Square for standard short content
+      const baseSize = Math.min(220, Math.max(160, content.length * 1.8));
+      optimalWidth = baseSize;
+      optimalHeight = Math.min(160, Math.max(100, baseSize * 0.8));
+      shape = 'square';
+    }
+    
+    return {
+      width: Math.round(optimalWidth / 20) * 20, // Round to 20px increments
+      height: Math.round(optimalHeight / 20) * 20,
+      area: optimalWidth * optimalHeight,
+      aspectRatio: optimalWidth / optimalHeight,
+      shape,
+      contentType: isComplexMath ? 'complex-math' : isMathFormula ? 'math' : hasLongText ? 'long-text' : hasImages ? 'image' : 'standard'
+    };
+  }, []);
+
+  // Masonry layout algorithm with collision detection
+  const calculateMasonryLayout = useCallback((allBoxes: CheatSheetBox[]) => {
     const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight } = LAYOUT_CONFIG;
     
     // Calculate viewport positioning
@@ -180,102 +230,58 @@ export default function CheatSheetWorkspace() {
     const pageStartX = centerOffsetX + margin;
     const pageStartY = pageOffset + margin + 40;
     
-    // Analyze content to determine optimal box sizes
-    const analyzeBoxContent = (box: CheatSheetBox) => {
-      const content = box.content || '';
-      const hasImages = content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i);
-      const hasLongText = content.length > 200;
-      const isMultiLine = content.includes('\n') || content.includes('<br>');
-      const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^');
-      
-      let optimalWidth, optimalHeight;
-      
-      if (hasImages) {
-        optimalWidth = Math.min(300, Math.max(200, content.length * 2));
-        optimalHeight = Math.min(250, Math.max(150, 200));
-      } else if (hasLongText) {
-        optimalWidth = Math.min(280, Math.max(220, Math.sqrt(content.length) * 15));
-        optimalHeight = Math.min(200, Math.max(120, content.length / 8));
-      } else if (isMultiLine) {
-        const lines = content.split(/\n|<br>/).length;
-        optimalWidth = Math.min(240, Math.max(180, content.length * 1.5));
-        optimalHeight = Math.min(180, Math.max(100, lines * 25 + 60));
-      } else if (isMathFormula) {
-        optimalWidth = Math.min(220, Math.max(160, content.length * 3));
-        optimalHeight = Math.min(150, Math.max(100, 120));
-      } else {
-        optimalWidth = Math.min(200, Math.max(160, content.length * 2));
-        optimalHeight = Math.min(120, Math.max(100, 100));
-      }
-      
-      return {
-        width: Math.round(optimalWidth),
-        height: Math.round(optimalHeight),
-        area: optimalWidth * optimalHeight,
-        aspectRatio: optimalWidth / optimalHeight
-      };
-    };
-    
-    // Sort boxes by area (largest first) for better packing
+    // Analyze and size all boxes
     const boxesWithSizes = allBoxes.map(box => ({
       ...box,
       optimalSize: analyzeBoxContent(box)
-    })).sort((a, b) => b.optimalSize.area - a.optimalSize.area);
+    }));
     
-    // Track occupied spaces on each page
-    const pages: Array<Array<{x: number, y: number, width: number, height: number}>> = [[]];
-    const positions: Array<{x: number, y: number, width: number, height: number}> = [];
+    // Sort by priority: complex math first, then by area (largest first) for better packing
+    boxesWithSizes.sort((a, b) => {
+      if (a.optimalSize.contentType === 'complex-math' && b.optimalSize.contentType !== 'complex-math') return -1;
+      if (b.optimalSize.contentType === 'complex-math' && a.optimalSize.contentType !== 'complex-math') return 1;
+      return b.optimalSize.area - a.optimalSize.area;
+    });
     
-    // Find best position for a box using tetris-like placement
-    const findBestPosition = (boxSize: {width: number, height: number}, pageIndex: number = 0) => {
-      const page = pages[pageIndex] || [];
-      const { width: boxWidth, height: boxHeight } = boxSize;
+    // Masonry layout with adaptive column sizing
+    const columns = 3;
+    const columnWidth = (contentWidth - (columns - 1) * gutter) / columns;
+    const columnHeights = new Array(columns).fill(0);
+    const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
+    
+    // Place boxes using masonry layout
+    boxesWithSizes.forEach((box, index) => {
+      const { width, height } = box.optimalSize;
       
-      // Try to place box at various positions with better spacing
-      for (let y = 0; y <= contentHeight - boxHeight; y += 20) {
-        for (let x = 0; x <= contentWidth - boxWidth; x += 20) {
-          // Check if position conflicts with existing boxes (with better margins)
-          const conflicts = page.some(occupiedSpace => 
-            !(x >= occupiedSpace.x + occupiedSpace.width + 15 ||
-              x + boxWidth + 15 <= occupiedSpace.x ||
-              y >= occupiedSpace.y + occupiedSpace.height + 15 ||
-              y + boxHeight + 15 <= occupiedSpace.y)
-          );
-          
-          if (!conflicts) {
-            // Found a good position
-            return { x: pageStartX + x, y: pageStartY + (pageIndex * (pageHeight + 40)) + y };
-          }
+      // Find column with minimum height that can accommodate the box
+      let targetColumn = 0;
+      let minHeight = columnHeights[0];
+      
+      for (let col = 0; col < columns; col++) {
+        if (columnHeights[col] < minHeight) {
+          minHeight = columnHeights[col];
+          targetColumn = col;
         }
       }
       
-      // If no position found, try next page
-      if (!pages[pageIndex + 1]) {
-        pages[pageIndex + 1] = [];
-      }
-      return findBestPosition(boxSize, pageIndex + 1);
-    };
-    
-    // Place each box optimally
-    boxesWithSizes.forEach((box, index) => {
-      const { width, height } = box.optimalSize;
-      const position = findBestPosition({ width, height });
-      const pageIndex = Math.floor((position.y - pageStartY) / (pageHeight + 40));
+      // Position calculation
+      const x = pageStartX + targetColumn * (columnWidth + gutter);
+      const y = pageStartY + columnHeights[targetColumn];
       
-      // Add to occupied spaces
-      if (!pages[pageIndex]) pages[pageIndex] = [];
-      pages[pageIndex].push({
-        x: position.x - pageStartX,
-        y: (position.y - pageStartY) % (pageHeight + 40),
-        width,
-        height
-      });
+      // Constrain box width to column width if needed
+      const finalWidth = Math.min(width, columnWidth);
+      const finalHeight = height;
       
-      positions[allBoxes.indexOf(box)] = {
-        x: position.x,
-        y: position.y,
-        width,
-        height
+      // Update column height
+      columnHeights[targetColumn] += finalHeight + gutter;
+      
+      // Store position
+      const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
+      positions[originalIndex] = {
+        x,
+        y,
+        width: finalWidth,
+        height: finalHeight
       };
     });
     
@@ -482,16 +488,44 @@ export default function CheatSheetWorkspace() {
     });
   }, [toast]);
 
-  // Function to reorganize boxes with optimal tetris-like positioning
-  const organizeBoxes = useCallback(() => {
-    // Re-arrange boxes using the optimal layout algorithm
-    autoArrangeBoxes();
-    debounceAndSave();
-    toast({
-      title: "Layout optimized",
-      description: `${boxes.length} boxes reorganized across ${totalPages} page${totalPages > 1 ? 's' : ''} with tetris-like positioning.`,
+  // Smart layout using masonry system with content-aware sizing
+  const applySmartLayout = useCallback(() => {
+    if (boxes.length === 0) return;
+    
+    console.log('Applying smart masonry layout to', boxes.length, 'boxes');
+    
+    // Calculate optimal positions using masonry layout
+    const layoutPositions = calculateMasonryLayout(boxes);
+    
+    // Update box positions and sizes
+    setBoxes(currentBoxes => {
+      return currentBoxes.map((box, index) => {
+        const layout = layoutPositions[index];
+        if (layout) {
+          // Update position state
+          setBoxPositions(prev => ({ 
+            ...prev, 
+            [box.id]: { x: layout.x, y: layout.y } 
+          }));
+          
+          return {
+            ...box,
+            position: { x: layout.x, y: layout.y },
+            size: { width: layout.width, height: layout.height }
+          };
+        }
+        return box;
+      });
     });
-  }, [debounceAndSave, toast, totalPages, boxes.length, autoArrangeBoxes]);
+    
+    // Save changes
+    setTimeout(() => saveSheetMutation.mutate(), 100);
+    
+    toast({
+      title: "Smart layout applied",
+      description: `${boxes.length} boxes arranged with content-aware masonry layout.`,
+    });
+  }, [boxes, calculateMasonryLayout, saveSheetMutation, setBoxPositions, toast]);
 
   const getRandomColor = () => {
     const colors = [
@@ -584,29 +618,11 @@ export default function CheatSheetWorkspace() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={autoFitAllBoxes}
-                      className="text-xs"
+                      onClick={applySmartLayout}
+                      className="text-xs gap-1"
                     >
-                      Refresh Grid
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={organizeBoxes}
-                      className="text-xs"
-                    >
-                      Re-organize
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        console.log('Manual auto-arrange triggered');
-                        autoArrangeBoxes();
-                      }}
-                      className="text-xs"
-                    >
-                      Debug Position
+                      <RotateCcw className="h-3 w-3" />
+                      Smart Layout
                     </Button>
                   </div>
                 )}
@@ -690,12 +706,19 @@ export default function CheatSheetWorkspace() {
                           y: LAYOUT_CONFIG.margin + Math.floor(boxIndex / 3) * 150
                         };
                         
-                        // Initialize position if not set
-                        if (!statePos) {
-                          setBoxPositions(prev => ({ ...prev, [box.id]: fallbackPos }));
-                        }
+                        // Use masonry layout for new boxes, or user-positioned for dragged boxes
+                        let actualPos = statePos || fallbackPos;
+                        let actualSize = box.size || { width: 200, height: 120 };
                         
-                        const actualPos = statePos || fallbackPos;
+                        // Apply masonry layout for optimal positioning and sizing
+                        if (!statePos) {
+                          const layoutPositions = calculateMasonryLayout([box]);
+                          if (layoutPositions[0]) {
+                            actualPos = { x: layoutPositions[0].x, y: layoutPositions[0].y };
+                            actualSize = { width: layoutPositions[0].width, height: layoutPositions[0].height };
+                            setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
+                          }
+                        }
                         
                         return (
                           <div key={`box-container-${box.id}`}>
@@ -706,7 +729,7 @@ export default function CheatSheetWorkspace() {
                               content={box.content}
                               color={box.color}
                               position={actualPos}
-                              size={box.size}
+                              size={actualSize}
                               onPositionChange={(position) => updateBoxPosition(box.id, position)}
                               onSizeChange={(size) => updateBoxSize(box.id, size)}
                               onSaveRequest={debounceAndSave}
