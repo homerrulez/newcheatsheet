@@ -10,6 +10,7 @@ import { ArrowLeft, Save, Printer, Plus, Grid3X3, Clock, SquareArrowOutUpLeft } 
 import ChatPanel from '@/components/chat-panel';
 import LaTeXRenderer from '@/components/latex-renderer';
 import AutoResizeMathBox from '@/components/auto-resize-math-box';
+import DraggableTest from '@/components/draggable-test';
 import WorkspaceSidebar from '@/components/workspace-sidebar';
 import { CheatSheet, CheatSheetBox } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
@@ -564,6 +565,11 @@ export default function CheatSheetWorkspace() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Draggable Control Test */}
+          <div className="p-4 bg-yellow-100 border-b">
+            <DraggableTest />
           </div>
 
           {/* Cheat Sheet Content - Page-Constrained Layout */}
