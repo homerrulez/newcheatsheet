@@ -260,21 +260,27 @@ export default function CheatSheetWorkspace() {
     
     console.log('Auto-arranging', boxes.length, 'boxes');
     
-    // Fixed positioning - much simpler
-    const startX = 100; // Fixed start position
-    const startY = 150; // Fixed start position  
+    // Calculate proper positioning for main page area
+    const { pageWidth, pageHeight, margin } = LAYOUT_CONFIG;
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448; // sidebar - chat panel
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
+    const pageStartX = centerOffsetX + margin + 256; // Add sidebar width
+    const pageStartY = 100 + margin; // Header space + margin
+    
     const boxWidth = 200;
     const boxHeight = 120;
-    const spacing = 30; // More spacing
+    const spacing = 30;
     const columns = 3;
+    
+    console.log('Page positioning:', { pageStartX, pageStartY, estimatedMiddlePanelWidth });
     
     setBoxes(currentBoxes => {
       const updatedBoxes = currentBoxes.map((box, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
         
-        const x = startX + (col * (boxWidth + spacing));
-        const y = startY + (row * (boxHeight + spacing));
+        const x = pageStartX + (col * (boxWidth + spacing));
+        const y = pageStartY + (row * (boxHeight + spacing));
         
         console.log(`Box ${index}: positioned at (${x}, ${y})`);
         
