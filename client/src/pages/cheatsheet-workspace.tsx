@@ -273,28 +273,23 @@ export default function CheatSheetWorkspace() {
     
     console.log('Canvas positioning:', { baseX, baseY, columns });
     
+    // Force re-render by creating completely new box objects with new IDs
     setBoxes(currentBoxes => {
-      console.log('Starting positioning for', currentBoxes.length, 'boxes');
-      console.log('Grid config:', { baseX, baseY, boxWidth, boxHeight, spacingX, spacingY, columns });
-      
       const updatedBoxes = currentBoxes.map((box, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
         
-        // Calculate absolute position within the canvas
         const x = baseX + (col * (boxWidth + spacingX));
         const y = baseY + (row * (boxHeight + spacingY));
         
-        console.log(`Box ${index}: "${box.title.substring(0, 20)}..." -> row=${row}, col=${col} -> position (${x}, ${y})`);
-        
         return {
           ...box,
+          id: `${box.id}_positioned_${Date.now()}_${index}`, // Force new key
           position: { x, y },
           size: { width: boxWidth, height: boxHeight }
         };
       });
       
-      console.log('FINAL POSITIONS:', updatedBoxes.map((b, i) => `${i}: (${b.position?.x}, ${b.position?.y})`));
       return updatedBoxes;
     });
   }, []);
@@ -618,38 +613,22 @@ export default function CheatSheetWorkspace() {
               {/* All boxes positioned within page boundaries */}
               <div className="absolute inset-0" style={{ zIndex: 10 }}>
                 {boxes.length > 0 ? (
-                  boxes.map((box, index) => {
-                    // HARDCODE TEST POSITIONS
-                    const testPos = { 
-                      x: 100 + (index % 3) * 250, 
-                      y: 100 + Math.floor(index / 3) * 150 
-                    };
-                    console.log(`HARDCODED Box ${index}: "${box.title.substring(0, 15)}" at position (${testPos.x}, ${testPos.y})`);
-                    return (
-                      <div
-                        key={box.id}
-                        style={{
-                          position: 'absolute',
-                          left: `${testPos.x}px`,
-                          top: `${testPos.y}px`,
-                          width: '200px',
-                          height: '120px',
-                          border: `3px solid hsl(${(index * 50) % 360}, 70%, 50%)`,
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          padding: '8px',
-                          zIndex: 10 + index
-                        }}
-                      >
-                        <div style={{ fontWeight: 'bold', fontSize: '12px' }}>
-                          {index + 1}: {box.title}
-                        </div>
-                        <div style={{ fontSize: '10px', marginTop: '4px' }}>
-                          Position: ({testPos.x}, {testPos.y})
-                        </div>
-                      </div>
-                    );
-                  })
+                  boxes.map((box, index) => (
+                    <AutoResizeMathBox
+                      key={box.id}
+                      id={box.id}
+                      title={box.title}
+                      content={box.content}
+                      color={box.color}
+                      position={box.position || { x: 0, y: 0 }}
+                      size={box.size}
+                      onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                      onSizeChange={(size) => updateBoxSize(box.id, size)}
+                      onSaveRequest={debounceAndSave}
+                      boxNumber={index + 1}
+                      isGridMode={false}
+                    />
+                  ))
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center py-16 max-w-md">

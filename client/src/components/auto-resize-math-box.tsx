@@ -179,11 +179,9 @@ export default function AutoResizeMathBox({
     onSaveRequest();
   }, [onSaveRequest]);
 
-  console.log(`AutoResizeMathBox ${title.substring(0, 15)} rendering at:`, position);
-  
   return (
     <Draggable
-      position={position}
+      defaultPosition={position}
       onStop={handleDragStop}
       grid={[10, 10]}
       handle=".drag-handle"
