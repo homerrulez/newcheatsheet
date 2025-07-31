@@ -260,19 +260,16 @@ export default function CheatSheetWorkspace() {
     
     console.log('Auto-arranging', boxes.length, 'boxes');
     
-    // Calculate proper positioning for main page area
-    const { pageWidth, pageHeight, margin } = LAYOUT_CONFIG;
-    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448; // sidebar - chat panel
-    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
-    const pageStartX = centerOffsetX + margin + 256; // Add sidebar width
-    const pageStartY = 100 + margin; // Header space + margin
+    // Use simpler, more reliable positioning that works regardless of window size
+    const pageStartX = 350; // Fixed position that works for the main content area
+    const pageStartY = 150; // Fixed position below header
     
     const boxWidth = 200;
     const boxHeight = 120;
     const spacing = 30;
     const columns = 3;
     
-    console.log('Page positioning:', { pageStartX, pageStartY, estimatedMiddlePanelWidth });
+    console.log('Page positioning:', { pageStartX, pageStartY, windowWidth: window.innerWidth });
     
     setBoxes(currentBoxes => {
       const updatedBoxes = currentBoxes.map((box, index) => {
@@ -311,13 +308,17 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Force auto-arrange immediately when boxes are added
+  // Force auto-arrange immediately when boxes are added or when dependencies change
   useEffect(() => {
     if (boxes.length > 0) {
       console.log('Triggering auto-arrange for', boxes.length, 'boxes');
-      autoArrangeBoxes();
+      // Add a small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        autoArrangeBoxes();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [boxes.length]);
+  }, [boxes.length, autoArrangeBoxes]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);

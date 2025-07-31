@@ -56,9 +56,17 @@ export default function LaTeXRenderer({ content, displayMode = true, className =
           mathContent = mathContent.replace(/\\\s*$/, ''); // Remove trailing backslash with space
           mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
           
+          // Fix problematic extstyle/displaystyle commands that break KaTeX
+          mathContent = mathContent.replace(/\\extstyle/g, ''); // Remove extstyle commands
+          mathContent = mathContent.replace(/\\begin\{displaystyle\}/g, ''); // Remove displaystyle begin
+          mathContent = mathContent.replace(/\\end\{displaystyle\}/g, ''); // Remove displaystyle end
+          mathContent = mathContent.replace(/\\displaystyle/g, ''); // Remove displaystyle
+          mathContent = mathContent.replace(/\\textstyle/g, ''); // Remove textstyle
+          
           // Remove problematic text commands that break KaTeX
           mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove text commands (units)
           mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove mathrm commands
+          mathContent = mathContent.replace(/\\textup\{[^}]*\}/g, ''); // Remove textup commands
           mathContent = mathContent.replace(/\([^)]*Units[^)]*\)/g, ''); // Remove units in parentheses
           
           // Remove unit annotations in parentheses with various spacing patterns
