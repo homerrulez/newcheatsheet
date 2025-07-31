@@ -254,43 +254,53 @@ export default function CheatSheetWorkspace() {
     return positions;
   }, []);
 
-  // Fixed grid-based auto-arrange with proper positioning
+  // Proper grid positioning within the scrollable canvas
   const autoArrangeBoxes = useCallback(() => {
     if (boxes.length === 0) return;
     
     console.log('Auto-arranging', boxes.length, 'boxes');
     
-    // Wait for DOM to be ready and find the actual page container
-    const pageContainer = document.querySelector('.page') || document.querySelector('[data-page]');
-    if (!pageContainer) {
-      console.log('Page container not found, retrying...');
+    // Find the actual scrollable content area (not the page boundary guides)
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const pageGuide = document.querySelector('.border-dashed.bg-white\\/50');
+    
+    if (!scrollContainer) {
+      console.log('Scroll container not found, retrying...');
       setTimeout(() => autoArrangeBoxes(), 200);
       return;
     }
     
-    const containerRect = pageContainer.getBoundingClientRect();
-    console.log('Page container bounds:', containerRect);
+    let baseX = 50; // Start position within canvas
+    let baseY = 80; // Start position within canvas
     
-    // Calculate positioning relative to the page container
-    const pageStartX = containerRect.left + 20; // 20px margin from left edge of page
-    const pageStartY = containerRect.top + 20; // 20px margin from top edge of page
+    // If we have page guides, position relative to them
+    if (pageGuide) {
+      const guideRect = pageGuide.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      
+      // Calculate position relative to the scroll container
+      baseX = (guideRect.left - containerRect.left) + 40; // 40px margin from page edge
+      baseY = (guideRect.top - containerRect.top) + 60; // 60px margin from page top
+    }
     
     const boxWidth = 180;
     const boxHeight = 120;
-    const spacing = 25;
-    const columns = Math.floor((containerRect.width - 40) / (boxWidth + spacing)) || 3; // Fit columns to container width
+    const spacingX = 20;
+    const spacingY = 20;
+    const columns = 3; // Fixed 3 columns for consistent layout
     
-    console.log('Grid layout:', { pageStartX, pageStartY, columns, containerWidth: containerRect.width });
+    console.log('Canvas positioning:', { baseX, baseY, columns });
     
     setBoxes(currentBoxes => {
       const updatedBoxes = currentBoxes.map((box, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
         
-        const x = pageStartX + (col * (boxWidth + spacing));
-        const y = pageStartY + (row * (boxHeight + spacing));
+        // Calculate absolute position within the canvas
+        const x = baseX + (col * (boxWidth + spacingX));
+        const y = baseY + (row * (boxHeight + spacingY));
         
-        console.log(`Box ${index} (${box.title}): positioned at (${x}, ${y})`);
+        console.log(`Box ${index} (${box.title}): canvas position (${x}, ${y})`);
         
         return {
           ...box,
@@ -299,7 +309,7 @@ export default function CheatSheetWorkspace() {
         };
       });
       
-      console.log('Updated boxes positioning complete:', updatedBoxes.length, 'boxes positioned');
+      console.log('Canvas positioning complete:', updatedBoxes.length, 'boxes positioned');
       return updatedBoxes;
     });
   }, []);
@@ -319,27 +329,27 @@ export default function CheatSheetWorkspace() {
   
   const totalPages = calculateTotalPages();
   
-  // Force auto-arrange when boxes are added, with proper DOM readiness check
+  // Auto-arrange when boxes change, waiting for proper DOM elements
   useEffect(() => {
     if (boxes.length > 0) {
       console.log('Triggering auto-arrange for', boxes.length, 'boxes');
       
-      // Check if page container exists, if not wait for it
+      // Wait for the scroll container to be ready
       const checkAndArrange = () => {
-        const pageContainer = document.querySelector('.page') || document.querySelector('[data-page]');
-        if (pageContainer) {
+        const scrollContainer = document.querySelector('.overflow-auto');
+        if (scrollContainer) {
           autoArrangeBoxes();
         } else {
-          console.log('Page container not ready, waiting...');
+          console.log('Scroll container not ready, waiting...');
           setTimeout(checkAndArrange, 100);
         }
       };
       
-      // Add delay to ensure DOM is fully rendered
-      const timer = setTimeout(checkAndArrange, 200);
+      // Immediate check and arrange
+      const timer = setTimeout(checkAndArrange, 300);
       return () => clearTimeout(timer);
     }
-  }, [boxes.length, autoArrangeBoxes]);
+  }, [boxes.length]);
 
   const handleAIResponse = useCallback((response: any) => {
     console.log('AI Response received in handleAIResponse:', response);
@@ -571,6 +581,17 @@ export default function CheatSheetWorkspace() {
                       className="text-xs"
                     >
                       Re-organize
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        console.log('Manual auto-arrange triggered');
+                        autoArrangeBoxes();
+                      }}
+                      className="text-xs"
+                    >
+                      Debug Position
                     </Button>
                   </div>
                 )}
