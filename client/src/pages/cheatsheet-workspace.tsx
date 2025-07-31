@@ -235,106 +235,97 @@ export default function CheatSheetWorkspace() {
     };
   }, []);
 
-  // Enhanced responsive masonry layout with page-aware positioning
+  // Fixed page-aware masonry layout with proper vertical distribution
   const calculateMasonryLayout = useCallback((allBoxes: CheatSheetBox[]) => {
     const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight, columns } = LAYOUT_CONFIG;
     
-    // Calculate viewport positioning with better responsiveness
+    if (allBoxes.length === 0) return [];
+    
+    // Calculate viewport positioning
     const pageOffset = 20;
     const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
     const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
-    const pageStartX = centerOffsetX + margin;
-    const pageStartY = pageOffset + margin + 40;
     
-    // Analyze and size all boxes with responsive sizing
+    // Analyze and size all boxes
     const boxesWithSizes = allBoxes.map(box => ({
       ...box,
       optimalSize: analyzeBoxContent(box)
     }));
     
-    // Enhanced sorting: prioritize by content complexity, then fit efficiently
+    // Sort by priority for better visual hierarchy
     boxesWithSizes.sort((a, b) => {
-      // First by priority (complex content first)
       const priorityA = a.optimalSize.priority || 1;
       const priorityB = b.optimalSize.priority || 1;
       if (priorityA !== priorityB) {
         return priorityB - priorityA;
       }
-      // Then by area for better packing
       return b.optimalSize.area - a.optimalSize.area;
     });
     
-    // Responsive column calculation with dynamic width
+    // Column-based masonry layout with page awareness
     const columnWidth = (contentWidth - (columns - 1) * gutter) / columns;
-    const columnHeights: number[] = new Array(columns).fill(0);
     const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
     
-    // Track current page for page-aware layout
-    let currentPage = 0;
-    const boxesPerCurrentPage = Math.ceil(allBoxes.length / Math.max(1, Math.ceil(allBoxes.length / boxesPerPage)));
+    // Track column heights per page
+    const pageColumnHeights: Record<number, number[]> = {};
+    let currentPageIndex = 0;
     
-    // Enhanced masonry placement with page boundaries
+    // Initialize first page
+    pageColumnHeights[0] = new Array(columns).fill(0);
+    
+    // Place each box using true masonry algorithm
     boxesWithSizes.forEach((box, index) => {
       const { width, height } = box.optimalSize;
+      let placed = false;
+      let pageIndex = currentPageIndex;
       
-      // Find optimal column considering height and content type
-      let targetColumn = 0;
-      let minHeight = columnHeights[0];
-      
-      // Smart column selection: prefer columns that minimize wasted space
-      for (let col = 0; col < columns; col++) {
-        const projectedHeight = columnHeights[col] + height + gutter;
+      while (!placed) {
+        // Ensure page exists
+        if (!pageColumnHeights[pageIndex]) {
+          pageColumnHeights[pageIndex] = new Array(columns).fill(0);
+        }
         
-        // Choose column with minimum height, but consider content type matching
-        if (columnHeights[col] < minHeight || 
-           (columnHeights[col] === minHeight && col < targetColumn)) {
-          minHeight = columnHeights[col];
-          targetColumn = col;
+        const columnHeights = pageColumnHeights[pageIndex];
+        
+        // Find shortest column on current page
+        let shortestColumn = 0;
+        let shortestHeight = columnHeights[0];
+        
+        for (let col = 1; col < columns; col++) {
+          if (columnHeights[col] < shortestHeight) {
+            shortestHeight = columnHeights[col];
+            shortestColumn = col;
+          }
         }
-      }
-      
-      // Check if we need to move to next page
-      const estimatedY = pageStartY + minHeight;
-      if (estimatedY + height > pageStartY + contentHeight && index > 0) {
-        // Move to next page - reset column heights
-        currentPage++;
-        columnHeights.fill(0);
-        targetColumn = 0; // Start fresh on new page
-      }
-      
-      // Position calculation with page offset
-      const pageYOffset = currentPage * (pageHeight + 40); // Account for page spacing
-      const x = pageStartX + targetColumn * (columnWidth + gutter);
-      const y = pageStartY + pageYOffset + columnHeights[targetColumn];
-      
-      // Responsive width: allow boxes to use optimal width within column constraints
-      let finalWidth = Math.min(width, columnWidth);
-      
-      // For very wide content, allow spanning multiple columns if space allows
-      if (width > columnWidth * 1.5 && targetColumn < columns - 1 && 
-          columnHeights[targetColumn] === columnHeights[targetColumn + 1]) {
-        const spanWidth = columnWidth * 2 + gutter;
-        if (width <= spanWidth) {
-          finalWidth = Math.min(width, spanWidth);
-          // Update both columns
-          columnHeights[targetColumn] += height + gutter;
-          columnHeights[targetColumn + 1] += height + gutter;
+        
+        // Check if box fits on current page
+        const wouldFitY = shortestHeight + height;
+        
+        if (wouldFitY <= contentHeight || pageIndex === 0) {
+          // Place box on current page
+          const pageYBase = pageOffset + margin + 40 + (pageIndex * (pageHeight + 40));
+          
+          const finalWidth = Math.min(width, columnWidth);
+          const x = centerOffsetX + margin + shortestColumn * (columnWidth + gutter);
+          const y = pageYBase + columnHeights[shortestColumn];
+          
+          // Update column height
+          columnHeights[shortestColumn] += height + gutter;
+          
+          // Store position using original box order
+          const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
+          if (originalIndex !== -1) {
+            positions[originalIndex] = { x, y, width: finalWidth, height };
+          }
+          
+          placed = true;
         } else {
-          columnHeights[targetColumn] += height + gutter;
+          // Move to next page
+          pageIndex++;
+          if (pageIndex > currentPageIndex) {
+            currentPageIndex = pageIndex;
+          }
         }
-      } else {
-        columnHeights[targetColumn] += height + gutter;
-      }
-      
-      // Store position with original index mapping
-      const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
-      if (originalIndex !== -1) {
-        positions[originalIndex] = {
-          x,
-          y,
-          width: finalWidth,
-          height: height
-        };
       }
     });
     
@@ -707,7 +698,7 @@ export default function CheatSheetWorkspace() {
           {/* Cheat Sheet Content - Page-Constrained Layout */}
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
             {/* Page System with Visual Boundaries */}
-            <div className="relative" style={{ minHeight: `${totalPages * 832}px` }}>
+            <div className="relative" style={{ minHeight: `${totalPages * (LAYOUT_CONFIG.pageHeight + 40) + 40}px` }}>
               {/* Render page boundaries as visual guides - centered */}
               {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
                 const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
@@ -744,74 +735,46 @@ export default function CheatSheetWorkspace() {
                 );
               })}
               
-              {/* Render boxes INSIDE each page guide for proper positioning context */}
-              {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
-                const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
-                const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
-                
-                // Get boxes for this page
-                const boxesPerPage = 15; // Assuming 3x5 grid per page
-                const pageBoxes = boxes.slice(pageIndex * boxesPerPage, (pageIndex + 1) * boxesPerPage);
-                
-                return (
-                  <div
-                    key={`page-boxes-${pageIndex}`}
-                    className="absolute"
-                    style={{
-                      top: `${20 + pageIndex * (LAYOUT_CONFIG.pageHeight + 40)}px`,
-                      left: `${centerOffsetX}px`,
-                      width: `${LAYOUT_CONFIG.pageWidth}px`,
-                      height: `${LAYOUT_CONFIG.pageHeight}px`,
-                      zIndex: 20
-                    }}
-                  >
-                    {/* Positioning container with relative positioning */}
-                    <div className="relative w-full h-full">
-                      {pageBoxes.map((box, boxIndex) => {
-                        const absoluteIndex = pageIndex * boxesPerPage + boxIndex;
-                        const pos = box.position || { x: 0, y: 0 };
-                        
-                        // Use state-based position or initialize with grid position  
-                        const statePos = boxPositions[box.id];
-                        const fallbackPos = {
-                          x: LAYOUT_CONFIG.margin + (boxIndex % 3) * 200,
-                          y: LAYOUT_CONFIG.margin + Math.floor(boxIndex / 3) * 150
-                        };
-                        
-                        // Use masonry layout for new boxes, or user-positioned for dragged boxes
-                        let actualPos = statePos || fallbackPos;
-                        let actualSize = box.size || { width: 200, height: 120 };
-                        
-                        // Apply content-aware sizing for new boxes
-                        if (!statePos) {
-                          const contentAnalysis = analyzeBoxContent(box);
-                          actualSize = { width: contentAnalysis.width, height: contentAnalysis.height };
-                          setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
-                        }
-                        
-                        return (
-                          <div key={`box-container-${box.id}`}>
-                            <AutoResizeMathBox
-                              key={box.id}
-                              id={box.id}
-                              title={box.title}
-                              content={box.content}
-                              color={box.color}
-                              position={actualPos}
-                              size={actualSize}
-                              onPositionChange={(position) => updateBoxPosition(box.id, position)}
-                              onSizeChange={(size) => updateBoxSize(box.id, size)}
-                              onSaveRequest={debounceAndSave}
-                              boxNumber={absoluteIndex + 1}
-                              isGridMode={false}
-                            />
-                          </div>
-                        );
-                      })}
+              {/* Single container for all boxes with absolute positioning */}
+              <div className="absolute inset-0" style={{ zIndex: 20 }}>
+                {boxes.map((box, boxIndex) => {
+                  // Use masonry layout positions or fallback positions
+                  const statePos = boxPositions[box.id];
+                  const fallbackPos = {
+                    x: 50 + (boxIndex % 3) * 200,
+                    y: 80 + Math.floor(boxIndex / 3) * 150
+                  };
+                  
+                  let actualPos = statePos || fallbackPos;
+                  let actualSize = box.size || { width: 200, height: 120 };
+                  
+                  // Apply content-aware sizing for new boxes
+                  if (!statePos) {
+                    const contentAnalysis = analyzeBoxContent(box);
+                    actualSize = { width: contentAnalysis.width, height: contentAnalysis.height };
+                    setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
+                  }
+                  
+                  return (
+                    <div key={`box-container-${box.id}`}>
+                      <AutoResizeMathBox
+                        key={box.id}
+                        id={box.id}
+                        title={box.title}
+                        content={box.content}
+                        color={box.color}
+                        position={actualPos}
+                        size={actualSize}
+                        onPositionChange={(position) => updateBoxPosition(box.id, position)}
+                        onSizeChange={(size) => updateBoxSize(box.id, size)}
+                        onSaveRequest={debounceAndSave}
+                        boxNumber={boxIndex + 1}
+                        isGridMode={false}
+                      />
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
               
               {/* Empty state when no boxes */}
               {boxes.length === 0 && (
