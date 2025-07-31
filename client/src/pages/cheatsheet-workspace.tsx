@@ -155,18 +155,26 @@ export default function CheatSheetWorkspace() {
     });
   };
 
-  // Tetris-like auto-fitting layout system
+  // Responsive masonry layout configuration
+  const [layoutDensity, setLayoutDensity] = useState<'compact' | 'balanced' | 'spacious'>('balanced');
+  const [boxesPerPage, setBoxesPerPage] = useState(12);
+  
   const LAYOUT_CONFIG = {
-    pageWidth: 612,    // 8.5 inches at 72 DPI
-    pageHeight: 792,   // 11 inches at 72 DPI
-    margin: 36,        // 0.5 inch margins
-    minBoxWidth: 160,  // Minimum box width
-    maxBoxWidth: 400,  // Maximum box width for large content
-    minBoxHeight: 100, // Minimum box height
-    maxBoxHeight: 600, // Maximum box height for large content
-    gutter: 10,        // Space between boxes
-    contentWidth: 612 - 72, // Available content width
-    contentHeight: 792 - 72  // Available content height per page
+    pageWidth: 620,
+    pageHeight: 800,
+    margin: 30,
+    minBoxWidth: 160,
+    maxBoxWidth: 420,
+    minBoxHeight: 90,
+    maxBoxHeight: 380,
+    gutter: 12,
+    get contentWidth() { return this.pageWidth - (2 * this.margin); },
+    get contentHeight() { return this.pageHeight - (2 * this.margin); },
+    get columns() { 
+      // Dynamic columns based on content width and density
+      const densityFactors = { compact: 4, balanced: 3, spacious: 2 };
+      return Math.max(2, densityFactors[layoutDensity] || 3);
+    }
   };
 
   // Advanced content-aware size analysis
@@ -209,84 +217,129 @@ export default function CheatSheetWorkspace() {
       shape = 'square';
     }
     
+    // Assign priority based on content complexity
+    let priority = 1;
+    if (isComplexMath) priority = 4;
+    else if (isMathFormula) priority = 3;
+    else if (hasImages) priority = 2;
+    else if (hasLongText) priority = 2;
+    
     return {
       width: Math.round(optimalWidth / 20) * 20, // Round to 20px increments
       height: Math.round(optimalHeight / 20) * 20,
       area: optimalWidth * optimalHeight,
       aspectRatio: optimalWidth / optimalHeight,
       shape,
-      contentType: isComplexMath ? 'complex-math' : isMathFormula ? 'math' : hasLongText ? 'long-text' : hasImages ? 'image' : 'standard'
+      contentType: isComplexMath ? 'complex-math' : isMathFormula ? 'math' : hasLongText ? 'long-text' : hasImages ? 'image' : 'standard',
+      priority
     };
   }, []);
 
-  // Masonry layout algorithm with collision detection
+  // Enhanced responsive masonry layout with page-aware positioning
   const calculateMasonryLayout = useCallback((allBoxes: CheatSheetBox[]) => {
-    const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight } = LAYOUT_CONFIG;
+    const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight, columns } = LAYOUT_CONFIG;
     
-    // Calculate viewport positioning
+    // Calculate viewport positioning with better responsiveness
     const pageOffset = 20;
     const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
     const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
     const pageStartX = centerOffsetX + margin;
     const pageStartY = pageOffset + margin + 40;
     
-    // Analyze and size all boxes
+    // Analyze and size all boxes with responsive sizing
     const boxesWithSizes = allBoxes.map(box => ({
       ...box,
       optimalSize: analyzeBoxContent(box)
     }));
     
-    // Sort by priority: complex math first, then by area (largest first) for better packing
+    // Enhanced sorting: prioritize by content complexity, then fit efficiently
     boxesWithSizes.sort((a, b) => {
-      if (a.optimalSize.contentType === 'complex-math' && b.optimalSize.contentType !== 'complex-math') return -1;
-      if (b.optimalSize.contentType === 'complex-math' && a.optimalSize.contentType !== 'complex-math') return 1;
+      // First by priority (complex content first)
+      const priorityA = a.optimalSize.priority || 1;
+      const priorityB = b.optimalSize.priority || 1;
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA;
+      }
+      // Then by area for better packing
       return b.optimalSize.area - a.optimalSize.area;
     });
     
-    // Masonry layout with adaptive column sizing
-    const columns = 3;
+    // Responsive column calculation with dynamic width
     const columnWidth = (contentWidth - (columns - 1) * gutter) / columns;
-    const columnHeights = new Array(columns).fill(0);
+    const columnHeights: number[] = new Array(columns).fill(0);
     const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
     
-    // Place boxes using masonry layout
+    // Track current page for page-aware layout
+    let currentPage = 0;
+    const boxesPerCurrentPage = Math.ceil(allBoxes.length / Math.max(1, Math.ceil(allBoxes.length / boxesPerPage)));
+    
+    // Enhanced masonry placement with page boundaries
     boxesWithSizes.forEach((box, index) => {
       const { width, height } = box.optimalSize;
       
-      // Find column with minimum height that can accommodate the box
+      // Find optimal column considering height and content type
       let targetColumn = 0;
       let minHeight = columnHeights[0];
       
+      // Smart column selection: prefer columns that minimize wasted space
       for (let col = 0; col < columns; col++) {
-        if (columnHeights[col] < minHeight) {
+        const projectedHeight = columnHeights[col] + height + gutter;
+        
+        // Choose column with minimum height, but consider content type matching
+        if (columnHeights[col] < minHeight || 
+           (columnHeights[col] === minHeight && col < targetColumn)) {
           minHeight = columnHeights[col];
           targetColumn = col;
         }
       }
       
-      // Position calculation
+      // Check if we need to move to next page
+      const estimatedY = pageStartY + minHeight;
+      if (estimatedY + height > pageStartY + contentHeight && index > 0) {
+        // Move to next page - reset column heights
+        currentPage++;
+        columnHeights.fill(0);
+        targetColumn = 0; // Start fresh on new page
+      }
+      
+      // Position calculation with page offset
+      const pageYOffset = currentPage * (pageHeight + 40); // Account for page spacing
       const x = pageStartX + targetColumn * (columnWidth + gutter);
-      const y = pageStartY + columnHeights[targetColumn];
+      const y = pageStartY + pageYOffset + columnHeights[targetColumn];
       
-      // Constrain box width to column width if needed
-      const finalWidth = Math.min(width, columnWidth);
-      const finalHeight = height;
+      // Responsive width: allow boxes to use optimal width within column constraints
+      let finalWidth = Math.min(width, columnWidth);
       
-      // Update column height
-      columnHeights[targetColumn] += finalHeight + gutter;
+      // For very wide content, allow spanning multiple columns if space allows
+      if (width > columnWidth * 1.5 && targetColumn < columns - 1 && 
+          columnHeights[targetColumn] === columnHeights[targetColumn + 1]) {
+        const spanWidth = columnWidth * 2 + gutter;
+        if (width <= spanWidth) {
+          finalWidth = Math.min(width, spanWidth);
+          // Update both columns
+          columnHeights[targetColumn] += height + gutter;
+          columnHeights[targetColumn + 1] += height + gutter;
+        } else {
+          columnHeights[targetColumn] += height + gutter;
+        }
+      } else {
+        columnHeights[targetColumn] += height + gutter;
+      }
       
-      // Store position
+      // Store position with original index mapping
       const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
-      positions[originalIndex] = {
-        x,
-        y,
-        width: finalWidth,
-        height: finalHeight
-      };
+      if (originalIndex !== -1) {
+        positions[originalIndex] = {
+          x,
+          y,
+          width: finalWidth,
+          height: height
+        };
+      }
     });
     
     return positions;
-  }, []);
+  }, [layoutDensity, boxesPerPage]);
 
   // Proper grid positioning within the scrollable canvas
   const autoArrangeBoxes = useCallback(() => {
@@ -611,10 +664,29 @@ export default function CheatSheetWorkspace() {
                 <div className="flex items-center space-x-2 text-sm text-slate-600">
                   <span>{boxes.length} boxes</span>
                   <span>•</span>
-                  <span>Dynamic layout</span>
+                  <span>{Math.max(1, Math.ceil(boxes.length / boxesPerPage))} pages • {layoutDensity} density</span>
                 </div>
                 {boxes.length > 0 && (
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-2 items-center">
+                    <select 
+                      value={layoutDensity} 
+                      onChange={(e) => setLayoutDensity(e.target.value as 'compact' | 'balanced' | 'spacious')}
+                      className="text-xs px-2 py-1 border rounded"
+                    >
+                      <option value="compact">Compact</option>
+                      <option value="balanced">Balanced</option>
+                      <option value="spacious">Spacious</option>
+                    </select>
+                    <select 
+                      value={boxesPerPage} 
+                      onChange={(e) => setBoxesPerPage(parseInt(e.target.value))}
+                      className="text-xs px-2 py-1 border rounded"
+                    >
+                      <option value="8">8 per page</option>
+                      <option value="12">12 per page</option>
+                      <option value="16">16 per page</option>
+                      <option value="20">20 per page</option>
+                    </select>
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -710,14 +782,11 @@ export default function CheatSheetWorkspace() {
                         let actualPos = statePos || fallbackPos;
                         let actualSize = box.size || { width: 200, height: 120 };
                         
-                        // Apply masonry layout for optimal positioning and sizing
+                        // Apply content-aware sizing for new boxes
                         if (!statePos) {
-                          const layoutPositions = calculateMasonryLayout([box]);
-                          if (layoutPositions[0]) {
-                            actualPos = { x: layoutPositions[0].x, y: layoutPositions[0].y };
-                            actualSize = { width: layoutPositions[0].width, height: layoutPositions[0].height };
-                            setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
-                          }
+                          const contentAnalysis = analyzeBoxContent(box);
+                          actualSize = { width: contentAnalysis.width, height: contentAnalysis.height };
+                          setBoxPositions(prev => ({ ...prev, [box.id]: actualPos }));
                         }
                         
                         return (
