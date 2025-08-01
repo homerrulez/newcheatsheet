@@ -189,12 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         response_format: { type: "json_object" }
       });
 
-      const rawContent = response.choices[0].message.content || "{}";
-      console.log('Raw AI response content:', rawContent.substring(0, 500) + '...');
-      
-      const aiResponse = JSON.parse(rawContent);
-      console.log('Parsed AI response keys:', Object.keys(aiResponse));
-      console.log('AI response content length:', aiResponse.content?.length || 0);
+      const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
       
       // Store AI response
       await storage.createChatMessage({
@@ -218,50 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
   switch (workspaceType) {
     case "document":
-      return `You are an AI assistant for document creation and editing with box management capabilities. When users request content, provide COMPLETE, DETAILED responses that fulfill their exact requirements.
-
-CRITICAL RULES:
-1. When user asks for N items (like "50 equations"), provide ALL N items - not just a summary or introduction
-2. Always respond in valid JSON format 
-3. For mathematical content, use clean LaTeX formatting without unit annotations
-4. DO NOT provide summaries, introductions, or partial lists - give complete content
-5. If user asks for specific quantities, deliver exactly that amount
-
-RESPONSE FORMATS:
-
-For CONTENT CREATION (default):
-{
-  "content": "The complete content the user requested - all equations, formulas, text, etc.",
-  "formatting": "Instructions for how content should be formatted in document"
-}
-
-For BOX OPERATIONS (when user references box numbers or pages):
-{
-  "operations": [
-    {
-      "type": "create" | "move" | "delete" | "edit",
-      "boxNumber": "number (for move/delete/edit)",
-      "pageNumber": "number (for create/move)",
-      "title": "box title (for create/edit)",
-      "content": "box content (for create/edit)",
-      "position": "description like 'top-left', 'center', 'bottom-right' (for create/move)"
-    }
-  ]
-}
-
-BOX COMMAND EXAMPLES:
-- "Move box 3 to page 4" → {"operations": [{"type": "move", "boxNumber": "3", "pageNumber": "4"}]}
-- "Create a box with Newton's law on page 2" → {"operations": [{"type": "create", "pageNumber": "2", "title": "Newton's Second Law", "content": "F = ma", "position": "center"}]}
-- "Delete box 5" → {"operations": [{"type": "delete", "boxNumber": "5"}]}
-- "Edit box 2 to include momentum" → {"operations": [{"type": "edit", "boxNumber": "2", "content": "p = mv"}]}
-
-MATH FORMATTING:
-- Use SIMPLE LaTeX: "F = ma", "E = mc^2", "\\frac{d}{dx}x^n = nx^{n-1}"
-- NEVER include units: NO \\text{N}, \\text{J}, \\text{V}, etc.
-- NO unit annotations like ", (N)" or "\\, (\\text{J})"
-- Use simple notation, avoid complex delimiters
-
-Your response must contain COMPLETE requested material. Never provide just summaries or introductory text.`;
+      return `You are an AI assistant helping with document editing. When users ask questions, provide responses that can be formatted with LaTeX for mathematical content. Always respond in valid JSON format with fields: "content" (the main response), "latex" (any LaTeX formulas), and "formatting" (how to insert into document). Focus on academic and educational content. Your response must be valid JSON.`;
     
     case "cheatsheet":
       const boxContext = currentBoxes && currentBoxes.length > 0 

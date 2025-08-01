@@ -25,7 +25,6 @@ export default function ChatPanel({
   currentBoxes
 }: ChatPanelProps) {
   const [message, setMessage] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -39,7 +38,6 @@ export default function ChatPanel({
     mutationFn: (msg: string) => sendChatMessage(workspaceId, workspaceType, msg, currentBoxes),
     onSuccess: (response) => {
       console.log('Chat mutation success, calling onAIResponse with:', response);
-      setError(null); // Clear any previous errors
       queryClient.invalidateQueries({
         queryKey: ['/api/chat', workspaceType, workspaceId],
       });
@@ -51,27 +49,12 @@ export default function ChatPanel({
       setMessage('');
     },
     onError: (error: any) => {
-      console.error('Chat mutation error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-      
-      let errorMessage = "Failed to send message. Please try again.";
-      
-      if (error.message?.includes('quota')) {
-        errorMessage = "API quota exceeded. Please check your OpenAI billing or try again later.";
-      } else if (error.message?.includes('timeout')) {
-        errorMessage = "Request timed out. Please try again.";
-      } else if (error.message?.includes('network')) {
-        errorMessage = "Network error. Please check your connection.";
-      }
-      
-      setError(errorMessage);
+      console.error('Chat error:', error);
       toast({
         title: "ChatGPT Error",
-        description: errorMessage,
+        description: error.message?.includes('quota') 
+          ? "API quota exceeded. Please check your OpenAI billing or try again later."
+          : "Failed to send message. Please try again.",
         variant: "destructive",
       });
     },
@@ -80,7 +63,6 @@ export default function ChatPanel({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !sendMessageMutation.isPending) {
-      setError(null); // Clear any previous errors when sending
       sendMessageMutation.mutate(message.trim());
     }
   };
