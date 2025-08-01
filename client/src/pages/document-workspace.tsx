@@ -149,7 +149,12 @@ export default function DocumentWorkspace() {
     let contentToInsert = '';
     
     if (response.content) {
-      contentToInsert = response.content;
+      // Handle both string and array content
+      if (Array.isArray(response.content)) {
+        contentToInsert = response.content.join('\n');
+      } else {
+        contentToInsert = response.content;
+      }
       console.log('Using response.content:', contentToInsert.substring(0, 200) + '...');
     } else if (typeof response === 'string') {
       contentToInsert = response;

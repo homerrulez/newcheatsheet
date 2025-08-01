@@ -4,24 +4,33 @@ export async function sendChatMessage(
   message: string,
   currentBoxes?: any[]
 ) {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      workspaceId,
-      workspaceType,
-      message,
-      currentBoxes,
-    }),
-  });
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        workspaceId,
+        workspaceType,
+        message,
+        currentBoxes,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to send chat message');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Chat API error response:', errorText);
+      throw new Error(`Chat API error: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Chat API success:', result);
+    return result;
+  } catch (error) {
+    console.error('Chat message send error:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function getChatMessages(workspaceType: string, workspaceId: string) {
