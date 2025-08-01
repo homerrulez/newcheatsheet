@@ -695,7 +695,7 @@ export default function CheatSheetWorkspace() {
                y2 + h2 + spacingBuffer <= y1);
     };
     
-    // Helper function to find collision-free position
+    // Helper function to find collision-free position with proper line wrapping
     const findSafePosition = (box: any, targetPage: number): { x: number; y: number; page: number } => {
       const pageTop = 20 + (targetPage * (LAYOUT_CONFIG.pageHeight + 40));
       const pageContentTop = pageTop + margin;
@@ -703,63 +703,57 @@ export default function CheatSheetWorkspace() {
       const pageContentLeft = centerOffsetX + margin;
       const pageContentRight = centerOffsetX + LAYOUT_CONFIG.pageWidth - margin;
       
-      // Try grid-based positioning first for neat arrangement
-      const columnWidth = Math.floor((LAYOUT_CONFIG.pageWidth - (2 * margin)) / columns);
-      const maxRowsPerPage = Math.floor((LAYOUT_CONFIG.pageHeight - (2 * margin)) / (box.dimensions.height + gutter));
+      // Flow-based positioning: left to right, then next line, like text
+      let currentY = pageContentTop;
       
-      for (let row = 0; row < maxRowsPerPage; row++) {
-        for (let col = 0; col < columns; col++) {
-          const testX = pageContentLeft + (col * columnWidth);
-          const testY = pageContentTop + (row * (box.dimensions.height + gutter));
-          
-          // Check if this position is within page bounds
-          if (testX + box.dimensions.width <= pageContentRight && 
-              testY + box.dimensions.height <= pageContentBottom) {
-            
-            // Check for collisions with existing boxes on this page
-            const hasAnyCollision = placedBoxes
-              .filter(placed => placed.page === targetPage)
-              .some(placed => hasCollision(testX, testY, box.dimensions.width, box.dimensions.height,
-                                         placed.x, placed.y, placed.width, placed.height));
-            
-            if (!hasAnyCollision) {
-              return { x: testX, y: testY, page: targetPage };
-            }
-          }
-        }
-      }
-      
-      // If grid positioning fails, try sequential placement with neat rows
-      let testY = pageContentTop;
-      const stepY = 25; // Fine vertical steps for precise positioning
-      
-      while (testY + box.dimensions.height <= pageContentBottom) {
-        let testX = pageContentLeft;
-        const stepX = 25; // Fine horizontal steps
+      while (currentY + box.dimensions.height <= pageContentBottom) {
+        let currentX = pageContentLeft;
+        let lineMaxHeight = box.dimensions.height; // Track the tallest box on this line
         
-        while (testX + box.dimensions.width <= pageContentRight) {
+        // Try to place boxes on current line from left to right
+        while (currentX + box.dimensions.width <= pageContentRight) {
+          // Check for collisions with existing boxes on this page
           const hasAnyCollision = placedBoxes
             .filter(placed => placed.page === targetPage)
-            .some(placed => hasCollision(testX, testY, box.dimensions.width, box.dimensions.height,
+            .some(placed => hasCollision(currentX, currentY, box.dimensions.width, box.dimensions.height,
                                        placed.x, placed.y, placed.width, placed.height));
           
           if (!hasAnyCollision) {
-            return { x: testX, y: testY, page: targetPage };
+            return { x: currentX, y: currentY, page: targetPage };
           }
           
-          testX += stepX;
+          // Find next available X position by checking existing boxes on this line
+          const boxesOnThisLine = placedBoxes.filter(placed => 
+            placed.page === targetPage && 
+            placed.y >= currentY && 
+            placed.y < currentY + lineMaxHeight + spacingBuffer
+          );
+          
+          if (boxesOnThisLine.length > 0) {
+            // Find the rightmost box on this line and place after it
+            const rightmostBox = boxesOnThisLine.reduce((rightmost, current) => 
+              current.x + current.width > rightmost.x + rightmost.width ? current : rightmost
+            );
+            currentX = rightmostBox.x + rightmostBox.width + spacingBuffer;
+            lineMaxHeight = Math.max(lineMaxHeight, rightmostBox.height);
+          } else {
+            // Move by box width if no collision but no space
+            currentX += box.dimensions.width + spacingBuffer;
+          }
         }
-        testY += stepY;
+        
+        // Move to next line using the actual height of boxes on current line
+        currentY += lineMaxHeight + spacingBuffer;
       }
       
       // If no space found on current page, move to next page
       return findSafePosition(box, targetPage + 1);
     };
     
-    // Place each box in sequence with collision avoidance
+    // Place each box in sequence with flow-based positioning (like text flow)
     allBoxes.forEach((box, index) => {
-      let targetPage = Math.floor(index / (columns * 3)); // Conservative estimate for boxes per page
-      const position = findSafePosition(box, targetPage);
+      // Start from page 0 and let the algorithm find the best position
+      const position = findSafePosition(box, 0);
       
       // Record the placed box
       placedBoxes.push({
