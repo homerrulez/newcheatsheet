@@ -3,18 +3,42 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText } from 'lucide-react';
+import { Save, FileText, Printer } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace-sidebar';
 import ChatPanel from '@/components/chat-panel';
+import DocumentEditorEnhanced from '@/components/document-editor-enhanced';
+import DocumentSettingsModal from '@/components/document-settings-modal';
 import { apiRequest } from '@/lib/queryClient';
 import { Document } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+
+interface DocumentSettings {
+  pageSize: 'letter' | 'a4' | 'legal' | '4x6';
+  orientation: 'portrait' | 'landscape';
+  margins: 'normal' | 'narrow' | 'wide';
+}
+
+interface DocumentBox {
+  id: string;
+  pageNumber: number;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  title: string;
+  content: string;
+  color: string;
+}
 
 export default function DocumentWorkspace() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [content, setContent] = useState('');
+  const [boxes, setBoxes] = useState<DocumentBox[]>([]);
+  const [documentSettings, setDocumentSettings] = useState<DocumentSettings>({
+    pageSize: 'letter',
+    orientation: 'portrait',
+    margins: 'normal'
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -69,27 +93,74 @@ export default function DocumentWorkspace() {
     console.log('Response type:', typeof response);
     console.log('Response keys:', Object.keys(response || {}));
     
-    // Handle different response structures
+    // Handle box operations first
+    if (response.operations && Array.isArray(response.operations)) {
+      console.log('Processing box operations:', response.operations);
+      
+      response.operations.forEach((operation: any) => {
+        switch (operation.type) {
+          case 'create':
+            const newBox: DocumentBox = {
+              id: `box-${Date.now()}-${Math.random()}`,
+              pageNumber: parseInt(operation.pageNumber) || 1,
+              position: getPositionFromDescription(operation.position || 'center'),
+              size: { width: 300, height: 150 },
+              title: operation.title || 'New Box',
+              content: operation.content || '',
+              color: 'from-blue-50 to-indigo-50 border-blue-200'
+            };
+            setBoxes(prev => [...prev, newBox]);
+            break;
+            
+          case 'move':
+            setBoxes(prev => prev.map(box => 
+              box.id === operation.boxNumber ? 
+                { ...box, pageNumber: parseInt(operation.pageNumber) } : 
+                box
+            ));
+            break;
+            
+          case 'delete':
+            setBoxes(prev => prev.filter(box => box.id !== operation.boxNumber));
+            break;
+            
+          case 'edit':
+            setBoxes(prev => prev.map(box => 
+              box.id === operation.boxNumber ? 
+                { 
+                  ...box, 
+                  title: operation.title || box.title,
+                  content: operation.content || box.content 
+                } : 
+                box
+            ));
+            break;
+        }
+      });
+      
+      toast({
+        title: "✅ Box operations completed",
+        description: `Processed ${response.operations.length} box operation(s)`,
+      });
+      return;
+    }
+    
+    // Handle content insertion
     let contentToInsert = '';
     
     if (response.content) {
-      // Standard content field
       contentToInsert = response.content;
       console.log('Using response.content:', contentToInsert.substring(0, 200) + '...');
     } else if (typeof response === 'string') {
-      // Direct string response
       contentToInsert = response;
       console.log('Using direct string response:', contentToInsert.substring(0, 200) + '...');
     } else if (response.message) {
-      // Alternative message field
       contentToInsert = response.message;
       console.log('Using response.message:', contentToInsert.substring(0, 200) + '...');
     } else if (response.text) {
-      // Alternative text field
       contentToInsert = response.text;
       console.log('Using response.text:', contentToInsert.substring(0, 200) + '...');
     } else {
-      // Fallback - stringify entire response if no recognized field
       contentToInsert = JSON.stringify(response, null, 2);
       console.log('Fallback - stringifying entire response:', contentToInsert.substring(0, 200) + '...');
     }
@@ -123,6 +194,17 @@ export default function DocumentWorkspace() {
       });
     }
   };
+  
+  const getPositionFromDescription = (position: string): { x: number; y: number } => {
+    switch (position.toLowerCase()) {
+      case 'top-left': return { x: 50, y: 50 };
+      case 'top-right': return { x: 400, y: 50 };
+      case 'bottom-left': return { x: 50, y: 400 };
+      case 'bottom-right': return { x: 400, y: 400 };
+      case 'center': return { x: 200, y: 200 };
+      default: return { x: 100, y: 100 };
+    }
+  };
 
   return (
     <div className="h-screen bg-slate-50 flex flex-col">
@@ -135,6 +217,18 @@ export default function DocumentWorkspace() {
           </div>
           
           <div className="flex items-center space-x-2">
+            <DocumentSettingsModal
+              settings={documentSettings}
+              onSettingsChange={setDocumentSettings}
+            />
+            <Button
+              onClick={() => window.print()}
+              variant="outline"
+              size="sm"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print
+            </Button>
             <Button
               onClick={() => saveDocumentMutation.mutate()}
               disabled={saveDocumentMutation.isPending || !currentDocument}
@@ -159,23 +253,25 @@ export default function DocumentWorkspace() {
         />
 
         {/* Middle Panel: Document Editor */}
-        <div className="flex-1 flex flex-col bg-white">
-          <div className="border-b border-slate-200 p-4">
+        <div className="flex-1 flex flex-col bg-gray-50 overflow-auto">
+          <div className="border-b border-slate-200 p-4 bg-white">
             <h2 className="text-lg font-semibold text-slate-900">
               {currentDocument?.title || 'New Document'}  
             </h2>
           </div>
           
-          <div className="flex-1 p-6">
+          <div className="flex-1">
             {currentDocument ? (
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start writing your document..."
-                className="w-full h-full p-4 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <DocumentEditorEnhanced
+                content={content}
+                settings={documentSettings}
+                boxes={boxes}
+                onChange={setContent}
+                onBoxesChange={setBoxes}
+                className="h-full"
               />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-full bg-white">
                 <div className="text-center">
                   <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">No Document Selected</h3>
@@ -191,6 +287,7 @@ export default function DocumentWorkspace() {
           workspaceId={currentDocument?.id || 'new'}
           workspaceType="document"
           onAIResponse={handleAIResponse}
+          currentBoxes={boxes}
         />
       </div>
     </div>
