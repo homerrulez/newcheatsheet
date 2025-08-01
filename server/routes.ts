@@ -189,7 +189,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         response_format: { type: "json_object" }
       });
 
-      const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+      const rawContent = response.choices[0].message.content || "{}";
+      console.log('Raw AI response content:', rawContent.substring(0, 500) + '...');
+      
+      const aiResponse = JSON.parse(rawContent);
+      console.log('Parsed AI response keys:', Object.keys(aiResponse));
+      console.log('AI response content length:', aiResponse.content?.length || 0);
       
       // Store AI response
       await storage.createChatMessage({
@@ -213,7 +218,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {
   switch (workspaceType) {
     case "document":
-      return `You are an AI assistant helping with document editing. When users ask questions, provide responses that can be formatted with LaTeX for mathematical content. Always respond in valid JSON format with fields: "content" (the main response), "latex" (any LaTeX formulas), and "formatting" (how to insert into document). Focus on academic and educational content. Your response must be valid JSON.`;
+      return `You are an AI assistant for document creation and editing. When users request content, provide COMPLETE, DETAILED responses that fulfill their exact requirements.
+
+CRITICAL RULES:
+1. When user asks for N items (like "50 equations"), provide ALL N items - not just a summary or introduction
+2. Always respond in valid JSON format with "content" field containing the full response
+3. For mathematical content, use clean LaTeX formatting without unit annotations
+4. DO NOT provide summaries, introductions, or partial lists - give complete content
+5. If user asks for specific quantities, deliver exactly that amount
+
+RESPONSE FORMAT:
+{
+  "content": "The complete content the user requested - all equations, formulas, text, etc.",
+  "formatting": "Instructions for how content should be formatted in document"
+}
+
+EXAMPLES:
+- User asks "50 math equations" → provide all 50 equations with LaTeX, not just "Here are 50 equations:"
+- User asks "calculus formulas" → provide complete list of calculus formulas
+- User asks "chapter on quantum physics" → provide full chapter content
+
+Your "content" field must contain the COMPLETE requested material. Never provide just summaries or introductory text.`;
     
     case "cheatsheet":
       const boxContext = currentBoxes && currentBoxes.length > 0 

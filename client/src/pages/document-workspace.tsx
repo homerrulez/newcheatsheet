@@ -65,8 +65,62 @@ export default function DocumentWorkspace() {
   });
 
   const handleAIResponse = (response: any) => {
+    console.log('Document workspace received AI response:', response);
+    console.log('Response type:', typeof response);
+    console.log('Response keys:', Object.keys(response || {}));
+    
+    // Handle different response structures
+    let contentToInsert = '';
+    
     if (response.content) {
-      setContent(prev => prev + '\n\n' + response.content);
+      // Standard content field
+      contentToInsert = response.content;
+      console.log('Using response.content:', contentToInsert.substring(0, 200) + '...');
+    } else if (typeof response === 'string') {
+      // Direct string response
+      contentToInsert = response;
+      console.log('Using direct string response:', contentToInsert.substring(0, 200) + '...');
+    } else if (response.message) {
+      // Alternative message field
+      contentToInsert = response.message;
+      console.log('Using response.message:', contentToInsert.substring(0, 200) + '...');
+    } else if (response.text) {
+      // Alternative text field
+      contentToInsert = response.text;
+      console.log('Using response.text:', contentToInsert.substring(0, 200) + '...');
+    } else {
+      // Fallback - stringify entire response if no recognized field
+      contentToInsert = JSON.stringify(response, null, 2);
+      console.log('Fallback - stringifying entire response:', contentToInsert.substring(0, 200) + '...');
+    }
+    
+    if (contentToInsert && contentToInsert.trim()) {
+      console.log('Inserting content into document:', contentToInsert.length, 'characters');
+      setContent(prev => {
+        const newContent = prev + '\n\n' + contentToInsert;
+        console.log('New document content length:', newContent.length);
+        return newContent;
+      });
+      
+      // Auto-save after AI content insertion
+      if (currentDocument) {
+        setTimeout(() => {
+          console.log('Auto-saving document after AI response');
+          saveDocumentMutation.mutate();
+        }, 1000);
+      }
+      
+      toast({
+        title: "✅ Content processed & formatted",
+        description: `Inserted ${contentToInsert.length} characters into document`,
+      });
+    } else {
+      console.warn('No valid content found in AI response:', response);
+      toast({
+        title: "⚠️ Content processing issue",
+        description: "AI response received but no content could be extracted. Check console for details.",
+        variant: "destructive"
+      });
     }
   };
 
