@@ -62,6 +62,19 @@ export default function DocumentEditorEnhanced({
   const contentWidth = pageWidth - marginConfig.left - marginConfig.right;
   const contentHeight = pageHeight - marginConfig.top - marginConfig.bottom;
 
+  // Calculate text scale factor based on page size
+  const getTextScaleFactor = (): number => {
+    // Base scaling on page area ratio compared to Letter size
+    const letterArea = 816 * 1056; // Letter page area in pixels
+    const currentArea = pageWidth * pageHeight;
+    const areaRatio = currentArea / letterArea;
+    
+    // Scale text proportionally, with minimum scale of 0.4 for readability
+    return Math.max(0.4, Math.sqrt(areaRatio));
+  };
+
+  const textScaleFactor = getTextScaleFactor();
+
   // Process content and split into pages
   const processedContent = useMemo(() => {
     if (!content) return [''];
@@ -87,26 +100,27 @@ export default function DocumentEditorEnhanced({
 
     const processedText = processLaTeX(content);
     
-    // Split content into pages based on estimated character count per page
-    // This is a simplified pagination - in a real editor you'd measure actual rendered height
-    const CHARS_PER_PAGE = 2000; // Rough estimate for page capacity
+    // Split content into pages based on scaled page capacity
+    // Adjust page capacity based on text scaling
+    const BASE_CHARS_PER_PAGE = 2000;
+    const scaledCharsPerPage = Math.floor(BASE_CHARS_PER_PAGE / (textScaleFactor * textScaleFactor));
     const textLength = processedText.length;
     
-    if (textLength <= CHARS_PER_PAGE) {
+    if (textLength <= scaledCharsPerPage) {
       return [processedText];
     }
 
-    const pageCount = Math.ceil(textLength / CHARS_PER_PAGE);
+    const pageCount = Math.ceil(textLength / scaledCharsPerPage);
     const newPages: string[] = [];
     
     for (let i = 0; i < pageCount; i++) {
-      const start = i * CHARS_PER_PAGE;
-      const end = Math.min(start + CHARS_PER_PAGE, textLength);
+      const start = i * scaledCharsPerPage;
+      const end = Math.min(start + scaledCharsPerPage, textLength);
       newPages.push(processedText.slice(start, end));
     }
     
     return newPages;
-  }, [content]);
+  }, [content, textScaleFactor]);
 
   useEffect(() => {
     setPages(processedContent);
@@ -163,6 +177,7 @@ export default function DocumentEditorEnhanced({
                 pageSize={settings.pageSize}
                 orientation={settings.orientation}
                 margins={settings.margins}
+                textScaleFactor={textScaleFactor}
                 onContentChange={(newContent) => handlePageContentChange(index, newContent)}
               />
               

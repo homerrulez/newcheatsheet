@@ -7,6 +7,7 @@ interface DocumentPageProps {
   pageSize: 'letter' | 'a4' | 'legal' | '4x6';
   orientation: 'portrait' | 'landscape';
   margins: 'normal' | 'narrow' | 'wide';
+  textScaleFactor?: number;
   onContentChange: (content: string) => void;
   className?: string;
 }
@@ -30,6 +31,7 @@ export default function DocumentPage({
   pageSize,
   orientation,
   margins,
+  textScaleFactor = 1,
   onContentChange,
   className
 }: DocumentPageProps) {
@@ -101,13 +103,27 @@ export default function DocumentPage({
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="w-full h-full p-0 border-none resize-none focus:outline-none font-serif text-base leading-relaxed"
-            style={{ fontSize: '12pt', lineHeight: '1.5' }}
+            style={{ 
+              fontSize: `${12 * textScaleFactor}pt`, 
+              lineHeight: '1.5',
+              transform: `scale(${textScaleFactor})`,
+              transformOrigin: 'top left',
+              width: `${100 / textScaleFactor}%`,
+              height: `${100 / textScaleFactor}%`
+            }}
           />
         ) : (
           <div
             onClick={handleClick}
             className="w-full h-full cursor-text font-serif text-base leading-relaxed overflow-hidden"
-            style={{ fontSize: '12pt', lineHeight: '1.5' }}
+            style={{ 
+              fontSize: `${12 * textScaleFactor}pt`, 
+              lineHeight: '1.5',
+              transform: `scale(${textScaleFactor})`,
+              transformOrigin: 'top left',
+              width: `${100 / textScaleFactor}%`,
+              height: `${100 / textScaleFactor}%`
+            }}
           >
             {content ? (
               <div className="whitespace-pre-wrap break-words">
