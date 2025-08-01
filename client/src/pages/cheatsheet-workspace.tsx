@@ -298,16 +298,20 @@ export default function CheatSheetWorkspace() {
           }
         }
         
-        // Check if box fits on current page
-        const wouldFitY = shortestHeight + height;
+        // Check if box fits on current page with proper margin
+        const wouldFitY = shortestHeight + height + margin;
         
         if (wouldFitY <= contentHeight || pageIndex === 0) {
-          // Place box on current page
-          const pageYBase = pageOffset + margin + 40 + (pageIndex * (pageHeight + 40));
+          // Place box on current page with proper page boundaries
+          const pageYBase = 60 + margin + (pageIndex * (pageHeight + 40));
           
           const finalWidth = Math.min(width, columnWidth);
           const x = centerOffsetX + margin + shortestColumn * (columnWidth + gutter);
           const y = pageYBase + columnHeights[shortestColumn];
+          
+          // Ensure box doesn't exceed page boundaries
+          const maxY = pageYBase + contentHeight - height - margin;
+          const clampedY = Math.min(y, maxY);
           
           // Update column height
           columnHeights[shortestColumn] += height + gutter;
@@ -315,7 +319,7 @@ export default function CheatSheetWorkspace() {
           // Store position using original box order
           const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
           if (originalIndex !== -1) {
-            positions[originalIndex] = { x, y, width: finalWidth, height };
+            positions[originalIndex] = { x, y: clampedY, width: finalWidth, height };
           }
           
           placed = true;
@@ -330,7 +334,7 @@ export default function CheatSheetWorkspace() {
     });
     
     return positions;
-  }, [layoutDensity, boxesPerPage]);
+  }, [layoutDensity, boxesPerPage, analyzeBoxContent]);
 
   // Proper grid positioning within the scrollable canvas
   const autoArrangeBoxes = useCallback(() => {
@@ -541,38 +545,52 @@ export default function CheatSheetWorkspace() {
       // Trigger save after state update
       setTimeout(() => saveSheetMutation.mutate(), 100);
     }
-    // Handle new boxes creation with page boundary enforcement
+    // Handle new boxes creation with immediate smart layout
     else if (response.boxes && Array.isArray(response.boxes)) {
-      console.log('Creating new boxes with page boundary enforcement:', response.boxes.length, 'boxes');
+      console.log('Creating new boxes with smart layout:', response.boxes.length, 'boxes');
       
       setBoxes(currentBoxes => {
         console.log('Current boxes before adding new ones:', currentBoxes.length);
         
         const newBoxes = response.boxes.map((box: any, index: number) => {
-          // Analyze content for optimal sizing
-          const contentAnalysis = analyzeBoxContent(box);
-          
-          // Find next available position within page boundaries
-          const position = findNextAvailablePosition(contentAnalysis);
-          
           return {
             id: `box-${Date.now()}-${index}`,
             title: box.title || 'Formula',
             content: box.content || '',
             color: box.color || getRandomColor(),
-            position: { x: position.x, y: position.y },
-            size: { width: contentAnalysis.width, height: contentAnalysis.height }
+            position: { x: 0, y: 0 }, // Will be set by smart layout
+            size: { width: 200, height: 120 } // Will be set by smart layout
           };
         });
         
-        const updatedBoxes = [...currentBoxes, ...newBoxes];
-        console.log('Final boxes count after adding:', updatedBoxes.length);
+        const allBoxes = [...currentBoxes, ...newBoxes];
+        console.log('Final boxes count after adding:', allBoxes.length);
         
-        return updatedBoxes;
+        // Apply smart layout immediately to all boxes
+        setTimeout(() => {
+          const layoutPositions = calculateMasonryLayout(allBoxes);
+          const newPositions: Record<string, { x: number; y: number }> = {};
+          
+          const finalBoxes = allBoxes.map((box, index) => {
+            const layout = layoutPositions[index];
+            if (layout) {
+              newPositions[box.id] = { x: layout.x, y: layout.y };
+              return {
+                ...box,
+                position: { x: layout.x, y: layout.y },
+                size: { width: layout.width, height: layout.height }
+              };
+            }
+            return box;
+          });
+          
+          setBoxes(finalBoxes);
+          setBoxPositions(newPositions);
+          saveSheetMutation.mutate();
+        }, 50);
+        
+        return allBoxes;
       });
-      
-      // Trigger save after state update
-      setTimeout(() => saveSheetMutation.mutate(), 100);
     }
     else {
       console.log('No boxes or operations found in response:', response);
@@ -662,16 +680,16 @@ export default function CheatSheetWorkspace() {
     // Calculate optimal positions using masonry layout
     const layoutPositions = calculateMasonryLayout(boxes);
     
+    // Create new position state mapping
+    const newPositions: Record<string, { x: number; y: number }> = {};
+    
     // Update box positions and sizes
     setBoxes(currentBoxes => {
       return currentBoxes.map((box, index) => {
         const layout = layoutPositions[index];
         if (layout) {
-          // Update position state
-          setBoxPositions(prev => ({ 
-            ...prev, 
-            [box.id]: { x: layout.x, y: layout.y } 
-          }));
+          // Store position for state update
+          newPositions[box.id] = { x: layout.x, y: layout.y };
           
           return {
             ...box,
@@ -683,6 +701,9 @@ export default function CheatSheetWorkspace() {
       });
     });
     
+    // Update position state separately
+    setBoxPositions(newPositions);
+    
     // Save changes
     setTimeout(() => saveSheetMutation.mutate(), 100);
     
@@ -690,7 +711,7 @@ export default function CheatSheetWorkspace() {
       title: "Smart layout applied",
       description: `${boxes.length} boxes arranged with content-aware masonry layout.`,
     });
-  }, [boxes, calculateMasonryLayout, saveSheetMutation, setBoxPositions, toast]);
+  }, [boxes, calculateMasonryLayout, saveSheetMutation, toast]);
 
 
 
