@@ -235,102 +235,83 @@ export default function CheatSheetWorkspace() {
     };
   }, []);
 
-  // Fixed page-aware masonry layout with proper vertical distribution
+  // Fixed page-aware masonry layout with proper cross-page distribution
   const calculateMasonryLayout = useCallback((allBoxes: CheatSheetBox[]) => {
     const { pageWidth, pageHeight, margin, gutter, contentWidth, contentHeight, columns } = LAYOUT_CONFIG;
     
     if (allBoxes.length === 0) return [];
     
     // Calculate viewport positioning
-    const pageOffset = 20;
     const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
     const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - pageWidth) / 2);
     
-    // Analyze and size all boxes
+    // Analyze and size all boxes with consistent sizing
     const boxesWithSizes = allBoxes.map(box => ({
       ...box,
       optimalSize: analyzeBoxContent(box)
     }));
     
-    // Sort by priority for better visual hierarchy
-    boxesWithSizes.sort((a, b) => {
-      const priorityA = a.optimalSize.priority || 1;
-      const priorityB = b.optimalSize.priority || 1;
-      if (priorityA !== priorityB) {
-        return priorityB - priorityA;
-      }
-      return b.optimalSize.area - a.optimalSize.area;
-    });
-    
-    // Column-based masonry layout with page awareness
+    // Use simple sequential placement instead of priority sorting to maintain order
     const columnWidth = (contentWidth - (columns - 1) * gutter) / columns;
     const positions: Array<{ x: number; y: number; width: number; height: number }> = [];
     
-    // Track column heights per page
-    const pageColumnHeights: Record<number, number[]> = {};
-    let currentPageIndex = 0;
+    // Track column heights across ALL pages globally
+    const allPageColumnHeights: Record<number, number[]> = {};
+    const maxContentPerPage = contentHeight - (2 * margin);
     
-    // Initialize first page
-    pageColumnHeights[0] = new Array(columns).fill(0);
+    // Calculate how many boxes per page based on average box height
+    const avgBoxHeight = 140; // Average expected box height
+    const boxesPerPageEstimate = Math.floor(maxContentPerPage / (avgBoxHeight + gutter)) * columns;
+    const totalPagesNeeded = Math.ceil(allBoxes.length / boxesPerPageEstimate);
     
-    // Place each box using true masonry algorithm
-    boxesWithSizes.forEach((box, index) => {
-      const { width, height } = box.optimalSize;
-      let placed = false;
-      let pageIndex = currentPageIndex;
+    // Initialize all pages
+    for (let p = 0; p < Math.max(3, totalPagesNeeded); p++) {
+      allPageColumnHeights[p] = new Array(columns).fill(margin);
+    }
+    
+    // Distribute boxes evenly across pages using round-robin column placement
+    allBoxes.forEach((box, boxIndex) => {
+      const optimalSize = boxesWithSizes[boxIndex].optimalSize;
+      const { width, height } = optimalSize;
       
-      while (!placed) {
-        // Ensure page exists
-        if (!pageColumnHeights[pageIndex]) {
-          pageColumnHeights[pageIndex] = new Array(columns).fill(0);
-        }
-        
-        const columnHeights = pageColumnHeights[pageIndex];
-        
-        // Find shortest column on current page
-        let shortestColumn = 0;
-        let shortestHeight = columnHeights[0];
-        
-        for (let col = 1; col < columns; col++) {
-          if (columnHeights[col] < shortestHeight) {
-            shortestHeight = columnHeights[col];
-            shortestColumn = col;
-          }
-        }
-        
-        // Check if box fits on current page with proper margin
-        const wouldFitY = shortestHeight + height + margin;
-        
-        if (wouldFitY <= contentHeight || pageIndex === 0) {
-          // Place box on current page with proper page boundaries
-          const pageYBase = 60 + margin + (pageIndex * (pageHeight + 40));
-          
-          const finalWidth = Math.min(width, columnWidth);
-          const x = centerOffsetX + margin + shortestColumn * (columnWidth + gutter);
-          const y = pageYBase + columnHeights[shortestColumn];
-          
-          // Ensure box doesn't exceed page boundaries
-          const maxY = pageYBase + contentHeight - height - margin;
-          const clampedY = Math.min(y, maxY);
-          
-          // Update column height
-          columnHeights[shortestColumn] += height + gutter;
-          
-          // Store position using original box order
-          const originalIndex = allBoxes.findIndex(originalBox => originalBox.id === box.id);
-          if (originalIndex !== -1) {
-            positions[originalIndex] = { x, y: clampedY, width: finalWidth, height };
-          }
-          
-          placed = true;
-        } else {
-          // Move to next page
-          pageIndex++;
-          if (pageIndex > currentPageIndex) {
-            currentPageIndex = pageIndex;
-          }
+      // Calculate which page this box should go on based on distribution
+      const targetPageIndex = Math.floor(boxIndex / boxesPerPageEstimate);
+      const pageIndex = Math.min(targetPageIndex, totalPagesNeeded - 1);
+      
+      // Get column heights for target page
+      const columnHeights = allPageColumnHeights[pageIndex];
+      
+      // Find shortest column on target page
+      let shortestColumn = 0;
+      let shortestHeight = columnHeights[0];
+      
+      for (let col = 1; col < columns; col++) {
+        if (columnHeights[col] < shortestHeight) {
+          shortestHeight = columnHeights[col];
+          shortestColumn = col;
         }
       }
+      
+      // Calculate position
+      const pageYBase = 60 + margin + (pageIndex * (pageHeight + 40));
+      const finalWidth = Math.min(width, columnWidth);
+      const x = centerOffsetX + margin + shortestColumn * (columnWidth + gutter);
+      const y = pageYBase + columnHeights[shortestColumn];
+      
+      // Ensure box fits within page boundaries
+      const maxY = pageYBase + contentHeight - height - margin;
+      const clampedY = Math.min(y, maxY);
+      
+      // Update column height for next box
+      columnHeights[shortestColumn] += height + gutter;
+      
+      // Store position
+      positions[boxIndex] = { 
+        x, 
+        y: clampedY, 
+        width: finalWidth, 
+        height 
+      };
     });
     
     return positions;
@@ -478,17 +459,19 @@ export default function CheatSheetWorkspace() {
 
 
 
-  // Calculate total pages based on simple grid layout
+  // Calculate total pages based on box distribution
   const calculateTotalPages = () => {
     if (boxes.length === 0) return 1;
     
+    const { contentHeight, margin } = LAYOUT_CONFIG;
+    const avgBoxHeight = 140;
+    const gutter = 20;
     const columns = 3;
-    const boxHeight = 120;
-    const spacing = 20;
-    const rowsNeeded = Math.ceil(boxes.length / columns);
-    const totalHeight = rowsNeeded * (boxHeight + spacing);
     
-    return Math.max(1, Math.ceil(totalHeight / LAYOUT_CONFIG.pageHeight));
+    const maxContentPerPage = contentHeight - (2 * margin);
+    const boxesPerPageEstimate = Math.floor(maxContentPerPage / (avgBoxHeight + gutter)) * columns;
+    
+    return Math.max(3, Math.ceil(boxes.length / boxesPerPageEstimate));
   };
   
   const totalPages = calculateTotalPages();
