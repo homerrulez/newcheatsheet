@@ -264,8 +264,8 @@ export default function CheatSheetWorkspace() {
     const boxesPerPageEstimate = Math.floor(maxContentPerPage / (avgBoxHeight + gutter)) * columns;
     const totalPagesNeeded = Math.ceil(allBoxes.length / boxesPerPageEstimate);
     
-    // Initialize all pages
-    for (let p = 0; p < Math.max(3, totalPagesNeeded); p++) {
+    // Initialize all pages (up to 50+ pages as needed)
+    for (let p = 0; p < Math.max(1, totalPagesNeeded); p++) {
       allPageColumnHeights[p] = new Array(columns).fill(margin);
     }
     
@@ -471,7 +471,7 @@ export default function CheatSheetWorkspace() {
     const maxContentPerPage = contentHeight - (2 * margin);
     const boxesPerPageEstimate = Math.floor(maxContentPerPage / (avgBoxHeight + gutter)) * columns;
     
-    return Math.max(3, Math.ceil(boxes.length / boxesPerPageEstimate));
+    return Math.max(1, Math.ceil(boxes.length / boxesPerPageEstimate));
   };
   
   const totalPages = calculateTotalPages();
@@ -826,8 +826,8 @@ export default function CheatSheetWorkspace() {
           <div className="flex-1 relative bg-gray-100 overflow-auto scroll-smooth">
             {/* Page System with Visual Boundaries */}
             <div className="relative" style={{ minHeight: `${totalPages * (LAYOUT_CONFIG.pageHeight + 40) + 40}px` }}>
-              {/* Render page boundaries as visual guides - centered */}
-              {Array.from({ length: Math.max(1, totalPages) }, (_, pageIndex) => {
+              {/* Render page boundaries as visual guides - centered - support up to 50+ pages */}
+              {Array.from({ length: Math.max(1, Math.min(50, totalPages)) }, (_, pageIndex) => {
                 const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
                 const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
                 
