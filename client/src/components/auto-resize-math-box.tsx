@@ -141,9 +141,9 @@ export default function AutoResizeMathBox({
     };
   }, [content]);
 
-  // Update size when content changes or component mounts
+  // Update size when content changes or component mounts - but respect manual resizing
   useEffect(() => {
-    if (contentRef.current && !isManuallyResized) {
+    if (contentRef.current && !isManuallyResized && !isDragging) {
       const timer = setTimeout(() => {
         const newSize = calculateContentSize();
         setAutoSize(newSize);
@@ -151,7 +151,7 @@ export default function AutoResizeMathBox({
       }, 150); // Slightly longer delay to ensure content is rendered
       return () => clearTimeout(timer);
     }
-  }, [content, calculateContentSize, onSizeChange, isManuallyResized]);
+  }, [content, calculateContentSize, onSizeChange, isManuallyResized, isDragging]);
 
   // Initial size calculation on mount
   useEffect(() => {
@@ -165,7 +165,7 @@ export default function AutoResizeMathBox({
     }
   }, []);
 
-  // Use auto size unless manually resized
+  // Use external size if manually resized, otherwise use auto size
   const boxSize = isManuallyResized && externalSize ? externalSize : autoSize;
 
   const handleDragStart = useCallback(() => {
@@ -179,7 +179,8 @@ export default function AutoResizeMathBox({
   }, [onPositionChange, onSaveRequest]);
 
   const handleResize = useCallback((e: any, { size }: any) => {
-    setIsManuallyResized(true);
+    setIsManuallyResized(true); // Permanently disable auto-resize once user manually resizes
+    setAutoSize(size); // Update auto size to match manual size
     onSizeChange(size);
   }, [onSizeChange]);
 
