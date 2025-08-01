@@ -654,30 +654,137 @@ export default function CheatSheetWorkspace() {
     });
   }, [toast]);
 
-  // Smart layout using masonry system with content-aware sizing
+  // Advanced collision-free positioning with intelligent spacing and neat sequencing
   const applySmartLayout = useCallback(() => {
     if (boxes.length === 0) return;
     
-    console.log('Applying smart masonry layout to', boxes.length, 'boxes');
+    console.log('Applying collision-free smart layout to', boxes.length, 'boxes');
     
-    // Calculate optimal positions using masonry layout
-    const layoutPositions = calculateMasonryLayout(boxes);
+    const margin = LAYOUT_CONFIG.margin;
+    const spacingBuffer = 20; // Extra spacing between boxes to prevent touching
+    const gutter = LAYOUT_CONFIG.gutter + spacingBuffer;
+    const columns = LAYOUT_CONFIG.columns;
+    const estimatedMiddlePanelWidth = window.innerWidth - 256 - 448;
+    const centerOffsetX = Math.max(20, (estimatedMiddlePanelWidth - LAYOUT_CONFIG.pageWidth) / 2);
     
-    // Create new position state mapping
-    const newPositions: Record<string, { x: number; y: number }> = {};
+    // Calculate content-aware dimensions for all boxes first
+    const allBoxes = boxes.map(box => ({
+      ...box,
+      dimensions: analyzeBoxContent(box)
+    }));
+    
+    // Advanced collision detection and positioning algorithm
+    const placedBoxes: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      page: number;
+    }> = [];
+    
+    const newPositions: { [key: string]: { x: number; y: number } } = {};
+    const newSizes: { [key: string]: { width: number; height: number } } = {};
+    
+    // Helper function to check if two boxes collide with buffer zone
+    const hasCollision = (x1: number, y1: number, w1: number, h1: number, 
+                         x2: number, y2: number, w2: number, h2: number): boolean => {
+      return !(x1 + w1 + spacingBuffer <= x2 || 
+               x2 + w2 + spacingBuffer <= x1 || 
+               y1 + h1 + spacingBuffer <= y2 || 
+               y2 + h2 + spacingBuffer <= y1);
+    };
+    
+    // Helper function to find collision-free position
+    const findSafePosition = (box: any, targetPage: number): { x: number; y: number; page: number } => {
+      const pageTop = 20 + (targetPage * (LAYOUT_CONFIG.pageHeight + 40));
+      const pageContentTop = pageTop + margin;
+      const pageContentBottom = pageTop + LAYOUT_CONFIG.pageHeight - margin;
+      const pageContentLeft = centerOffsetX + margin;
+      const pageContentRight = centerOffsetX + LAYOUT_CONFIG.pageWidth - margin;
+      
+      // Try grid-based positioning first for neat arrangement
+      const columnWidth = Math.floor((LAYOUT_CONFIG.pageWidth - (2 * margin)) / columns);
+      const maxRowsPerPage = Math.floor((LAYOUT_CONFIG.pageHeight - (2 * margin)) / (box.dimensions.height + gutter));
+      
+      for (let row = 0; row < maxRowsPerPage; row++) {
+        for (let col = 0; col < columns; col++) {
+          const testX = pageContentLeft + (col * columnWidth);
+          const testY = pageContentTop + (row * (box.dimensions.height + gutter));
+          
+          // Check if this position is within page bounds
+          if (testX + box.dimensions.width <= pageContentRight && 
+              testY + box.dimensions.height <= pageContentBottom) {
+            
+            // Check for collisions with existing boxes on this page
+            const hasAnyCollision = placedBoxes
+              .filter(placed => placed.page === targetPage)
+              .some(placed => hasCollision(testX, testY, box.dimensions.width, box.dimensions.height,
+                                         placed.x, placed.y, placed.width, placed.height));
+            
+            if (!hasAnyCollision) {
+              return { x: testX, y: testY, page: targetPage };
+            }
+          }
+        }
+      }
+      
+      // If grid positioning fails, try sequential placement with neat rows
+      let testY = pageContentTop;
+      const stepY = 25; // Fine vertical steps for precise positioning
+      
+      while (testY + box.dimensions.height <= pageContentBottom) {
+        let testX = pageContentLeft;
+        const stepX = 25; // Fine horizontal steps
+        
+        while (testX + box.dimensions.width <= pageContentRight) {
+          const hasAnyCollision = placedBoxes
+            .filter(placed => placed.page === targetPage)
+            .some(placed => hasCollision(testX, testY, box.dimensions.width, box.dimensions.height,
+                                       placed.x, placed.y, placed.width, placed.height));
+          
+          if (!hasAnyCollision) {
+            return { x: testX, y: testY, page: targetPage };
+          }
+          
+          testX += stepX;
+        }
+        testY += stepY;
+      }
+      
+      // If no space found on current page, move to next page
+      return findSafePosition(box, targetPage + 1);
+    };
+    
+    // Place each box in sequence with collision avoidance
+    allBoxes.forEach((box, index) => {
+      let targetPage = Math.floor(index / (columns * 3)); // Conservative estimate for boxes per page
+      const position = findSafePosition(box, targetPage);
+      
+      // Record the placed box
+      placedBoxes.push({
+        id: box.id,
+        x: position.x,
+        y: position.y,
+        width: box.dimensions.width,
+        height: box.dimensions.height,
+        page: position.page
+      });
+      
+      newPositions[box.id] = { x: position.x, y: position.y };
+      newSizes[box.id] = box.dimensions;
+    });
     
     // Update box positions and sizes
     setBoxes(currentBoxes => {
-      return currentBoxes.map((box, index) => {
-        const layout = layoutPositions[index];
-        if (layout) {
-          // Store position for state update
-          newPositions[box.id] = { x: layout.x, y: layout.y };
-          
+      return currentBoxes.map(box => {
+        const newPos = newPositions[box.id];
+        const newSize = newSizes[box.id];
+        if (newPos && newSize) {
           return {
             ...box,
-            position: { x: layout.x, y: layout.y },
-            size: { width: layout.width, height: layout.height }
+            position: newPos,
+            size: newSize
           };
         }
         return box;
@@ -691,10 +798,10 @@ export default function CheatSheetWorkspace() {
     setTimeout(() => saveSheetMutation.mutate(), 100);
     
     toast({
-      title: "Smart layout applied",
-      description: `${boxes.length} boxes arranged with content-aware masonry layout.`,
+      title: "Collision-free layout applied",
+      description: `${boxes.length} boxes arranged with intelligent spacing and automatic collision avoidance.`,
     });
-  }, [boxes, calculateMasonryLayout, saveSheetMutation, toast]);
+  }, [boxes, analyzeBoxContent, saveSheetMutation, toast]);
 
 
 
