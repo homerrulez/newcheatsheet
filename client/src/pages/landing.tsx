@@ -164,7 +164,7 @@ export default function Landing() {
 
                 {/* Feature List */}
                 <div className="bg-white/60 rounded-xl p-4 space-y-3">
-                  <p className="text-sm text-gray-600 text-center mb-3">Create and edit documents with AI-powered assistance and beautiful LaTeX rendering for mathematical content.</p>
+                  <p className="text-sm text-gray-600 text-center mb-3">Create documents with AI assistance and LaTeX rendering for academic content.</p>
                   <div className="flex items-center text-sm text-gray-600">
                     <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
                     Rich text editing
