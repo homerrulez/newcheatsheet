@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, ZoomIn, ZoomOut, Printer } from 'lucide-react';
+import { Save, FileText, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, Highlighter, Strikethrough, Subscript, Superscript, Indent, Outdent, Copy, Scissors, Clipboard, Undo2, Redo2 } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace-sidebar';
 import ChatPanel from '@/components/chat-panel';
 import { apiRequest } from '@/lib/queryClient';
@@ -18,28 +18,59 @@ export default function DocumentWorkspace() {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [fontSize, setFontSize] = useState(12);
   const [fontFamily, setFontFamily] = useState('Times New Roman');
+  const [textColor, setTextColor] = useState('#000000');
+  const [highlightColor, setHighlightColor] = useState('#FFFF00');
   const editorRef = useRef<HTMLDivElement>(null);
+  const pagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Calculate pages based on content
+  // Calculate pages based on actual content height
   const calculatePages = useCallback(() => {
     if (!editorRef.current) return 1;
-    const lineHeight = fontSize * 1.2;
-    const pageHeight = 792; // 11 inches at 72 DPI
-    const marginTop = 72; // 1 inch
-    const marginBottom = 72; // 1 inch
-    const usableHeight = pageHeight - marginTop - marginBottom;
-    const linesPerPage = Math.floor(usableHeight / lineHeight);
-    const lines = content.split('\n').length;
-    return Math.max(1, Math.ceil(lines / linesPerPage));
-  }, [content, fontSize]);
+    
+    // Create a temporary element to measure content height
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = `
+      position: absolute;
+      visibility: hidden;
+      width: 612px;
+      font-family: ${fontFamily};
+      font-size: ${fontSize}pt;
+      line-height: 1.15;
+      padding: 0;
+      margin: 0;
+    `;
+    tempDiv.innerHTML = content || 'A';
+    document.body.appendChild(tempDiv);
+    
+    const contentHeight = tempDiv.scrollHeight;
+    document.body.removeChild(tempDiv);
+    
+    const pageHeight = 648; // 9 inches usable height (11in - 2in margins)
+    const pages = Math.max(1, Math.ceil(contentHeight / pageHeight));
+    
+    return pages;
+  }, [content, fontSize, fontFamily]);
 
   const formatText = (command: string, value?: string) => {
     if (editorRef.current && editorRef.current.focus) {
       editorRef.current.focus();
       document.execCommand(command, false, value);
       setContent(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleContentChange = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML;
+      setContent(newContent);
+      
+      // Auto-pagination: split content across pages if needed
+      const pages = calculatePages();
+      if (pages > 1) {
+        // This will trigger re-render with proper page distribution
+      }
     }
   };
 
@@ -121,19 +152,41 @@ export default function DocumentWorkspace() {
         </div>
       </header>
 
-      {/* Toolbar */}
+      {/* Comprehensive Toolbar */}
       <div className="bg-white border-b border-slate-200 px-6 py-2">
-        <div className="flex items-center space-x-1">
+        <div className="flex flex-wrap items-center gap-1">
+          {/* Clipboard operations */}
+          <Button variant="ghost" size="sm" onClick={() => formatText('undo')} className="p-2">
+            <Undo2 className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('redo')} className="p-2">
+            <Redo2 className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('cut')} className="p-2">
+            <Scissors className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('copy')} className="p-2">
+            <Copy className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('paste')} className="p-2">
+            <Clipboard className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
           {/* Font controls */}
           <select
             value={fontFamily}
             onChange={(e) => setFontFamily(e.target.value)}
-            className="border border-slate-300 rounded px-2 py-1 text-sm"
+            className="border border-slate-300 rounded px-2 py-1 text-sm w-36"
           >
             <option value="Times New Roman">Times New Roman</option>
             <option value="Arial">Arial</option>
             <option value="Calibri">Calibri</option>
             <option value="Georgia">Georgia</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Tahoma">Tahoma</option>
           </select>
           
           <select
@@ -153,113 +206,107 @@ export default function DocumentWorkspace() {
             <option value="24">24</option>
             <option value="28">28</option>
             <option value="32">32</option>
+            <option value="36">36</option>
+            <option value="48">48</option>
+            <option value="72">72</option>
           </select>
 
           <Separator orientation="vertical" className="h-6" />
 
-          {/* Formatting buttons */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('bold')}
-            className="p-2"
-          >
+          {/* Text formatting */}
+          <Button variant="ghost" size="sm" onClick={() => formatText('bold')} className="p-2">
             <Bold className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('italic')}
-            className="p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => formatText('italic')} className="p-2">
             <Italic className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('underline')}
-            className="p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => formatText('underline')} className="p-2">
             <Underline className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('strikeThrough')} className="p-2">
+            <Strikethrough className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('subscript')} className="p-2">
+            <Subscript className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('superscript')} className="p-2">
+            <Superscript className="w-4 h-4" />
           </Button>
 
           <Separator orientation="vertical" className="h-6" />
 
-          {/* Alignment buttons */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('justifyLeft')}
-            className="p-2"
-          >
+          {/* Color controls */}
+          <div className="flex items-center">
+            <input
+              type="color"
+              value={textColor}
+              onChange={(e) => {
+                setTextColor(e.target.value);
+                formatText('foreColor', e.target.value);
+              }}
+              className="w-8 h-6 border border-slate-300 rounded cursor-pointer"
+              title="Text Color"
+            />
+            <Type className="w-3 h-3 ml-1" />
+          </div>
+          
+          <div className="flex items-center">
+            <input
+              type="color"
+              value={highlightColor}
+              onChange={(e) => {
+                setHighlightColor(e.target.value);
+                formatText('backColor', e.target.value);
+              }}
+              className="w-8 h-6 border border-slate-300 rounded cursor-pointer"
+              title="Highlight Color"
+            />
+            <Highlighter className="w-3 h-3 ml-1" />
+          </div>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Alignment */}
+          <Button variant="ghost" size="sm" onClick={() => formatText('justifyLeft')} className="p-2">
             <AlignLeft className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('justifyCenter')}
-            className="p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => formatText('justifyCenter')} className="p-2">
             <AlignCenter className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('justifyRight')}
-            className="p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => formatText('justifyRight')} className="p-2">
             <AlignRight className="w-4 h-4" />
           </Button>
 
           <Separator orientation="vertical" className="h-6" />
 
-          {/* List buttons */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('insertUnorderedList')}
-            className="p-2"
-          >
+          {/* Lists and indentation */}
+          <Button variant="ghost" size="sm" onClick={() => formatText('insertUnorderedList')} className="p-2">
             <List className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => formatText('insertOrderedList')}
-            className="p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => formatText('insertOrderedList')} className="p-2">
             <ListOrdered className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('outdent')} className="p-2">
+            <Outdent className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => formatText('indent')} className="p-2">
+            <Indent className="w-4 h-4" />
           </Button>
 
           <Separator orientation="vertical" className="h-6" />
 
-          {/* Zoom controls */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setZoomLevel(prev => Math.min(200, prev + 10))}
-            className="p-2"
-          >
+          {/* View controls */}
+          <Button variant="ghost" size="sm" onClick={() => setZoomLevel(prev => Math.min(200, prev + 10))} className="p-2">
             <ZoomIn className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-slate-600 px-2">{zoomLevel}%</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))}
-            className="p-2"
-          >
+          <span className="text-sm text-slate-600 px-2 min-w-[50px] text-center">{zoomLevel}%</span>
+          <Button variant="ghost" size="sm" onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))} className="p-2">
             <ZoomOut className="w-4 h-4" />
           </Button>
 
           <Separator orientation="vertical" className="h-6" />
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.print()}
-            className="p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => window.print()} className="p-2">
             <Printer className="w-4 h-4" />
           </Button>
         </div>
@@ -288,68 +335,58 @@ export default function DocumentWorkspace() {
           </div>
           
           {/* Document Editor Area */}
-          <div className="flex-1 overflow-auto p-8" style={{ backgroundColor: '#f8f9fa' }}>
+          <div className="flex-1 overflow-auto p-8" style={{ backgroundColor: '#f8f9fa' }} ref={pagesContainerRef}>
             {currentDocument ? (
               <div className="max-w-4xl mx-auto">
-                {/* Render multiple pages */}
-                {Array.from({ length: calculatePages() }, (_, pageIndex) => (
-                  <div
-                    key={pageIndex}
-                    className="document-page bg-white shadow-lg mb-8 mx-auto relative"
-                    style={{
-                      width: '8.5in',
-                      minHeight: '11in',
-                      padding: '1in',
-                      transform: `scale(${zoomLevel / 100})`,
-                      transformOrigin: 'top center',
-                      marginBottom: pageIndex === calculatePages() - 1 ? '2rem' : '4rem'
-                    }}
-                  >
-                    {/* Page number */}
-                    <div className="absolute bottom-4 right-4 text-xs text-slate-400">
+                {/* Single continuous editor that flows across pages */}
+                <div
+                  className="document-page bg-white shadow-lg mx-auto relative"
+                  style={{
+                    width: '8.5in',
+                    minHeight: `${calculatePages() * 11}in`,
+                    padding: '1in',
+                    transform: `scale(${zoomLevel / 100})`,
+                    transformOrigin: 'top center',
+                    marginBottom: '4rem',
+                    backgroundImage: calculatePages() > 1 ? `repeating-linear-gradient(transparent, transparent 10.5in, #e2e8f0 10.5in, #e2e8f0 11in)` : 'none',
+                    backgroundSize: '100% 11in'
+                  }}
+                >
+                  {/* Page numbers overlay */}
+                  {Array.from({ length: calculatePages() }, (_, pageIndex) => (
+                    <div
+                      key={pageIndex}
+                      className="absolute text-xs text-slate-400 pointer-events-none"
+                      style={{
+                        bottom: `${(calculatePages() - pageIndex - 1) * 11 + 0.25}in`,
+                        right: '0.25in'
+                      }}
+                    >
                       Page {pageIndex + 1}
                     </div>
+                  ))}
 
-                    {/* Content editor */}
-                    {pageIndex === 0 && (
-                      <div
-                        ref={editorRef}
-                        contentEditable
-                        className="w-full h-full outline-none"
-                        style={{
-                          fontFamily: fontFamily,
-                          fontSize: `${fontSize}pt`,
-                          lineHeight: '1.2',
-                          minHeight: '9in'
-                        }}
-                        onInput={(e) => {
-                          setContent(e.currentTarget.innerHTML);
-                        }}
-                        dangerouslySetInnerHTML={{ __html: content }}
-                        data-placeholder="Start writing your document..."
-                      />
-                    )}
-
-                    {/* Additional pages show overflow content */}
-                    {pageIndex > 0 && (
-                      <div
-                        className="w-full h-full"
-                        style={{
-                          fontFamily: fontFamily,
-                          fontSize: `${fontSize}pt`,
-                          lineHeight: '1.2',
-                          color: '#333',
-                          minHeight: '9in'
-                        }}
-                      >
-                        {/* This would contain overflow content from previous pages */}
-                        <div className="text-slate-400 italic">
-                          [Continued from previous page...]
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  {/* Content editor - single continuous area */}
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    className="w-full outline-none"
+                    style={{
+                      fontFamily: fontFamily,
+                      fontSize: `${fontSize}pt`,
+                      lineHeight: '1.15',
+                      minHeight: `${calculatePages() > 1 ? (calculatePages() * 9) : 9}in`,
+                      color: textColor
+                    }}
+                    onInput={handleContentChange}
+                    onPaste={(e) => {
+                      // Handle paste to maintain formatting
+                      setTimeout(handleContentChange, 10);
+                    }}
+                    dangerouslySetInnerHTML={{ __html: content }}
+                    data-placeholder="Start writing your document..."
+                  />
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
