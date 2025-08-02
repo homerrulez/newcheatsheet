@@ -76,57 +76,7 @@ export default function Landing() {
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
-                    {/* Custom template icon with cyan-purple-blue color scheme */}
-                    <svg width="40" height="40" viewBox="0 0 100 100" className="text-gray-800">
-                      <defs>
-                        <linearGradient id="templateGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#67e8f9" />
-                          <stop offset="50%" stopColor="#c084fc" />
-                          <stop offset="100%" stopColor="#60a5fa" />
-                        </linearGradient>
-                        <linearGradient id="templateGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#22d3ee" />
-                          <stop offset="100%" stopColor="#a855f7" />
-                        </linearGradient>
-                        <linearGradient id="templateGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#06b6d4" />
-                          <stop offset="100%" stopColor="#8b5cf6" />
-                        </linearGradient>
-                      </defs>
-                      
-                      {/* Background rounded rectangle */}
-                      <rect x="15" y="15" width="70" height="70" rx="12" fill="url(#templateGradient1)" opacity="0.3"/>
-                      
-                      {/* Top left document */}
-                      <rect x="23" y="23" width="25" height="18" rx="3" fill="url(#templateGradient1)" opacity="0.8"/>
-                      <rect x="25" y="27" width="16" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="25" y="30" width="12" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="25" y="33" width="10" height="2" rx="1" fill="#60a5fa"/>
-                      
-                      {/* Top right document */}
-                      <rect x="52" y="23" width="25" height="18" rx="3" fill="url(#templateGradient2)" opacity="0.8"/>
-                      <rect x="54" y="27" width="16" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="54" y="30" width="12" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="54" y="33" width="10" height="2" rx="1" fill="#60a5fa"/>
-                      
-                      {/* Bottom left document */}
-                      <rect x="23" y="45" width="25" height="18" rx="3" fill="url(#templateGradient3)" opacity="0.8"/>
-                      <rect x="25" y="49" width="16" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="25" y="52" width="12" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="25" y="55" width="10" height="2" rx="1" fill="#60a5fa"/>
-                      
-                      {/* Bottom right document */}
-                      <rect x="52" y="45" width="25" height="18" rx="3" fill="url(#templateGradient2)" opacity="0.8"/>
-                      <rect x="54" y="49" width="16" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="54" y="52" width="12" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="54" y="55" width="10" height="2" rx="1" fill="#60a5fa"/>
-                      
-                      {/* Bottom text lines */}
-                      <rect x="23" y="68" width="20" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="52" y="68" width="20" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="23" y="72" width="15" height="2" rx="1" fill="#60a5fa"/>
-                      <rect x="52" y="72" width="15" height="2" rx="1" fill="#60a5fa"/>
-                    </svg>
+                    <Layout className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Template</h3>
