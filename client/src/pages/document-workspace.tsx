@@ -356,78 +356,82 @@ export default function DocumentWorkspace() {
             </div>
           </div>
           
-          {/* Document Editor Area - True Print Layout */}
+          {/* Document Editor Area - Fixed Page Layout (No Scroll Per Page) */}
           <div 
             className="flex-1 overflow-auto" 
             style={{ backgroundColor: '#f8f9fa', padding: '40px 20px' }} 
             ref={pagesContainerRef}
           >
             {currentDocument ? (
-              <div className="flex flex-col items-center space-y-8">
-                {/* Render proper pages with constrained content areas */}
-                {Array.from({ length: pageCount }, (_, pageIndex) => (
-                  <div
-                    key={pageIndex}
-                    className="document-page bg-white shadow-xl relative border border-slate-300"
-                    style={{
-                      width: `${pageSize.width * zoomLevel / 100}in`,
-                      height: `${pageSize.height * zoomLevel / 100}in`,
-                      overflow: 'hidden', // Strict clipping
-                    }}
-                  >
-                    {/* Page content area with strict margins */}
+              <div className="max-w-none mx-auto">
+                {/* Single unified editor positioned absolutely over page backgrounds */}
+                <div className="relative">
+                  {/* Page backgrounds (visual only) */}
+                  {Array.from({ length: pageCount }, (_, pageIndex) => (
                     <div
-                      className="absolute inset-0"
+                      key={`bg-${pageIndex}`}
+                      className="bg-white shadow-xl border border-slate-300 mx-auto"
                       style={{
-                        padding: `${Math.min(1, pageSize.width * 0.12) * zoomLevel / 100}in`,
-                        boxSizing: 'border-box'
+                        width: `${pageSize.width * zoomLevel / 100}in`,
+                        height: `${pageSize.height * zoomLevel / 100}in`,
+                        marginBottom: '20px',
+                        position: 'relative'
                       }}
                     >
+                      {/* Page margins guide */}
+                      <div
+                        className="absolute inset-0 border border-dashed border-slate-200"
+                        style={{
+                          margin: `${1 * zoomLevel / 100}in`,
+                        }}
+                      />
+                      
                       {/* Page number */}
                       <div 
-                        className="absolute bottom-3 right-4 text-xs text-slate-400 pointer-events-none z-20"
-                        style={{ 
-                          fontSize: `${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt`,
-                        }}
+                        className="absolute bottom-3 right-4 text-xs text-slate-400"
+                        style={{ fontSize: `${10 * zoomLevel / 100}pt` }}
                       >
                         {pageIndex + 1}
                       </div>
+                    </div>
+                  ))}
 
-                      {/* Editable content area for this page */}
-                      <div
-                        ref={pageIndex === 0 ? editorRef : null}
-                        contentEditable={true}
-                        className="w-full outline-none relative z-10"
-                        style={{
-                          fontFamily: fontFamily,
-                          fontSize: `${fontSize * zoomLevel / 100}pt`,
-                          lineHeight: Math.max(1.2, 1.5 * (pageSize.height / 11)),
-                          color: textColor,
-                          height: `${(pageSize.height - Math.min(2.5, pageSize.width * 0.3)) * zoomLevel / 100}in`,
-                          overflow: 'hidden', // Clip content to this page
-                          wordWrap: 'break-word',
-                          wordBreak: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          width: '100%',
-                          maxWidth: '100%'
-                        }}
-                        onInput={handleContentChange}
-                        onPaste={(e) => {
-                          e.preventDefault();
-                          const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
-                          if (pageIndex === 0) {
-                            setContent(prev => prev + paste);
-                          }
-                          setTimeout(handleContentChange, 10);
-                        }}
-                        onFocus={() => setCurrentPageIndex(pageIndex)}
-                        data-placeholder={pageIndex === 0 && !content ? "Start writing your document..." : undefined}
-                      >
-                        {pageIndex === 0 ? content : getPageContent(pageIndex)}
-                      </div>
+                  {/* Single continuous editor overlaid on pages */}
+                  <div
+                    className="absolute top-0 left-1/2 transform -translate-x-1/2"
+                    style={{
+                      width: `${(pageSize.width - 2) * zoomLevel / 100}in`, // Content width (page minus margins)
+                      zIndex: 10
+                    }}
+                  >
+                    <div
+                      ref={editorRef}
+                      contentEditable
+                      className="outline-none w-full"
+                      style={{
+                        fontFamily: fontFamily,
+                        fontSize: `${fontSize * zoomLevel / 100}pt`,
+                        lineHeight: '1.5',
+                        color: textColor,
+                        wordWrap: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        minHeight: `${pageCount * (pageSize.height - 2) * zoomLevel / 100}in`,
+                        padding: `${1 * zoomLevel / 100}in 0`,
+                        background: 'transparent'
+                      }}
+                      onInput={handleContentChange}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
+                        setContent(prev => prev + paste);
+                        setTimeout(handleContentChange, 10);
+                      }}
+                      data-placeholder="Start writing your document..."
+                    >
+                      {content}
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
