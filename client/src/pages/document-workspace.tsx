@@ -77,12 +77,9 @@ function DocumentRenderer({
   const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
   const contentHeight = pageHeight - 128; // 64px padding top/bottom
   
-  // Measure ProseMirror node height accurately
-  const measureNodeHeight = useCallback((node: any, nodeIndex: number): number => {
-    if (!editor) return 0;
-    
+  // Measure content height using proper HTML serialization
+  const measureContentHeight = useCallback((htmlContent: string): number => {
     try {
-      // Create a temporary container with exact page styling
       const measureDiv = document.createElement('div');
       measureDiv.style.cssText = `
         position: absolute;
@@ -97,90 +94,37 @@ function DocumentRenderer({
         margin: 0;
       `;
       
-      // Render the actual node using Tiptap's HTML serializer
-      const nodeHTML = editor.schema.nodeFromJSON(node).toHTML();
-      measureDiv.innerHTML = nodeHTML;
-      
+      measureDiv.innerHTML = htmlContent;
       document.body.appendChild(measureDiv);
       const height = measureDiv.offsetHeight;
       document.body.removeChild(measureDiv);
       
       return height;
     } catch (error) {
-      console.error('Node measurement error:', error);
+      console.error('Content measurement error:', error);
       return 20; // Fallback height
     }
-  }, [editor, pageWidth, fontFamily, fontSize]);
+  }, [pageWidth, fontFamily, fontSize]);
   
-  // Calculate proper page layouts based on ProseMirror document structure
-  const calculatePageLayouts = useCallback(() => {
+  // Calculate page count based on total content height (simplified approach)
+  const calculatePageCount = useCallback(() => {
     if (!editor) return;
     
     try {
-      const doc = editor.state.doc;
+      // Get the full document as HTML
+      const fullHTML = editor.getHTML();
+      const totalContentHeight = measureContentHeight(fullHTML);
+      
+      // Calculate how many pages we need
+      const pagesNeeded = Math.max(1, Math.ceil(totalContentHeight / contentHeight));
+      
+      // Create simple page layouts
       const layouts: DocumentPageLayout[] = [];
-      let currentLayout: DocumentPageLayout = {
-        pageIndex: 0,
-        nodes: [],
-        totalHeight: 0,
-        startPos: 0,
-        endPos: 0
-      };
-      
-      let docPosition = 0;
-      
-      // Walk through each top-level node in the document
-      doc.content.forEach((node: any, offset: number, index: number) => {
-        const nodeHeight = measureNodeHeight(node, index);
-        const nodeStartPos = docPosition;
-        const nodeEndPos = docPosition + node.nodeSize;
-        
-        const pageNode: PageNode = {
-          node,
-          nodeIndex: index,
-          startPos: nodeStartPos,
-          endPos: nodeEndPos,
-          height: nodeHeight
-        };
-        
-        // Check if node fits on current page
-        if (currentLayout.totalHeight + nodeHeight > contentHeight && currentLayout.nodes.length > 0) {
-          // Finalize current page
-          currentLayout.endPos = currentLayout.nodes[currentLayout.nodes.length - 1].endPos;
-          layouts.push(currentLayout);
-          
-          // Start new page
-          currentLayout = {
-            pageIndex: layouts.length,
-            nodes: [pageNode],
-            totalHeight: nodeHeight,
-            startPos: nodeStartPos,
-            endPos: nodeEndPos
-          };
-        } else {
-          // Add to current page
-          currentLayout.nodes.push(pageNode);
-          currentLayout.totalHeight += nodeHeight;
-          if (currentLayout.nodes.length === 1) {
-            currentLayout.startPos = nodeStartPos;
-          }
-          currentLayout.endPos = nodeEndPos;
-        }
-        
-        docPosition = nodeEndPos;
-      });
-      
-      // Add final page
-      if (currentLayout.nodes.length > 0) {
-        layouts.push(currentLayout);
-      }
-      
-      // Ensure at least one page
-      if (layouts.length === 0) {
+      for (let i = 0; i < pagesNeeded; i++) {
         layouts.push({
-          pageIndex: 0,
-          nodes: [],
-          totalHeight: 0,
+          pageIndex: i,
+          nodes: [], // Simplified - we'll use HTML splitting instead
+          totalHeight: i === pagesNeeded - 1 ? totalContentHeight % contentHeight : contentHeight,
           startPos: 0,
           endPos: 0
         });
@@ -188,7 +132,7 @@ function DocumentRenderer({
       
       setPageLayouts(layouts);
     } catch (error) {
-      console.error('Page layout calculation error:', error);
+      console.error('Page calculation error:', error);
       setPageLayouts([{
         pageIndex: 0,
         nodes: [],
@@ -197,7 +141,7 @@ function DocumentRenderer({
         endPos: 0
       }]);
     }
-  }, [editor, measureNodeHeight, contentHeight]);
+  }, [editor, measureContentHeight, contentHeight]);
   
   // Get which page contains a given document position
   const getPageForPosition = useCallback((pos: number): number => {
@@ -245,8 +189,8 @@ function DocumentRenderer({
     if (!editor) return;
     
     const handleUpdate = () => {
-      // Recalculate page layouts when content changes
-      setTimeout(calculatePageLayouts, 100);
+      // Recalculate page count when content changes
+      setTimeout(calculatePageCount, 100);
     };
     
     const handleSelectionUpdate = ({ editor }: { editor: any }) => {
@@ -260,103 +204,84 @@ function DocumentRenderer({
     editor.on('selectionUpdate', handleSelectionUpdate);
     
     // Initial calculation
-    calculatePageLayouts();
+    calculatePageCount();
     
     return () => {
       editor.off('update', handleUpdate);
       editor.off('selectionUpdate', handleSelectionUpdate);
     };
-  }, [editor, calculatePageLayouts, getPageForPosition]);
+  }, [editor, calculatePageCount, getPageForPosition]);
   
   // Real-time layout updates
   useEffect(() => {
-    const timer = setTimeout(calculatePageLayouts, 300);
+    const timer = setTimeout(calculatePageCount, 300);
     return () => clearTimeout(timer);
-  }, [calculatePageLayouts, documentContent]);
+  }, [calculatePageCount, documentContent]);
 
-  // Render page-specific content while preserving formatting
+  // Simplified rendering - just show the continuous editor
   const renderPageContent = (pageLayout: DocumentPageLayout) => {
-    if (!editor || pageLayout.nodes.length === 0) {
-      return <div className="prose prose-sm max-w-none min-h-[200px]"></div>;
-    }
-    
-    // Check if this page contains the cursor
-    const isActivePage = pageLayout.pageIndex === currentPage;
-    
-    if (isActivePage) {
-      // Active page: Show live editor with proper document slice
-      return (
-        <EditorContent 
-          editor={editor}
-          className="focus:outline-none prose prose-sm max-w-none min-h-[200px]"
-        />
-      );
-    } else {
-      // Inactive page: Render static content from nodes while preserving formatting
-      const pageHTML = pageLayout.nodes.map(pageNode => {
-        try {
-          // Use Tiptap's proper HTML serialization to preserve formatting
-          const proseMirrorNode = editor.schema.nodeFromJSON(pageNode.node);
-          return proseMirrorNode.toHTML();
-        } catch (error) {
-          console.error('Node HTML conversion error:', error);
-          return '<p></p>';
-        }
-      }).join('');
-      
-      return (
-        <div 
-          className="prose prose-sm max-w-none min-h-[200px] cursor-text"
-          dangerouslySetInnerHTML={{ __html: pageHTML }}
-        />
-      );
-    }
+    // For now, let's just show the continuous editor approach that works
+    // We'll make it visual-only pages with one continuous editor overlay
+    return null; // Content will be rendered by the overlay approach
   };
 
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
       {/* Page count status like Microsoft Word */}
       <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Page {currentPage + 1} of {pageLayouts.length}
+        Page 1 of {pageLayouts.length}
       </div>
       
-      <div ref={containerRef} className="space-y-8">
-        {/* Render each page with proper content and interactivity */}
-        {pageLayouts.map((pageLayout) => (
+      <div ref={containerRef} className="relative">
+        {/* Visual page backgrounds */}
+        <div className="mx-auto" style={{ width: `${pageWidth}px` }}>
+          {pageLayouts.map((pageLayout) => (
+            <div
+              key={pageLayout.pageIndex}
+              className="bg-white shadow-lg mb-8 pointer-events-none"
+              style={{
+                width: `${pageWidth}px`,
+                height: `${pageHeight}px`,
+                position: 'relative',
+              }}
+            >
+              {/* Page number */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+                {pageLayout.pageIndex + 1}
+              </div>
+            </div>
+          ))}
+          
+          {/* Single continuous editor overlaid on all pages */}
           <div
-            key={pageLayout.pageIndex}
-            className="mx-auto bg-white shadow-lg relative cursor-text"
+            className="absolute top-0 left-0 pointer-events-auto"
             style={{
               width: `${pageWidth}px`,
-              height: `${pageHeight}px`,
-              overflow: 'hidden',
+              minHeight: `${pageLayouts.length * (pageHeight + 32)}px`,
             }}
-            onClick={(e) => handlePageClick(pageLayout.pageIndex, e)}
           >
-            {/* Page content area */}
             <div 
-              className="p-16 h-full overflow-hidden"
               style={{
                 fontFamily,
                 fontSize: `${fontSize}pt`,
                 color: textColor,
                 lineHeight: '1.6',
+                padding: '64px',
+                minHeight: '100%',
               }}
             >
-              {renderPageContent(pageLayout)}
+              {editor && (
+                <EditorContent 
+                  editor={editor}
+                  className="focus:outline-none prose prose-sm max-w-none"
+                  style={{
+                    minHeight: '100%',
+                  }}
+                />
+              )}
             </div>
-            
-            {/* Page number */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
-              {pageLayout.pageIndex + 1}
-            </div>
-            
-            {/* Active page indicator */}
-            {pageLayout.pageIndex === currentPage && (
-              <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full pointer-events-none"></div>
-            )}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
