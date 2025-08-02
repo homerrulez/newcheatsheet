@@ -83,7 +83,7 @@ export default function Landing() {
                 <p className="text-lg text-gray-700 mb-6 text-center">Smart Templates Powered by AI</p>
 
                 {/* Feature List */}
-                <div className="bg-gradient-to-br from-white/70 via-cyan-50/60 to-purple-50/50 backdrop-blur-md border border-white/40 rounded-xl p-4 space-y-3 shadow-inner">
+                <div className="bg-gradient-to-br from-white/60 via-cyan-50/45 to-purple-50/35 backdrop-blur-xl border border-white/50 rounded-xl p-4 space-y-3 shadow-lg shadow-cyan-200/30 ring-1 ring-white/20">
                   <p className="text-sm text-gray-700 text-center mb-3 font-medium">Use pre-designed templates with structured layouts perfect for academic reference sheets.</p>
                   <div className="flex items-center text-sm text-gray-700">
                     <Check className="w-4 h-4 text-emerald-600 mr-3 flex-shrink-0" />
@@ -129,7 +129,7 @@ export default function Landing() {
                 <p className="text-lg text-gray-700 mb-6 text-center">Cheat Sheets Powered by AI</p>
 
                 {/* Feature List */}
-                <div className="bg-gradient-to-br from-white/75 via-purple-50/65 to-blue-50/55 backdrop-blur-md border border-white/40 rounded-xl p-4 space-y-3 shadow-inner">
+                <div className="bg-gradient-to-br from-white/65 via-purple-50/50 to-blue-50/40 backdrop-blur-xl border border-white/50 rounded-xl p-4 space-y-3 shadow-lg shadow-purple-200/30 ring-1 ring-white/20">
                   <p className="text-sm text-gray-700 text-center mb-3 font-medium">Generate organized cheat sheets with auto-resizing content boxes and intelligent formatting.</p>
                   <div className="flex items-center text-sm text-gray-700">
                     <Check className="w-4 h-4 text-emerald-600 mr-3 flex-shrink-0" />
@@ -175,7 +175,7 @@ export default function Landing() {
                 <p className="text-lg text-gray-700 mb-6 text-center">Smart Documents Powered by AI</p>
 
                 {/* Feature List */}
-                <div className="bg-gradient-to-br from-white/80 via-blue-50/70 to-green-50/60 backdrop-blur-md border border-white/40 rounded-xl p-4 space-y-3 shadow-inner">
+                <div className="bg-gradient-to-br from-white/70 via-blue-50/55 to-green-50/45 backdrop-blur-xl border border-white/50 rounded-xl p-4 space-y-3 shadow-lg shadow-blue-200/30 ring-1 ring-white/20">
                   <p className="text-sm text-gray-700 text-center mb-3 font-medium">Create documents with AI assistance and LaTeX rendering for academic content.</p>
                   <div className="flex items-center text-sm text-gray-700">
                     <Check className="w-4 h-4 text-emerald-600 mr-3 flex-shrink-0" />
