@@ -356,82 +356,135 @@ export default function DocumentWorkspace() {
             </div>
           </div>
           
-          {/* Document Editor Area - Fixed Page Layout (No Scroll Per Page) */}
+          {/* Embedded Document Editor - Isolated from React */}
           <div 
-            className="flex-1 overflow-auto" 
-            style={{ backgroundColor: '#f8f9fa', padding: '40px 20px' }} 
+            className="flex-1 overflow-hidden" 
+            style={{ backgroundColor: '#f8f9fa', padding: '20px' }} 
             ref={pagesContainerRef}
           >
             {currentDocument ? (
-              <div className="max-w-none mx-auto">
-                {/* Single unified editor positioned absolutely over page backgrounds */}
-                <div className="relative">
-                  {/* Page backgrounds (visual only) */}
-                  {Array.from({ length: pageCount }, (_, pageIndex) => (
-                    <div
-                      key={`bg-${pageIndex}`}
-                      className="bg-white shadow-xl border border-slate-300 mx-auto"
-                      style={{
-                        width: `${pageSize.width * zoomLevel / 100}in`,
-                        height: `${pageSize.height * zoomLevel / 100}in`,
-                        marginBottom: '20px',
-                        position: 'relative'
-                      }}
-                    >
-                      {/* Page margins guide */}
-                      <div
-                        className="absolute inset-0 border border-dashed border-slate-200"
-                        style={{
-                          margin: `${1 * zoomLevel / 100}in`,
-                        }}
-                      />
+              <div className="w-full h-full flex justify-center">
+                <iframe
+                  ref={editorRef}
+                  className="border border-slate-300 shadow-xl"
+                  style={{
+                    width: `${pageSize.width * zoomLevel / 100}in`,
+                    height: '100%',
+                    backgroundColor: 'white'
+                  }}
+                  srcDoc={`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <style>
+                        body {
+                          margin: 0;
+                          padding: ${1 * zoomLevel / 100}in;
+                          font-family: ${fontFamily};
+                          font-size: ${fontSize * zoomLevel / 100}pt;
+                          line-height: 1.5;
+                          color: ${textColor};
+                          background: white;
+                          width: ${(pageSize.width - 2) * zoomLevel / 100}in;
+                          min-height: calc(100vh - ${2 * zoomLevel / 100}in);
+                          box-sizing: border-box;
+                          word-wrap: break-word;
+                          overflow-wrap: break-word;
+                          page-break-inside: avoid;
+                        }
+                        
+                        @media print {
+                          body {
+                            width: ${pageSize.width}in;
+                            height: ${pageSize.height}in;
+                            margin: 0;
+                            padding: 1in;
+                          }
+                          @page {
+                            size: ${pageSize.width}in ${pageSize.height}in;
+                            margin: 0;
+                          }
+                        }
+                        
+                        /* Page break indicators */
+                        .page-break {
+                          border-top: 2px dashed #ccc;
+                          margin: 20px 0;
+                          position: relative;
+                        }
+                        
+                        .page-break::after {
+                          content: 'Page Break';
+                          position: absolute;
+                          top: -10px;
+                          left: 50%;
+                          transform: translateX(-50%);
+                          background: white;
+                          padding: 0 10px;
+                          font-size: 10px;
+                          color: #999;
+                        }
+                        
+                        p {
+                          margin: 0 0 12px 0;
+                        }
+                        
+                        [contenteditable]:empty:before {
+                          content: "Start writing your document...";
+                          color: #999;
+                          font-style: italic;
+                        }
+                      </style>
+                    </head>
+                    <body contenteditable="true" spellcheck="true">
+                      ${content || ''}
+                    </body>
+                    <script>
+                      // Handle content changes
+                      document.body.addEventListener('input', function() {
+                        const content = document.body.innerHTML;
+                        window.parent.postMessage({ type: 'contentChange', content }, '*');
+                      });
                       
-                      {/* Page number */}
-                      <div 
-                        className="absolute bottom-3 right-4 text-xs text-slate-400"
-                        style={{ fontSize: `${10 * zoomLevel / 100}pt` }}
-                      >
-                        {pageIndex + 1}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Single continuous editor overlaid on pages */}
-                  <div
-                    className="absolute top-0 left-1/2 transform -translate-x-1/2"
-                    style={{
-                      width: `${(pageSize.width - 2) * zoomLevel / 100}in`, // Content width (page minus margins)
-                      zIndex: 10
-                    }}
-                  >
-                    <div
-                      ref={editorRef}
-                      contentEditable
-                      className="outline-none w-full"
-                      style={{
-                        fontFamily: fontFamily,
-                        fontSize: `${fontSize * zoomLevel / 100}pt`,
-                        lineHeight: '1.5',
-                        color: textColor,
-                        wordWrap: 'break-word',
-                        whiteSpace: 'pre-wrap',
-                        minHeight: `${pageCount * (pageSize.height - 2) * zoomLevel / 100}in`,
-                        padding: `${1 * zoomLevel / 100}in 0`,
-                        background: 'transparent'
-                      }}
-                      onInput={handleContentChange}
-                      onPaste={(e) => {
+                      // Handle paste
+                      document.body.addEventListener('paste', function(e) {
                         e.preventDefault();
-                        const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
-                        setContent(prev => prev + paste);
-                        setTimeout(handleContentChange, 10);
-                      }}
-                      data-placeholder="Start writing your document..."
-                    >
-                      {content}
-                    </div>
-                  </div>
-                </div>
+                        const paste = e.clipboardData.getData('text/plain');
+                        document.execCommand('insertText', false, paste);
+                      });
+                      
+                      // Auto-focus
+                      document.body.focus();
+                      
+                      // Insert page breaks automatically based on content height
+                      function checkPageBreaks() {
+                        const pageHeight = ${(pageSize.height - 2) * 72 * zoomLevel / 100}; // Convert to pixels
+                        const content = document.body;
+                        const currentHeight = content.scrollHeight;
+                        
+                        if (currentHeight > pageHeight) {
+                          // Logic for page breaking would go here
+                          // For now, just ensure content fits
+                        }
+                      }
+                      
+                      // Check page breaks on content change
+                      document.body.addEventListener('input', checkPageBreaks);
+                    </script>
+                    </html>
+                  `}
+                  onLoad={() => {
+                    // Handle messages from iframe
+                    const handleMessage = (event: MessageEvent) => {
+                      if (event.data.type === 'contentChange') {
+                        setContent(event.data.content);
+                      }
+                    };
+                    
+                    window.addEventListener('message', handleMessage);
+                    return () => window.removeEventListener('message', handleMessage);
+                  }}
+                />
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
