@@ -72,7 +72,7 @@ export default function Landing() {
         </div>
 
         {/* Workspace Cards and Video Previews */}
-        <div className="grid md:grid-cols-3 gap-16 mb-16">
+        <div className="grid md:grid-cols-3 gap-16 mb-16 scale-[1.4]">
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
@@ -240,7 +240,7 @@ export default function Landing() {
         </div>
 
         {/* Additional Features Section */}
-        <div className="grid grid-cols-3 gap-8 mt-16 scale-[1.4]">
+        <div className="grid grid-cols-3 gap-6 mt-16">
           {/* Academic Excellence */}
           <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
             <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
