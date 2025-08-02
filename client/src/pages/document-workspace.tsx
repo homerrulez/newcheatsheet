@@ -434,7 +434,7 @@ export default function DocumentWorkspace() {
                         
                         .page-content {
                           width: 100%;
-                          height: 100%;
+                          height: ${(pageSize.height - 2) * zoomLevel / 100}in;
                           font-size: ${fontSize * zoomLevel / 100}pt;
                           line-height: 1.5;
                           color: ${textColor};
@@ -444,6 +444,8 @@ export default function DocumentWorkspace() {
                           border: none;
                           resize: none;
                           overflow: hidden;
+                          white-space: pre-wrap;
+                          box-sizing: border-box;
                         }
                         
                         .page-number {
@@ -512,22 +514,23 @@ export default function DocumentWorkspace() {
                         }
                         
                         function checkPagination() {
-                          const content = getAllContent();
-                          const neededPages = Math.max(1, Math.ceil(content.length / CHARS_PER_PAGE));
-                          
-                          if (neededPages > pageCount) {
-                            // Add pages
-                            for (let i = pageCount + 1; i <= neededPages; i++) {
-                              addPage(i);
-                            }
-                          } else if (neededPages < pageCount && pageCount > 1) {
-                            // Remove empty pages
-                            for (let i = pageCount; i > neededPages; i--) {
-                              removePage(i);
+                          // Check if current page content exceeds page height
+                          for (let i = 1; i <= pageCount; i++) {
+                            const pageContent = document.getElementById('pageContent' + i);
+                            if (pageContent) {
+                              const contentHeight = pageContent.scrollHeight;
+                              const pageHeight = pageContent.offsetHeight;
+                              
+                              if (contentHeight > pageHeight) {
+                                // Content overflow - need to move excess to next page
+                                moveOverflowToNextPage(i);
+                                break;
+                              }
                             }
                           }
                           
-                          redistributeContent();
+                          // Remove empty trailing pages
+                          removeEmptyTrailingPages();
                         }
                         
                         function addPage(pageNum) {
@@ -544,6 +547,7 @@ export default function DocumentWorkspace() {
                           const pageContent = document.getElementById('pageContent' + pageNum);
                           pageContent.addEventListener('input', handleContentChange);
                           pageContent.addEventListener('paste', handlePaste);
+                          pageContent.addEventListener('keydown', handleKeyDown);
                           
                           pageCount = pageNum;
                         }
@@ -556,17 +560,70 @@ export default function DocumentWorkspace() {
                           }
                         }
                         
-                        function redistributeContent() {
-                          const allContent = getAllContent();
+                        function moveOverflowToNextPage(pageNum) {
+                          const pageContent = document.getElementById('pageContent' + pageNum);
+                          if (!pageContent) return;
                           
-                          for (let i = 1; i <= pageCount; i++) {
-                            const startIndex = (i - 1) * CHARS_PER_PAGE;
-                            const endIndex = startIndex + CHARS_PER_PAGE;
-                            const pageContent = document.getElementById('pageContent' + i);
+                          // Create next page if it doesn't exist
+                          if (pageNum === pageCount) {
+                            addPage(pageNum + 1);
+                          }
+                          
+                          const nextPageContent = document.getElementById('pageContent' + (pageNum + 1));
+                          if (!nextPageContent) return;
+                          
+                          // Use a temporary container to measure content that fits
+                          const tempDiv = document.createElement('div');
+                          tempDiv.style.cssText = pageContent.style.cssText;
+                          tempDiv.style.position = 'absolute';
+                          tempDiv.style.visibility = 'hidden';
+                          tempDiv.style.height = pageContent.offsetHeight + 'px';
+                          document.body.appendChild(tempDiv);
+                          
+                          const originalContent = pageContent.innerText;
+                          let fitContent = '';
+                          let remainingContent = '';
+                          
+                          // Binary search to find maximum content that fits
+                          let low = 0;
+                          let high = originalContent.length;
+                          
+                          while (low < high) {
+                            const mid = Math.floor((low + high + 1) / 2);
+                            tempDiv.innerText = originalContent.slice(0, mid);
                             
-                            if (pageContent) {
-                              const pageText = allContent.slice(startIndex, endIndex);
-                              pageContent.innerText = pageText;
+                            if (tempDiv.scrollHeight <= tempDiv.offsetHeight) {
+                              low = mid;
+                            } else {
+                              high = mid - 1;
+                            }
+                          }
+                          
+                          fitContent = originalContent.slice(0, low);
+                          remainingContent = originalContent.slice(low);
+                          
+                          // Apply the split
+                          pageContent.innerText = fitContent;
+                          
+                          // Prepend remaining content to next page
+                          const nextPageText = nextPageContent.innerText || '';
+                          nextPageContent.innerText = remainingContent + nextPageText;
+                          
+                          document.body.removeChild(tempDiv);
+                          
+                          // Check if next page also needs splitting
+                          if (nextPageContent.scrollHeight > nextPageContent.offsetHeight) {
+                            moveOverflowToNextPage(pageNum + 1);
+                          }
+                        }
+                        
+                        function removeEmptyTrailingPages() {
+                          for (let i = pageCount; i > 1; i--) {
+                            const pageContent = document.getElementById('pageContent' + i);
+                            if (pageContent && pageContent.innerText.trim() === '') {
+                              removePage(i);
+                            } else {
+                              break;
                             }
                           }
                         }
@@ -599,13 +656,69 @@ export default function DocumentWorkspace() {
                           }
                         });
                         
-                        // Set up event listeners
-                        document.getElementById('pageContent1').addEventListener('input', handleContentChange);
-                        document.getElementById('pageContent1').addEventListener('paste', handlePaste);
+                        // Handle cursor navigation between pages
+                        function handleKeyDown(e) {
+                          const currentPage = e.target;
+                          const pageNum = parseInt(currentPage.id.replace('pageContent', ''));
+                          
+                          // Handle cursor at end of page
+                          if (e.key === 'ArrowDown' || e.key === 'End') {
+                            const selection = window.getSelection();
+                            const range = selection.getRangeAt(0);
+                            const rect = range.getBoundingClientRect();
+                            const pageRect = currentPage.getBoundingClientRect();
+                            
+                            // If cursor is near bottom of page, move to next page
+                            if (rect.bottom >= pageRect.bottom - 20) {
+                              const nextPage = document.getElementById('pageContent' + (pageNum + 1));
+                              if (nextPage) {
+                                e.preventDefault();
+                                nextPage.focus();
+                                // Set cursor to beginning of next page
+                                const range = document.createRange();
+                                range.setStart(nextPage, 0);
+                                range.collapse(true);
+                                selection.removeAllRanges();
+                                selection.addRange(range);
+                              }
+                            }
+                          }
+                          
+                          // Handle cursor at top of page
+                          if (e.key === 'ArrowUp' || e.key === 'Home') {
+                            if (pageNum > 1) {
+                              const selection = window.getSelection();
+                              const range = selection.getRangeAt(0);
+                              const rect = range.getBoundingClientRect();
+                              const pageRect = currentPage.getBoundingClientRect();
+                              
+                              // If cursor is near top of page, move to previous page
+                              if (rect.top <= pageRect.top + 20) {
+                                const prevPage = document.getElementById('pageContent' + (pageNum - 1));
+                                if (prevPage) {
+                                  e.preventDefault();
+                                  prevPage.focus();
+                                  // Set cursor to end of previous page
+                                  const range = document.createRange();
+                                  range.selectNodeContents(prevPage);
+                                  range.collapse(false);
+                                  selection.removeAllRanges();
+                                  selection.addRange(range);
+                                }
+                              }
+                            }
+                          }
+                        }
+                        
+                        // Set up event listeners for first page
+                        const page1Content = document.getElementById('pageContent1');
+                        page1Content.addEventListener('input', handleContentChange);
+                        page1Content.addEventListener('paste', handlePaste);
+                        page1Content.addEventListener('keydown', handleKeyDown);
                         
                         // Auto-focus first page
                         setTimeout(() => {
-                          document.getElementById('pageContent1').focus();
+                          page1Content.focus();
                         }, 100);
                       </script>
                     </html>
