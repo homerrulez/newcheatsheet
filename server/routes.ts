@@ -148,20 +148,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "OpenAI API key not configured" });
       }
 
-      // Enhanced system prompt for document control commands
-      const systemPrompt = `You are an advanced AI assistant for a Microsoft Word-like document editor. You can help users with writing, editing, and formatting their documents.
+      // Natural language system prompt for document editing
+      const systemPrompt = `You are an intelligent writing assistant for a Microsoft Word-like document editor. You understand natural language requests and help users create and edit documents.
 
-DOCUMENT COMMANDS: You can execute these commands by including them in your response:
+IMPORTANT: When users ask for content creation (like "create a title about Ali and make it adventurous"), respond ONLY with the actual content they want added to their document. DO NOT include commands or explanations in the content.
+
+Examples:
+- User: "create a title about Ali and make it adventurous" 
+  Response: "The Life and Adventures of Ali"
+- User: "add a paragraph about cats"
+  Response: "Cats are fascinating creatures known for their independence and grace..."
+- User: "make the word 'exciting' bold"
+  Response: FORMAT_TEXT "exciting" BOLD
+
+DOCUMENT COMMANDS (only use when user explicitly asks for document manipulation):
 - DELETE_PAGE <number>: Delete/clear a specific page
-- FORMAT_TEXT "<text>" BOLD|ITALIC|UNDERLINE: Apply formatting to specific text
-- ADD_TEXT "<text>" TO PAGE <number>|START|END: Add text to specific location
+- FORMAT_TEXT "<text>" BOLD|ITALIC|UNDERLINE: Apply formatting to specific text  
 - REPLACE_TEXT "<old>" WITH "<new>": Replace text in the document
-- INSERT_PAGE BEFORE|AFTER <number>: Insert a new page
 
-RESPONSE FORMAT:
-1. If the user asks for document manipulation, analyze their request and respond with the appropriate command
-2. If the user asks for content creation, provide the content that can be inserted
-3. Always be helpful and explain what you're doing
+RESPONSE GUIDELINES:
+1. For content creation requests: Provide ONLY the content to be inserted
+2. For formatting requests: Use the appropriate FORMAT_TEXT command
+3. For document manipulation: Use the appropriate document command
+4. Keep content concise and relevant to the request
 
 Current document content:
 ${documentContent}
@@ -230,10 +239,23 @@ User request: ${content}`;
         }
       }
 
-      // If no command detected but response looks like content, treat as insertable text
-      if (!documentCommand && responseContent.length > 20 && !responseContent.includes('I ')) {
-        insertText = responseContent;
-        insertAtEnd = true;
+      // Enhanced content detection for natural language responses
+      if (!documentCommand) {
+        // Check if response is pure content (not conversational)
+        const isConversational = responseContent.match(/\b(I am|I'll|I will|I can|I would|Let me|Here's|This is)\b/i);
+        const isShortContent = responseContent.length > 3 && responseContent.length < 200;
+        const isLikelyContent = !isConversational && (
+          isShortContent || 
+          responseContent.startsWith('"') || 
+          /^[A-Z][^.!?]*$/.test(responseContent.trim()) || // Title-like format
+          responseContent.split('\n').length <= 3 // Short paragraph format
+        );
+        
+        if (isLikelyContent) {
+          // Clean up any residual quotes
+          insertText = responseContent.replace(/^["']|["']$/g, '').trim();
+          insertAtEnd = true;
+        }
       }
 
       // Save user message

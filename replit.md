@@ -10,6 +10,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### August 2, 2025 - Natural Language ChatGPT Integration & Layout Engine
+- **Issues Resolved**: 
+  - Fixed ChatGPT adding command text instead of actual content when users request natural content creation
+  - Enhanced natural language understanding to respond with only the obvious content, not explanations
+  - Improved content detection to distinguish between conversational responses and insertable content
+- **Advanced Layout Engine**: Comprehensive automatic pagination and content flow management
+  - **LAYOUT_TEXT Function**: Automatically splits content into chunks and distributes across pages
+  - **Content Reflow**: Dynamic reflow when font size or page size changes with smart scaling
+  - **PREVIEW_LAYOUT Mode**: Shows estimated page count before actual content insertion
+  - **Page Metrics**: Real-time display of characters/line, lines/page, total capacity
+  - **7 Page Sizes**: All major formats (Letter, Legal, A4, A3, Tabloid, Executive, Ledger) with auto-scaling
+- **Natural Language Processing**: 
+  - **Conversational Understanding**: "create a title about Ali and make it adventurous" → adds "The Life and Adventures of Ali"
+  - **Content vs Commands**: Distinguishes between content creation requests and document manipulation commands
+  - **Smart Content Detection**: Identifies pure content vs conversational responses automatically
+
 ### August 2, 2025 - Complete Document Workspace Overhaul: Best Microsoft Word Experience
 - **Issues Resolved**: 
   - Chat session creation validation errors fixed
