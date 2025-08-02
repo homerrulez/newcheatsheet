@@ -100,47 +100,48 @@ function DocumentRenderer({
   
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      <div ref={containerRef} className="space-y-8 relative">
-        {/* Single continuous editor that spans all pages */}
-        <div 
-          className="absolute inset-0 z-10"
-          style={{
-            fontFamily,
-            fontSize: `${fontSize}pt`,
-            color: textColor,
-            lineHeight: '1.6',
-          }}
-        >
-          <EditorContent 
-            editor={editor}
-            className="focus:outline-none prose prose-sm max-w-none"
-            style={{
-              width: `${pageWidth - 128}px`,
-              margin: '0 auto',
-              paddingTop: '64px',
-              paddingLeft: '64px',
-              paddingRight: '64px',
-              minHeight: `${pages.length * pageHeight}px`,
-            }}
-          />
-        </div>
-        
-        {/* Page boundaries - visual frames that show through the editor */}
+      <div ref={containerRef} className="space-y-8">
+        {/* Page containers with individual clipped content windows */}
         {pages.map((_, pageIndex) => (
           <div
             key={pageIndex}
-            className="mx-auto bg-white shadow-lg relative pointer-events-none"
+            className="mx-auto bg-white shadow-lg relative"
             style={{
               width: `${pageWidth}px`,
               height: `${pageHeight}px`,
               overflow: 'hidden',
             }}
           >
-            {/* Page border to show page boundaries */}
-            <div className="absolute inset-0 border border-gray-300 pointer-events-none" />
+            {/* Content window for this specific page */}
+            <div 
+              className="absolute inset-0 p-16 overflow-hidden"
+              style={{
+                fontFamily,
+                fontSize: `${fontSize}pt`,
+                color: textColor,
+                lineHeight: '1.6',
+              }}
+            >
+              {/* Positioned editor content - each page shows a different window */}
+              <div
+                style={{
+                  position: 'relative',
+                  top: `-${pageIndex * contentHeight}px`,
+                  width: '100%',
+                  minHeight: `${pages.length * contentHeight}px`,
+                }}
+              >
+                {pageIndex === 0 && editor && (
+                  <EditorContent 
+                    editor={editor}
+                    className="focus:outline-none prose prose-sm max-w-none"
+                  />
+                )}
+              </div>
+            </div>
             
             {/* Page number */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
               {pageIndex + 1}
             </div>
           </div>
