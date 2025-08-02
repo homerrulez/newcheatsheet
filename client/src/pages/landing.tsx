@@ -240,7 +240,7 @@ export default function Landing() {
         </div>
 
         {/* Additional Features Section */}
-        <div className="grid grid-cols-3 gap-6 mt-16">
+        <div className="grid grid-cols-3 gap-6 mt-32 mx-auto max-w-5xl">
           {/* Academic Excellence */}
           <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
             <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
