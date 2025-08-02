@@ -38,7 +38,10 @@ const PAGE_SIZES = {
   'letter': { width: 816, height: 1056, name: 'Letter (8.5" × 11")' },
   'legal': { width: 816, height: 1344, name: 'Legal (8.5" × 14")' },
   'a4': { width: 794, height: 1123, name: 'A4 (8.27" × 11.69")' },
+  'a3': { width: 1123, height: 1587, name: 'A3 (11.69" × 16.54")' },
   'tabloid': { width: 1056, height: 1632, name: 'Tabloid (11" × 17")' },
+  'executive': { width: 696, height: 1008, name: 'Executive (7.25" × 10.5")' },
+  'ledger': { width: 1632, height: 1056, name: 'Ledger (17" × 11")' },
 } as const;
 
 export default function DocumentWorkspace() {
@@ -376,9 +379,10 @@ export default function DocumentWorkspace() {
     }
   }, [editor, fontFamily, fontSize, textColor]);
 
-  // Calculate page metrics
-  const pageWidth = PAGE_SIZES[pageSize].width * (zoomLevel / 100);
-  const pageHeight = PAGE_SIZES[pageSize].height * (zoomLevel / 100);
+  // Calculate page metrics - with error protection
+  const currentPageSize = PAGE_SIZES[pageSize] || PAGE_SIZES.letter;
+  const pageWidth = currentPageSize.width * (zoomLevel / 100);
+  const pageHeight = currentPageSize.height * (zoomLevel / 100);
   const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
 
   // Calculate number of pages based on content height - FIXED PAGINATION
@@ -590,23 +594,65 @@ export default function DocumentWorkspace() {
           <div className="flex items-center space-x-4 overflow-x-auto">
             {/* File operations */}
             <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
-              <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText('')}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  const content = editor?.getHTML() || '';
+                  navigator.clipboard.writeText(content);
+                  toast({ title: "Content copied to clipboard" });
+                }}
+              >
                 <Copy className="w-4 h-4 mr-1" />
                 Copy
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (editor?.state.selection.empty) {
+                    editor?.chain().focus().selectAll().run();
+                  }
+                  const content = editor?.getHTML() || '';
+                  navigator.clipboard.writeText(content);
+                  editor?.chain().focus().deleteSelection().run();
+                  toast({ title: "Content cut to clipboard" });
+                }}
+              >
                 <Scissors className="w-4 h-4 mr-1" />
                 Cut
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    editor?.chain().focus().insertContent(text).run();
+                    toast({ title: "Content pasted" });
+                  } catch (err) {
+                    toast({ title: "Paste failed", description: "Please use Ctrl+V instead", variant: "destructive" });
+                  }
+                }}
+              >
                 <ClipboardPaste className="w-4 h-4 mr-1" />
                 Paste
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => editor?.chain().focus().undo().run()}
+                disabled={!editor?.can().undo()}
+              >
                 <Undo2 className="w-4 h-4 mr-1" />
                 Undo
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => editor?.chain().focus().redo().run()}
+                disabled={!editor?.can().redo()}
+              >
                 <Redo2 className="w-4 h-4 mr-1" />
                 Redo
               </Button>
@@ -694,14 +740,40 @@ export default function DocumentWorkspace() {
               >
                 <Strikethrough className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="outline" title="Subscript">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                title="Subscript"
+                onClick={() => editor?.chain().focus().toggleSubscript().run()}
+              >
                 <span className="text-xs">X₂</span>
               </Button>
-              <Button size="sm" variant="outline" title="Superscript">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                title="Superscript"
+                onClick={() => editor?.chain().focus().toggleSuperscript().run()}
+              >
                 <span className="text-xs">X²</span>
               </Button>
-              <div className="w-8 h-6 bg-yellow-200 border rounded cursor-pointer" title="Highlight"></div>
-              <div className="w-8 h-6 bg-black border rounded cursor-pointer" title="Font Color"></div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                title="Highlight"
+                onClick={() => editor?.chain().focus().toggleHighlight({ color: '#ffff00' }).run()}
+              >
+                <div className="w-4 h-4 bg-yellow-300 border rounded" />
+              </Button>
+              <input
+                type="color"
+                value={textColor}
+                onChange={(e) => {
+                  setTextColor(e.target.value);
+                  editor?.chain().focus().setColor(e.target.value).run();
+                }}
+                className="w-8 h-6 border rounded cursor-pointer"
+                title="Font Color"
+              />
             </div>
 
             {/* Text alignment */}
@@ -752,10 +824,20 @@ export default function DocumentWorkspace() {
               >
                 <ListOrdered className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="outline" title="Increase Indent">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                title="Increase Indent"
+                onClick={() => editor?.chain().focus().sinkListItem('listItem').run()}
+              >
                 <Indent className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="outline" title="Decrease Indent">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                title="Decrease Indent"
+                onClick={() => editor?.chain().focus().liftListItem('listItem').run()}
+              >
                 <Outdent className="w-4 h-4" />
               </Button>
             </div>
