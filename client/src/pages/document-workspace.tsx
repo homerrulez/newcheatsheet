@@ -50,99 +50,96 @@ function DocumentRenderer({
   documentContent,
   onContentChange 
 }: DocumentRendererProps) {
-  const [pages, setPages] = useState<string[]>(['']);
-  const measureRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pageCount, setPageCount] = useState(1);
   
   // Calculate actual page dimensions
   const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
   const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
-  const contentWidth = pageWidth - 128; // 64px padding on each side
   const contentHeight = pageHeight - 128; // 64px padding top/bottom
   
-  // Split content into pages based on actual height constraints
+  // Monitor content height and calculate required pages
   useEffect(() => {
-    if (!documentContent || !measureRef.current) return;
+    if (!editor || !containerRef.current) return;
     
-    const tempDiv = document.createElement('div');
-    tempDiv.style.cssText = `
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-      width: ${contentWidth}px;
-      font-family: ${fontFamily};
-      font-size: ${fontSize}pt;
-      line-height: 1.6;
-      visibility: hidden;
-      overflow: hidden;
-    `;
-    document.body.appendChild(tempDiv);
+    const updatePageCount = () => {
+      const editorElement = containerRef.current?.querySelector('.ProseMirror');
+      if (editorElement) {
+        const totalContentHeight = editorElement.scrollHeight;
+        const requiredPages = Math.max(1, Math.ceil(totalContentHeight / contentHeight));
+        setPageCount(requiredPages);
+      }
+    };
     
-    try {
-      // Parse HTML content into paragraphs
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(documentContent, 'text/html');
-      const elements = Array.from(doc.body.children);
-      
-      const newPages: string[] = [];
-      let currentPageContent = '';
-      let currentPageHeight = 0;
-      
-      for (const element of elements) {
-        tempDiv.innerHTML = currentPageContent + element.outerHTML;
-        const newHeight = tempDiv.scrollHeight;
-        
-        if (newHeight > contentHeight && currentPageContent) {
-          // Current page is full, start new page
-          newPages.push(currentPageContent);
-          currentPageContent = element.outerHTML;
-          tempDiv.innerHTML = element.outerHTML;
-          currentPageHeight = tempDiv.scrollHeight;
-        } else {
-          currentPageContent += element.outerHTML;
-          currentPageHeight = newHeight;
-        }
-      }
-      
-      if (currentPageContent) {
-        newPages.push(currentPageContent);
-      }
-      
-      if (newPages.length === 0) {
-        newPages.push('<p></p>');
-      }
-      
-      setPages(newPages);
-    } finally {
-      document.body.removeChild(tempDiv);
-    }
-  }, [documentContent, contentWidth, contentHeight, fontFamily, fontSize]);
-  
-  // Handle content updates from a specific page
-  const handlePageContentChange = (pageIndex: number, newContent: string) => {
-    const updatedPages = [...pages];
-    updatedPages[pageIndex] = newContent;
+    // Update page count after a short delay to allow content to render
+    const timer = setTimeout(updatePageCount, 200);
     
-    // Combine all pages back into single content
-    const combinedContent = updatedPages.join('');
-    onContentChange(combinedContent);
-  };
+    // Also listen for editor content changes
+    const unsubscribe = editor.on('update', () => {
+      setTimeout(updatePageCount, 100);
+    });
+    
+    return () => {
+      clearTimeout(timer);
+      unsubscribe?.();
+    };
+  }, [editor, contentHeight, documentContent]);
   
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      <div ref={measureRef} className="space-y-8">
-        {pages.map((pageContent, pageIndex) => (
-          <PageContainer
+      <div ref={containerRef} className="space-y-8">
+        {/* Render pages with content flowing through them */}
+        {Array.from({ length: pageCount }, (_, pageIndex) => (
+          <div
             key={pageIndex}
-            pageIndex={pageIndex}
-            content={pageContent}
-            pageWidth={pageWidth}
-            pageHeight={pageHeight}
-            fontSize={fontSize}
-            fontFamily={fontFamily}
-            textColor={textColor}
-            editor={pageIndex === 0 ? editor : null} // Only first page gets editor for now
-            onContentChange={(newContent) => handlePageContentChange(pageIndex, newContent)}
-          />
+            className="mx-auto bg-white shadow-lg relative"
+            style={{
+              width: `${pageWidth}px`,
+              height: `${pageHeight}px`,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Content window for this page */}
+            <div 
+              className="absolute"
+              style={{
+                top: '64px',
+                left: '64px',
+                right: '64px',
+                bottom: '64px',
+                // Create a "window" into the continuous content
+                clipPath: 'inset(0)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Positioned editor content - only visible portion shows through */}
+              <div
+                style={{
+                  position: 'relative',
+                  top: `-${pageIndex * contentHeight}px`,
+                  fontFamily,
+                  fontSize: `${fontSize}pt`,
+                  color: textColor,
+                  lineHeight: '1.6',
+                }}
+              >
+                {pageIndex === 0 && editor && (
+                  <EditorContent 
+                    editor={editor}
+                    className="focus:outline-none prose prose-sm max-w-none"
+                    style={{
+                      minHeight: `${pageCount * contentHeight}px`,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+            
+            {/* Page number */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+              {pageIndex + 1}
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -193,11 +190,11 @@ function PageContainer({
         {editor && pageIndex === 0 ? (
           <EditorContent 
             editor={editor}
-            className="h-full w-full focus:outline-none"
+            className="h-full w-full focus:outline-none prose prose-sm max-w-none"
           />
         ) : (
           <div 
-            className="h-full w-full"
+            className="h-full w-full prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: content }}
           />
         )}
