@@ -1096,7 +1096,7 @@ export default function DocumentWorkspace() {
               
               {/* Chat messages area - Proper height */}
               <div className="mb-4">
-                <ScrollArea className="h-64 border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                <ScrollArea className="h-[32rem] border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
                   <div className="space-y-2">
                     {chatMessages.length === 0 && (
                       <div className="text-center py-8">
