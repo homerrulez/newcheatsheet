@@ -232,56 +232,52 @@ function DocumentRenderer({
         Page 1 of {pageLayouts.length}
       </div>
       
-      <div ref={containerRef} className="relative">
-        {/* Visual page backgrounds */}
-        <div className="mx-auto" style={{ width: `${pageWidth}px` }}>
-          {pageLayouts.map((pageLayout) => (
-            <div
-              key={pageLayout.pageIndex}
-              className="bg-white shadow-lg mb-8 pointer-events-none"
-              style={{
-                width: `${pageWidth}px`,
-                height: `${pageHeight}px`,
-                position: 'relative',
-              }}
-            >
-              {/* Page number */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-                {pageLayout.pageIndex + 1}
-              </div>
-            </div>
-          ))}
-          
-          {/* Single continuous editor overlaid on all pages */}
+      <div ref={containerRef} className="space-y-8">
+        {/* Render each page with clipped content */}
+        {pageLayouts.map((pageLayout, pageIndex) => (
           <div
-            className="absolute top-0 left-0 pointer-events-auto"
+            key={pageLayout.pageIndex}
+            className="mx-auto bg-white shadow-lg relative overflow-hidden"
             style={{
               width: `${pageWidth}px`,
-              minHeight: `${pageLayouts.length * (pageHeight + 32)}px`,
+              height: `${pageHeight}px`,
             }}
           >
+            {/* Content wrapper that clips to page boundaries */}
             <div 
+              className="absolute inset-0 overflow-hidden"
               style={{
-                fontFamily,
-                fontSize: `${fontSize}pt`,
-                color: textColor,
-                lineHeight: '1.6',
                 padding: '64px',
-                minHeight: '100%',
               }}
             >
-              {editor && (
-                <EditorContent 
-                  editor={editor}
-                  className="focus:outline-none prose prose-sm max-w-none"
-                  style={{
-                    minHeight: '100%',
-                  }}
-                />
-              )}
+              {/* Editor positioned to show only this page's content */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: `${-pageIndex * contentHeight + 64}px`,
+                  left: '64px',
+                  right: '64px',
+                  fontFamily,
+                  fontSize: `${fontSize}pt`,
+                  color: textColor,
+                  lineHeight: '1.6',
+                }}
+              >
+                {editor && (
+                  <EditorContent 
+                    editor={editor}
+                    className="focus:outline-none prose prose-sm max-w-none"
+                  />
+                )}
+              </div>
+            </div>
+            
+            {/* Page number */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
+              {pageLayout.pageIndex + 1}
             </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
