@@ -27,37 +27,47 @@ export default function DocumentWorkspace() {
 
   // Calculate pages based on actual content height
   const calculatePages = useCallback(() => {
-    if (!editorRef.current) return 1;
+    if (!content || typeof window === 'undefined') return 1;
     
-    // Create a temporary element to measure content height
-    const tempDiv = document.createElement('div');
-    tempDiv.style.cssText = `
-      position: absolute;
-      visibility: hidden;
-      width: 612px;
-      font-family: ${fontFamily};
-      font-size: ${fontSize}pt;
-      line-height: 1.15;
-      padding: 0;
-      margin: 0;
-    `;
-    tempDiv.innerHTML = content || 'A';
-    document.body.appendChild(tempDiv);
-    
-    const contentHeight = tempDiv.scrollHeight;
-    document.body.removeChild(tempDiv);
-    
-    const pageHeight = 648; // 9 inches usable height (11in - 2in margins)
-    const pages = Math.max(1, Math.ceil(contentHeight / pageHeight));
-    
-    return pages;
+    try {
+      // Create a temporary element to measure content height
+      const tempDiv = window.document.createElement('div');
+      tempDiv.style.cssText = `
+        position: absolute;
+        visibility: hidden;
+        width: 612px;
+        font-family: ${fontFamily};
+        font-size: ${fontSize}pt;
+        line-height: 1.15;
+        padding: 0;
+        margin: 0;
+        white-space: pre-wrap;
+      `;
+      tempDiv.innerHTML = content || 'Sample text';
+      window.document.body.appendChild(tempDiv);
+      
+      const contentHeight = tempDiv.scrollHeight;
+      window.document.body.removeChild(tempDiv);
+      
+      const pageHeight = 648; // 9 inches usable height (11in - 2in margins)
+      const pages = Math.max(1, Math.ceil(contentHeight / pageHeight));
+      
+      return pages;
+    } catch (error) {
+      console.warn('Error calculating pages:', error);
+      return 1;
+    }
   }, [content, fontSize, fontFamily]);
 
   const formatText = (command: string, value?: string) => {
-    if (editorRef.current && editorRef.current.focus) {
-      editorRef.current.focus();
-      document.execCommand(command, false, value);
-      setContent(editorRef.current.innerHTML);
+    if (editorRef.current && typeof window !== 'undefined') {
+      try {
+        editorRef.current.focus();
+        window.document.execCommand(command, false, value);
+        setContent(editorRef.current.innerHTML);
+      } catch (error) {
+        console.warn('Error executing format command:', error);
+      }
     }
   };
 
@@ -330,7 +340,7 @@ export default function DocumentWorkspace() {
               {currentDocument?.title || 'New Document'}  
             </h2>
             <div className="text-sm text-slate-600 mt-1">
-              Page {calculatePages()} of {calculatePages()}
+              Page 1 of {calculatePages()}
             </div>
           </div>
           
