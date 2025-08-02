@@ -40,15 +40,14 @@ export default function Landing() {
       <header className="relative z-10 px-8 py-6">
         <nav className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <div className="grid grid-cols-2 gap-0.5">
-                <div className="w-1.5 h-1.5 bg-white rounded-sm"></div>
-                <div className="w-1.5 h-1.5 bg-white rounded-sm"></div>  
-                <div className="w-1.5 h-1.5 bg-white rounded-sm"></div>
-                <div className="w-1.5 h-1.5 bg-white rounded-sm"></div>
+            <div className="w-10 h-10 bg-gradient-to-br from-white/30 via-cyan-50/25 to-purple-50/20 backdrop-blur-md border border-white/40 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="relative">
+                <div className="w-4 h-4 border-2 border-white rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full"></div>
+                <div className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-3 h-0.5 bg-white rounded-full"></div>
               </div>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">Math Company</h1>
+            <h1 className="text-xl font-semibold text-white">StudyFlow</h1>
           </div>
           <div className="flex items-center space-x-6">
             <Button variant="ghost" className="text-gray-700 hover:text-gray-900 font-medium">
@@ -120,21 +119,21 @@ export default function Landing() {
             </button>
 
             {/* Additional Features */}
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-white/20 via-cyan-50/15 to-purple-50/10 backdrop-blur-md border border-white/30 rounded-xl p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+            <div className="space-y-6 mt-8">
+              <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                   <BookOpen className="w-4 h-4 mr-2 text-cyan-600" />
                   Academic Excellence
                 </h4>
-                <p className="text-xs text-gray-700">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
+                <p className="text-xs text-gray-700 leading-relaxed">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
               </div>
               
-              <div className="bg-gradient-to-r from-white/20 via-cyan-50/15 to-purple-50/10 backdrop-blur-md border border-white/30 rounded-xl p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+              <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                   <Layout className="w-4 h-4 mr-2 text-cyan-600" />
                   Print Ready
                 </h4>
-                <p className="text-xs text-gray-700">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
+                <p className="text-xs text-gray-700 leading-relaxed">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
               </div>
             </div>
           </div>
@@ -185,21 +184,21 @@ export default function Landing() {
             </button>
 
             {/* Additional Features */}
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/30 rounded-xl p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+            <div className="space-y-6 mt-8">
+              <div className="bg-gradient-to-r from-white/30 via-purple-50/25 to-blue-50/20 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                   <Calculator className="w-4 h-4 mr-2 text-purple-600" />
                   Smart Organization
                 </h4>
-                <p className="text-xs text-gray-700">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
+                <p className="text-xs text-gray-700 leading-relaxed">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
               </div>
               
-              <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/30 rounded-xl p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+              <div className="bg-gradient-to-r from-white/30 via-purple-50/25 to-blue-50/20 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                   <Grid3X3 className="w-4 h-4 mr-2 text-purple-600" />
                   Dynamic Layouts
                 </h4>
-                <p className="text-xs text-gray-700">Intelligent box sizing and collision detection for optimal space utilization.</p>
+                <p className="text-xs text-gray-700 leading-relaxed">Intelligent box sizing and collision detection for optimal space utilization.</p>
               </div>
             </div>
           </div>
@@ -250,21 +249,21 @@ export default function Landing() {
             </button>
 
             {/* Additional Features */}
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-white/30 via-blue-50/25 to-green-50/20 backdrop-blur-md border border-white/30 rounded-xl p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+            <div className="space-y-6 mt-8">
+              <div className="bg-gradient-to-r from-white/35 via-blue-50/30 to-green-50/25 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                   <PenTool className="w-4 h-4 mr-2 text-blue-600" />
                   Microsoft Word Level
                 </h4>
-                <p className="text-xs text-gray-700">True pagination with live editing, content flow, and professional document standards.</p>
+                <p className="text-xs text-gray-700 leading-relaxed">True pagination with live editing, content flow, and professional document standards.</p>
               </div>
               
-              <div className="bg-gradient-to-r from-white/30 via-blue-50/25 to-green-50/20 backdrop-blur-md border border-white/30 rounded-xl p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+              <div className="bg-gradient-to-r from-white/35 via-blue-50/30 to-green-50/25 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                   <Brain className="w-4 h-4 mr-2 text-blue-600" />
                   AI Integration
                 </h4>
-                <p className="text-xs text-gray-700">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
+                <p className="text-xs text-gray-700 leading-relaxed">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
               </div>
             </div>
           </div>
