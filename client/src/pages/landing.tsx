@@ -96,7 +96,7 @@ export default function Landing() {
             {/* Embedded Video Preview */}
             <button 
               onClick={() => openVideoModal('template', 'Smart Templates Powered by AI')}
-              className="w-full aspect-video bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="w-full aspect-video bg-gradient-to-br from-emerald-300 via-cyan-300 to-teal-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
@@ -142,7 +142,7 @@ export default function Landing() {
             {/* Embedded Video Preview */}
             <button 
               onClick={() => openVideoModal('cheatsheet', 'Cheat Sheets Powered by AI')}
-              className="w-full aspect-video bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="w-full aspect-video bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
@@ -188,7 +188,7 @@ export default function Landing() {
             {/* Embedded Video Preview */}
             <button 
               onClick={() => openVideoModal('document', 'Smart Documents Powered by AI')}
-              className="w-full aspect-video bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="w-full aspect-video bg-gradient-to-br from-sky-300 via-blue-300 to-cyan-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
