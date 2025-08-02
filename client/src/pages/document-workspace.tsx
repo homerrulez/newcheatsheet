@@ -1094,16 +1094,24 @@ export default function DocumentWorkspace() {
                 </Button>
               </div>
               
-              {/* Chat messages area - Limited height */}
+              {/* Chat messages area - Proper height */}
               <div className="mb-4">
-                <ScrollArea className="h-32 border rounded-lg p-2 bg-gray-50 dark:bg-gray-800">
+                <ScrollArea className="h-64 border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
                   <div className="space-y-2">
                     {chatMessages.length === 0 && (
-                      <div className="text-center py-4">
-                        <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Ready to help! Try "create a title about Ali and make it adventurous"
+                      <div className="text-center py-8">
+                        <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                          Ready to Help!
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          Try natural language requests:
                         </p>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                          <p>"create a title about Ali and make it adventurous"</p>
+                          <p>"make the text bold"</p>
+                          <p>"add a paragraph about nature"</p>
+                        </div>
                       </div>
                     )}
                     
@@ -1113,13 +1121,13 @@ export default function DocumentWorkspace() {
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[90%] p-2 rounded text-xs ${
+                          className={`max-w-[85%] p-3 rounded-lg text-sm ${
                             message.role === 'user'
                               ? 'bg-blue-500 text-white'
-                              : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white border'
+                              : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white border shadow-sm'
                           }`}
                         >
-                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
                         </div>
                       </div>
                     ))}
