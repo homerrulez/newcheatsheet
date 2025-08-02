@@ -63,8 +63,8 @@ export default function Landing() {
             <Link href="/template">
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
-                  <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
-                    <FileSpreadsheet className="text-white text-3xl" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
+                    <FileSpreadsheet className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Template</h3>
@@ -109,8 +109,8 @@ export default function Landing() {
             <Link href="/cheatsheet">
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
-                  <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
-                    <Grid3X3 className="text-white text-3xl" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Grid3X3 className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Cheatsheet</h3>
@@ -155,8 +155,8 @@ export default function Landing() {
             <Link href="/document">
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
-                  <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
-                    <FileText className="text-white text-3xl" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
+                    <FileText className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Document</h3>
