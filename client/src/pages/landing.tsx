@@ -76,7 +76,7 @@ export default function Landing() {
         {/* Subscription Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
           {/* Free Plan */}
-          <div className="bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-white/30">
+          <div className="bg-gradient-to-br from-green-500/25 via-emerald-500/25 to-teal-500/25 backdrop-blur-md border border-green-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-green-500/35 hover:via-emerald-500/35 hover:to-teal-500/35">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Free</h3>
               <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$0</div>
@@ -147,7 +147,7 @@ export default function Landing() {
           </div>
 
           {/* Enterprise Plan */}
-          <div className="bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-white/30">
+          <div className="bg-gradient-to-br from-purple-500/25 via-indigo-500/25 to-violet-500/25 backdrop-blur-md border border-purple-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-500/35 hover:via-indigo-500/35 hover:to-violet-500/35">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Enterprise</h3>
               <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$49</div>
