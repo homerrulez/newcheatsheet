@@ -53,7 +53,8 @@ export default function DocumentWorkspace() {
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
       updatePageContent(activePageIndex, content);
-      checkForPageOverflow();
+      // Trigger content flow management after a short delay
+      setTimeout(() => manageContentFlow(), 200);
     },
     editorProps: {
       attributes: {
@@ -72,49 +73,82 @@ export default function DocumentWorkspace() {
     ));
   }, []);
 
-  // Check if content overflows current page and move to next page
-  const checkForPageOverflow = useCallback(() => {
-    if (!editor || typeof window === 'undefined') return;
+  // Proper content flow management - measures and splits content between pages
+  const manageContentFlow = useCallback(() => {
+    if (!editor || typeof window === 'undefined' || !window.document) return;
 
-    const editorElement = window.document.querySelector('.ProseMirror');
-    if (!editorElement) return;
-
+    const content = editor.getHTML();
     const currentPageSize = PAGE_SIZES[pageSize];
-    const pageHeightPx = (currentPageSize.height - 2) * (zoomLevel / 100) * 96; // Convert inches to pixels (96 DPI)
-    
-    if (editorElement.scrollHeight > pageHeightPx) {
-      // Content overflows - need to split content
-      splitContentToNextPage();
-    }
-  }, [editor, pageSize, zoomLevel]);
+    // Available height in pixels minus padding (96 DPI conversion)
+    const availableHeight = (currentPageSize.height - 2) * (zoomLevel / 100) * 96 - 64; // 64px for padding
+    const availableWidth = (currentPageSize.width - 2) * (zoomLevel / 100) * 96 - 64;
 
-  // Split overflowing content to next page
-  const splitContentToNextPage = useCallback(() => {
-    if (!editor) return;
+    // Create measurement container with exact page dimensions
+    const measureDiv = window.document.createElement('div');
+    measureDiv.style.cssText = `
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: ${availableWidth}px;
+      font-family: ${fontFamily};
+      font-size: ${fontSize * zoomLevel / 100}pt;
+      line-height: 1.5;
+      padding: 32px;
+      box-sizing: border-box;
+      overflow: hidden;
+    `;
+    window.document.body.appendChild(measureDiv);
 
-    const currentContent = editor.getHTML();
-    const textContent = editor.getText();
+    // Parse content into individual paragraphs
+    measureDiv.innerHTML = content;
+    const paragraphs = Array.from(measureDiv.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote'));
     
-    // Simple content splitting based on approximate character limit
-    const currentPageSize = PAGE_SIZES[pageSize];
-    const charsPerPage = Math.floor((currentPageSize.height - 2) * (currentPageSize.width - 2) * 150 / (fontSize || 12));
-    
-    if (textContent.length > charsPerPage) {
-      const cutPoint = charsPerPage;
-      const remainingContent = textContent.slice(cutPoint);
-      const currentPageContent = textContent.slice(0, cutPoint);
+    // Split content across pages based on actual height measurements
+    const newPages = [];
+    let currentPageContent = '';
+    let currentHeight = 0;
+
+    for (const paragraph of paragraphs) {
+      const elementHeight = paragraph.offsetHeight + 16; // Add some margin
       
-      // Update current page with truncated content
-      editor.commands.setContent(`<p>${currentPageContent}</p>`);
-      
-      // Create or update next page
-      if (activePageIndex + 1 >= pages.length) {
-        setPages(prev => [...prev, { content: `<p>${remainingContent}</p>`, id: String(prev.length + 1) }]);
+      // If adding this element would overflow the page and we have content
+      if (currentHeight + elementHeight > availableHeight && currentPageContent) {
+        // Save current page and start new one
+        newPages.push(currentPageContent);
+        currentPageContent = paragraph.outerHTML;
+        currentHeight = elementHeight;
       } else {
-        updatePageContent(activePageIndex + 1, `<p>${remainingContent}</p>`);
+        // Add element to current page
+        currentPageContent += paragraph.outerHTML;
+        currentHeight += elementHeight;
       }
     }
-  }, [editor, pageSize, fontSize, activePageIndex, pages.length, updatePageContent]);
+
+    // Add the last page if it has content
+    if (currentPageContent) {
+      newPages.push(currentPageContent);
+    }
+
+    window.document.body.removeChild(measureDiv);
+
+    // Update pages with properly split content
+    if (newPages.length > 0) {
+      // Update existing pages and add new ones as needed
+      const updatedPages = [...pages];
+      
+      // Update current and following pages with new content
+      for (let i = 0; i < newPages.length; i++) {
+        const pageIndex = activePageIndex + i;
+        if (pageIndex < updatedPages.length) {
+          updatedPages[pageIndex] = { ...updatedPages[pageIndex], content: newPages[i] };
+        } else {
+          updatedPages.push({ content: newPages[i], id: String(pageIndex + 1) });
+        }
+      }
+      
+      setPages(updatedPages);
+    }
+  }, [editor, pageSize, zoomLevel, fontFamily, fontSize, activePageIndex, pages]);
 
   // Format text using Tiptap commands
   const formatText = (command: string, value?: string) => {
