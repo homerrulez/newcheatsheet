@@ -60,10 +60,10 @@ export default function Landing() {
       {/* Hero Section */}
       <main className="relative z-10 max-w-6xl mx-auto px-8 py-16">
         <div className="text-center mb-20">
-          <h2 className="text-7xl font-bold text-gray-900 mb-6 leading-tight">
+          <h2 className="text-7xl font-black text-gray-900 mb-6 leading-tight tracking-tight font-sans bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text">
             Welcome
           </h2>
-          <p className="text-2xl text-gray-700 mb-16">
+          <p className="text-2xl text-gray-700 mb-16 font-medium tracking-wide">
             Choose an option to get started.
           </p>
         </div>
@@ -212,26 +212,37 @@ export default function Landing() {
 
       {/* Video Modal */}
       <Dialog open={videoModal.isOpen} onOpenChange={closeVideoModal}>
-        <DialogContent className="max-w-4xl max-h-[80vh] p-0">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="text-2xl font-bold">{videoModal.title}</DialogTitle>
-          </DialogHeader>
-          <div className="p-6 pt-4">
-            <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
-              <div className="text-center text-white">
-                <Play className="w-16 h-16 mx-auto mb-4 opacity-60" />
-                <p className="text-lg mb-2">Video Demonstration</p>
-                <p className="text-sm opacity-75">
-                  {videoModal.type === 'template' && 'See how Smart Templates help you create structured academic layouts instantly'}
-                  {videoModal.type === 'cheatsheet' && 'Watch how Cheat Sheets organize your formulas with intelligent auto-sizing'}
-                  {videoModal.type === 'document' && 'Experience Smart Documents with AI assistance and beautiful LaTeX rendering'}
-                </p>
+        <DialogContent className="max-w-4xl max-h-[85vh] p-0 border-0 bg-gradient-to-br from-white/40 via-cyan-50/30 to-purple-50/20 backdrop-blur-2xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 backdrop-blur-sm rounded-lg"></div>
+          <div className="relative z-10">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="text-3xl font-black text-gray-900 tracking-tight bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text">
+                {videoModal.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="p-6 pt-4">
+              <div className="aspect-video bg-gradient-to-br from-gray-900/95 via-gray-800/90 to-gray-900/95 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
+                <div className="text-center text-white">
+                  <div className="w-20 h-20 bg-gradient-to-br from-white/20 via-cyan-200/30 to-purple-200/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center shadow-lg mx-auto mb-6">
+                    <Play className="w-10 h-10 text-white ml-1" />
+                  </div>
+                  <p className="text-xl mb-3 font-semibold tracking-wide">Video Demonstration</p>
+                  <p className="text-sm opacity-90 max-w-md mx-auto leading-relaxed">
+                    {videoModal.type === 'template' && 'See how Smart Templates help you create structured academic layouts instantly with AI-powered design assistance'}
+                    {videoModal.type === 'cheatsheet' && 'Watch how Cheat Sheets organize your formulas with intelligent auto-sizing and dynamic layout management'}
+                    {videoModal.type === 'document' && 'Experience Smart Documents with AI assistance and beautiful LaTeX rendering for academic excellence'}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="mt-4 text-center">
-              <Button onClick={closeVideoModal} variant="outline">
-                Close
-              </Button>
+              <div className="mt-6 text-center">
+                <Button 
+                  onClick={closeVideoModal} 
+                  variant="outline"
+                  className="bg-gradient-to-r from-white/60 via-cyan-50/50 to-purple-50/40 backdrop-blur-md border-white/40 hover:from-white/70 hover:via-cyan-50/60 hover:to-purple-50/50 hover:backdrop-blur-lg transition-all duration-300 font-medium"
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
