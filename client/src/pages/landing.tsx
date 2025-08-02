@@ -42,18 +42,24 @@ export default function Landing() {
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-white/30 via-cyan-50/25 to-purple-50/20 backdrop-blur-md border border-white/40 rounded-xl flex items-center justify-center shadow-lg">
               <div className="relative">
-                <div className="w-4 h-4 border-2 border-white rounded-full"></div>
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full"></div>
-                <div className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-3 h-0.5 bg-white rounded-full"></div>
+                {/* AI Brain/Neural Network */}
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+                <div className="absolute -top-0.5 -left-0.5 w-1 h-1 bg-white rounded-full"></div>
+                <div className="absolute -top-0.5 -right-0.5 w-1 h-1 bg-white rounded-full"></div>
+                <div className="absolute -bottom-0.5 -left-0.5 w-1 h-1 bg-white rounded-full"></div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-1 h-1 bg-white rounded-full"></div>
+                {/* Graduation Cap */}
+                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-4 h-0.5 bg-white rounded-full"></div>
+                <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
               </div>
             </div>
-            <h1 className="text-xl font-semibold text-white">StudyFlow</h1>
+            <h1 className="text-xl font-bold text-white tracking-wide" style={{ fontFamily: '"Playfair Display", serif' }}>StudyFlow</h1>
           </div>
           <div className="flex items-center space-x-6">
-            <Button variant="ghost" className="text-gray-700 hover:text-gray-900 font-medium">
+            <Button variant="ghost" className="text-white/90 hover:text-white font-medium hover:bg-white/10 transition-all duration-300">
               Log in
             </Button>
-            <Button variant="ghost" className="text-gray-700 hover:text-gray-900 font-medium">
+            <Button variant="ghost" className="text-white/90 hover:text-white font-medium hover:bg-white/10 transition-all duration-300">
               Register
             </Button>
           </div>
