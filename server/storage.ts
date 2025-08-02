@@ -62,6 +62,26 @@ export class MemStorage implements IStorage {
     this.cheatSheets = new Map();
     this.templates = new Map();
     this.chatMessages = new Map();
+    
+    // Create a default test document immediately
+    this.createTestDocument();
+  }
+  
+  private async createTestDocument() {
+    const testDoc: Document = {
+      id: "test-doc-1",
+      title: "My First Document",
+      content: "<p>Welcome to your new document workspace! Start typing here...</p>",
+      pages: [],
+      pageSize: "letter",
+      fontSize: "12",
+      fontFamily: "Times New Roman",
+      textColor: "#000000",
+      userId: "default-user",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.documents.set("test-doc-1", testDoc);
   }
 
   async getUser(id: string): Promise<User | undefined> {

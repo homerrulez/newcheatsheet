@@ -28,6 +28,189 @@ import { apiRequest } from '@/lib/queryClient';
 import { Document, DocumentHistory, DocumentPage } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 
+// Real pagination component that enforces page boundaries
+interface DocumentRendererProps {
+  editor: any;
+  pageSize: keyof typeof PAGE_SIZES;
+  zoomLevel: number;
+  fontSize: number;
+  fontFamily: string;
+  textColor: string;
+  documentContent: string;
+  onContentChange: (content: string) => void;
+}
+
+function DocumentRenderer({ 
+  editor, 
+  pageSize, 
+  zoomLevel, 
+  fontSize, 
+  fontFamily, 
+  textColor, 
+  documentContent,
+  onContentChange 
+}: DocumentRendererProps) {
+  const [pages, setPages] = useState<string[]>(['']);
+  const measureRef = useRef<HTMLDivElement>(null);
+  
+  // Calculate actual page dimensions
+  const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
+  const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
+  const contentWidth = pageWidth - 128; // 64px padding on each side
+  const contentHeight = pageHeight - 128; // 64px padding top/bottom
+  
+  // Split content into pages based on actual height constraints
+  useEffect(() => {
+    if (!documentContent || !measureRef.current) return;
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = `
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: ${contentWidth}px;
+      font-family: ${fontFamily};
+      font-size: ${fontSize}pt;
+      line-height: 1.6;
+      visibility: hidden;
+      overflow: hidden;
+    `;
+    document.body.appendChild(tempDiv);
+    
+    try {
+      // Parse HTML content into paragraphs
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(documentContent, 'text/html');
+      const elements = Array.from(doc.body.children);
+      
+      const newPages: string[] = [];
+      let currentPageContent = '';
+      let currentPageHeight = 0;
+      
+      for (const element of elements) {
+        tempDiv.innerHTML = currentPageContent + element.outerHTML;
+        const newHeight = tempDiv.scrollHeight;
+        
+        if (newHeight > contentHeight && currentPageContent) {
+          // Current page is full, start new page
+          newPages.push(currentPageContent);
+          currentPageContent = element.outerHTML;
+          tempDiv.innerHTML = element.outerHTML;
+          currentPageHeight = tempDiv.scrollHeight;
+        } else {
+          currentPageContent += element.outerHTML;
+          currentPageHeight = newHeight;
+        }
+      }
+      
+      if (currentPageContent) {
+        newPages.push(currentPageContent);
+      }
+      
+      if (newPages.length === 0) {
+        newPages.push('<p></p>');
+      }
+      
+      setPages(newPages);
+    } finally {
+      document.body.removeChild(tempDiv);
+    }
+  }, [documentContent, contentWidth, contentHeight, fontFamily, fontSize]);
+  
+  // Handle content updates from a specific page
+  const handlePageContentChange = (pageIndex: number, newContent: string) => {
+    const updatedPages = [...pages];
+    updatedPages[pageIndex] = newContent;
+    
+    // Combine all pages back into single content
+    const combinedContent = updatedPages.join('');
+    onContentChange(combinedContent);
+  };
+  
+  return (
+    <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
+      <div ref={measureRef} className="space-y-8">
+        {pages.map((pageContent, pageIndex) => (
+          <PageContainer
+            key={pageIndex}
+            pageIndex={pageIndex}
+            content={pageContent}
+            pageWidth={pageWidth}
+            pageHeight={pageHeight}
+            fontSize={fontSize}
+            fontFamily={fontFamily}
+            textColor={textColor}
+            editor={pageIndex === 0 ? editor : null} // Only first page gets editor for now
+            onContentChange={(newContent) => handlePageContentChange(pageIndex, newContent)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Individual page container with strict boundaries
+interface PageContainerProps {
+  pageIndex: number;
+  content: string;
+  pageWidth: number;
+  pageHeight: number;
+  fontSize: number;
+  fontFamily: string;
+  textColor: string;
+  editor: any;
+  onContentChange: (content: string) => void;
+}
+
+function PageContainer({ 
+  pageIndex, 
+  content, 
+  pageWidth, 
+  pageHeight, 
+  fontSize, 
+  fontFamily, 
+  textColor, 
+  editor,
+  onContentChange 
+}: PageContainerProps) {
+  return (
+    <div 
+      className="mx-auto bg-white shadow-lg relative overflow-hidden"
+      style={{
+        width: `${pageWidth}px`,
+        height: `${pageHeight}px`,
+      }}
+    >
+      <div 
+        className="absolute inset-0 p-16 overflow-hidden"
+        style={{
+          fontFamily,
+          fontSize: `${fontSize}pt`,
+          color: textColor,
+          lineHeight: '1.6',
+        }}
+      >
+        {editor && pageIndex === 0 ? (
+          <EditorContent 
+            editor={editor}
+            className="h-full w-full focus:outline-none"
+          />
+        ) : (
+          <div 
+            className="h-full w-full"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        )}
+      </div>
+      
+      {/* Page number */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+        {pageIndex + 1}
+      </div>
+    </div>
+  );
+}
+
 // Page size configurations (in inches)
 const PAGE_SIZES = {
   'letter': { width: 8.5, height: 11, name: 'Letter' },
@@ -458,44 +641,16 @@ export default function DocumentWorkspace() {
 
         {/* Document Editor Panel */}
         <ResizablePanel defaultSize={55} minSize={40}>
-          <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-            {/* Single Document Page - Microsoft Word Style */}
-            <div 
-              className="mx-auto bg-white shadow-lg relative"
-              style={{
-                width: `${PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100}px`,
-                minHeight: `${PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100}px`,
-              }}
-            >
-              {editor && (
-                <EditorContent 
-                  editor={editor} 
-                  className="w-full min-h-full"
-                  style={{
-                    fontFamily,
-                    fontSize: `${fontSize}pt`,
-                    color: textColor,
-                    padding: '64px',
-                    lineHeight: '1.6',
-                    // Add page break CSS for printing
-                    pageBreakAfter: 'auto',
-                    pageBreakInside: 'avoid',
-                  }}
-                />
-              )}
-              
-              {/* Page break lines for visual guidance */}
-              <div 
-                className="absolute left-0 right-0 pointer-events-none"
-                style={{
-                  top: `${PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100}px`,
-                  height: '1px',
-                  backgroundColor: '#e2e8f0',
-                  borderTop: '1px dashed #94a3b8',
-                }}
-              />
-            </div>
-          </div>
+          <DocumentRenderer 
+            editor={editor}
+            pageSize={pageSize}
+            zoomLevel={zoomLevel}
+            fontSize={fontSize}
+            fontFamily={fontFamily}
+            textColor={textColor}
+            documentContent={documentContent}
+            onContentChange={setDocumentContent}
+          />
         </ResizablePanel>
 
         <ResizableHandle />

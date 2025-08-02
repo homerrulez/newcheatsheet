@@ -16,18 +16,6 @@ const openai = new OpenAI({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Create default test document
-  const testDoc = await storage.createDocument({
-    title: "My First Document",
-    content: "<p>Welcome to your new document workspace! Start typing here...</p>",
-    pages: [{ id: "1", content: "<p>Welcome to your new document workspace! Start typing here...</p>", pageNumber: 1 }],
-    pageSize: "letter",
-    fontSize: "12",
-    fontFamily: "Times New Roman",
-    textColor: "#000000",
-    userId: "default-user"
-  });
-  
   // Documents API
   app.get("/api/documents", async (req, res) => {
     try {
