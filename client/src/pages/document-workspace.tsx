@@ -384,30 +384,29 @@ export default function DocumentWorkspace() {
     return title;
   };
 
-  // Create document history entry
-  const createHistoryEntry = async () => {
+  // Create new chat session
+  const createNewChatSession = async () => {
     try {
       const content = editor?.getHTML() || '<p></p>';
       const smartTitle = generateSmartTitle(content);
       
-      const response = await fetch(`/api/documents/${id}/history`, {
+      const response = await fetch(`/api/documents/${id}/chat-sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          documentId: id,
           title: smartTitle,
-          content,
-          pages: [],
-          changeDescription: 'Manual snapshot created'
+          documentSnapshot: content,
         }),
       });
       if (response.ok) {
-        refetchHistory();
-        toast({ title: "Document snapshot created" });
+        const newSession = await response.json();
+        setDefaultSessionId(newSession.id);
+        refetchSessions();
+        toast({ title: "New chat session created" });
       }
     } catch (error) {
-      console.error('Failed to create history entry:', error);
-      toast({ title: "Failed to create snapshot", variant: "destructive" });
+      console.error('Failed to create chat session:', error);
+      toast({ title: "Failed to create chat session", variant: "destructive" });
     }
   };
 
@@ -419,14 +418,14 @@ export default function DocumentWorkspace() {
     }
   };
 
-  // Copy version content to clipboard
-  const copyVersionContent = async (historyItem: any) => {
+  // Share chat session
+  const shareSession = async (sessionItem: any) => {
     try {
-      const textContent = historyItem.content.replace(/<[^>]*>/g, '');
-      await navigator.clipboard.writeText(textContent);
-      toast({ title: "Version content copied to clipboard" });
+      const shareUrl = `${window.location.origin}/document/${id}/chat/${sessionItem.id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ title: "Share link copied to clipboard" });
     } catch (error) {
-      toast({ title: "Failed to copy content", variant: "destructive" });
+      toast({ title: "Failed to copy share link", variant: "destructive" });
     }
   };
 
@@ -445,15 +444,23 @@ export default function DocumentWorkspace() {
     toast({ title: "Version downloaded" });
   };
 
-  // Delete version (placeholder - would need API endpoint)
-  const deleteVersion = async (historyItem: any) => {
+  // Delete chat session
+  const deleteSession = async (sessionItem: any) => {
     try {
-      // For now, just show confirmation
-      if (confirm(`Delete version "${historyItem.title}"?`)) {
-        toast({ title: "Version delete functionality coming soon" });
+      if (confirm(`Delete chat session "${sessionItem.title}"?`)) {
+        const response = await fetch(`/api/chat-sessions/${sessionItem.id}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          if (defaultSessionId === sessionItem.id) {
+            setDefaultSessionId(null);
+          }
+          refetchSessions();
+          toast({ title: "Chat session deleted" });
+        }
       }
     } catch (error) {
-      toast({ title: "Failed to delete version", variant: "destructive" });
+      toast({ title: "Failed to delete session", variant: "destructive" });
     }
   };
 
@@ -468,13 +475,20 @@ export default function DocumentWorkspace() {
   };
 
   // Save rename
-  const saveRename = async (historyId: string) => {
+  const saveRename = async (sessionId: string) => {
     try {
-      // For now, just update locally (would need API endpoint)
-      setRenamingHistoryId(null);
-      toast({ title: "Version renamed (feature coming soon)" });
+      const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: renameTitle }),
+      });
+      if (response.ok) {
+        setRenamingHistoryId(null);
+        refetchSessions();
+        toast({ title: "Chat session renamed" });
+      }
     } catch (error) {
-      toast({ title: "Failed to rename version", variant: "destructive" });
+      toast({ title: "Failed to rename session", variant: "destructive" });
     }
   };
 
@@ -632,50 +646,57 @@ export default function DocumentWorkspace() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                    <History className="w-5 h-5 mr-2" />
-                    Document History
+                    <MessageSquare className="w-5 h-5 mr-2" />
+                    Chat Sessions
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    All versions and snapshots
+                    All conversations with your document
                   </p>
                 </div>
                 <Button
                   size="sm"
-                  onClick={createHistoryEntry}
+                  onClick={createNewChatSession}
                   className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                 >
                   <Plus className="w-4 h-4 mr-1" />
-                  Save Version
+                  New Chat
                 </Button>
               </div>
             </div>
             
             <ScrollArea className="h-full p-4">
               <div className="space-y-2">
-                {documentHistory.map((historyItem: any) => (
-                  <div key={historyItem.id} className="group">
-                    <div className="p-3 rounded-lg border bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200">
+                {chatSessions.map((sessionItem: any) => (
+                  <div key={sessionItem.id} className="group">
+                    <div 
+                      className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
+                        defaultSessionId === sessionItem.id
+                          ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
+                          : 'bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                      }`}
+                      onClick={() => setDefaultSessionId(sessionItem.id)}
+                    >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 flex-1">
-                          <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
-                          {renamingHistoryId === historyItem.id ? (
+                          <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          {renamingHistoryId === sessionItem.id ? (
                             <Input
                               value={renameTitle}
                               onChange={(e) => setRenameTitle(e.target.value)}
                               className="text-sm h-6 px-1"
                               onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
-                                  saveRename(historyItem.id);
+                                  saveRename(sessionItem.id);
                                 } else if (e.key === 'Escape') {
                                   setRenamingHistoryId(null);
                                 }
                               }}
-                              onBlur={() => setRenamingHistoryId(null)}
+                              onBlur={() => saveRename(sessionItem.id)}
                               autoFocus
                             />
                           ) : (
                             <span className="font-medium text-gray-900 dark:text-white truncate">
-                              {historyItem.title}
+                              {sessionItem.title}
                             </span>
                           )}
                         </div>
@@ -684,17 +705,11 @@ export default function DocumentWorkspace() {
                             size="sm" 
                             variant="ghost" 
                             className="p-1"
-                            onClick={() => loadDocumentVersion(historyItem)}
-                            title="Load this version"
-                          >
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="p-1"
-                            onClick={() => startRenaming(historyItem)}
-                            title="Rename version"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startRenaming(sessionItem);
+                            }}
+                            title="Rename session"
                           >
                             <Edit3 className="w-3 h-3" />
                           </Button>
@@ -702,56 +717,48 @@ export default function DocumentWorkspace() {
                             size="sm" 
                             variant="ghost" 
                             className="p-1"
-                            onClick={() => copyVersionContent(historyItem)}
-                            title="Copy version content"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              shareSession(sessionItem);
+                            }}
+                            title="Share session link"
                           >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="p-1"
-                            onClick={() => downloadVersion(historyItem)}
-                            title="Download version"
-                          >
-                            <Download className="w-3 h-3" />
+                            <Share className="w-3 h-3" />
                           </Button>
                           <Button 
                             size="sm" 
                             variant="ghost" 
                             className="p-1 text-red-500"
-                            onClick={() => deleteVersion(historyItem)}
-                            title="Delete version"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSession(sessionItem);
+                            }}
+                            title="Delete session"
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {new Date(historyItem.createdAt || Date.now()).toLocaleString()}
+                        {new Date(sessionItem.createdAt || Date.now()).toLocaleString()}
                       </div>
-                      {historyItem.changeDescription && (
-                        <div className="text-xs text-gray-600 dark:text-gray-300 mt-1 italic">
-                          {historyItem.changeDescription}
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
                 
-                {documentHistory.length === 0 && (
+                {chatSessions.length === 0 && (
                   <div className="text-center py-8">
-                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      No document versions yet
+                      No chat sessions yet
                     </p>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={createHistoryEntry}
+                      onClick={createNewChatSession}
                     >
                       <Plus className="w-4 h-4 mr-1" />
-                      Create First Version
+                      Create First Chat
                     </Button>
                   </div>
                 )}
