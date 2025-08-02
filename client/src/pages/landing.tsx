@@ -72,7 +72,7 @@ export default function Landing() {
         </div>
 
         {/* Workspace Cards and Video Previews */}
-        <div className="grid md:grid-cols-3 gap-16 mb-16 scale-[1.4]">
+        <div className="grid md:grid-cols-3 gap-16 mb-16 scale-[1.19]">
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
