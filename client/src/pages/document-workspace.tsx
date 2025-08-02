@@ -577,7 +577,7 @@ export default function DocumentWorkspace() {
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 flex items-center justify-center">
               <img 
-                src="/src/assets/studyflow-logo.svg" 
+                src="/src/assets/studyflow-logo-new.svg" 
                 alt="StudyFlow" 
                 className="w-8 h-8"
               />

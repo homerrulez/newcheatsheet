@@ -40,19 +40,12 @@ export default function Landing() {
       <header className="relative z-10 px-8 py-6">
         <nav className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-white/30 via-cyan-50/25 to-purple-50/20 backdrop-blur-md border border-white/40 rounded-xl flex items-center justify-center shadow-lg">
-              <div className="relative">
-                {/* AI Brain */}
-                <div className="w-4 h-3 bg-white rounded-t-full rounded-b-lg relative">
-                  {/* Brain hemispheres */}
-                  <div className="absolute top-0.5 left-0.5 w-1 h-1 bg-gradient-to-br from-cyan-300 to-purple-300 rounded-full"></div>
-                  <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-gradient-to-br from-purple-300 to-blue-300 rounded-full"></div>
-                  <div className="absolute bottom-0.5 left-1 w-0.5 h-0.5 bg-gradient-to-br from-blue-300 to-cyan-300 rounded-full"></div>
-                  <div className="absolute bottom-0.5 right-1 w-0.5 h-0.5 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full"></div>
-                  {/* Central line */}
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-white/30"></div>
-                </div>
-              </div>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img 
+                src="/src/assets/studyflow-logo-new.svg" 
+                alt="StudyFlow" 
+                className="w-10 h-10"
+              />
             </div>
             <h1 className="text-xl font-bold text-white tracking-wide" style={{ fontFamily: '"Playfair Display", serif' }}>StudyFlow</h1>
           </div>

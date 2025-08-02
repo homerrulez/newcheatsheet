@@ -1,0 +1,50 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Brain gradient -->
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A855F7;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Graduation cap gradient -->
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Circuit gradient -->
+    <linearGradient id="circuitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Brain shape -->
+  <path d="M45 80 Q40 60 55 55 Q70 45 85 55 Q95 50 105 60 Q115 55 125 65 Q130 75 125 85 Q130 95 120 105 Q110 115 95 110 Q85 120 70 115 Q55 120 45 105 Q35 95 40 85 Q35 75 45 80 Z" fill="url(#brainGradient)" opacity="0.9"/>
+  
+  <!-- Brain neural pathways -->
+  <path d="M55 70 Q65 75 75 70" stroke="#F8FAFC" stroke-width="2" fill="none" opacity="0.8"/>
+  <path d="M60 85 Q70 80 80 85" stroke="#F8FAFC" stroke-width="2" fill="none" opacity="0.8"/>
+  <path d="M65 95 Q75 90 85 95" stroke="#F8FAFC" stroke-width="2" fill="none" opacity="0.8"/>
+  <path d="M70 105 Q80 100 90 105" stroke="#F8FAFC" stroke-width="2" fill="none" opacity="0.8"/>
+  
+  <!-- Graduation cap -->
+  <path d="M120 40 L160 50 L165 55 Q167 57 165 59 L162 62 L120 52 Q115 50 115 45 Q115 42 120 40 Z" fill="url(#capGradient)" opacity="0.9"/>
+  <path d="M160 50 L165 55 L165 65 L160 70 L120 60 L120 52 L160 50 Z" fill="url(#capGradient)" opacity="0.7"/>
+  
+  <!-- Graduation cap tassel -->
+  <circle cx="165" cy="60" r="3" fill="url(#capGradient)"/>
+  <path d="M165 63 Q168 68 165 73" stroke="url(#capGradient)" stroke-width="2" fill="none"/>
+  
+  <!-- Circuit connections -->
+  <path d="M130 80 L150 80 L150 90 L160 90" stroke="url(#circuitGradient)" stroke-width="3" fill="none" opacity="0.8"/>
+  <path d="M130 100 L145 100 L145 110 L155 110" stroke="url(#circuitGradient)" stroke-width="3" fill="none" opacity="0.8"/>
+  
+  <!-- Circuit nodes -->
+  <circle cx="160" cy="90" r="4" fill="url(#circuitGradient)" opacity="0.9"/>
+  <circle cx="155" cy="110" r="4" fill="url(#circuitGradient)" opacity="0.9"/>
+  <circle cx="130" cy="80" r="3" fill="url(#circuitGradient)" opacity="0.9"/>
+  <circle cx="130" cy="100" r="3" fill="url(#circuitGradient)" opacity="0.9"/>
+</svg>
