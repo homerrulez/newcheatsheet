@@ -41,42 +41,22 @@ export default function DocumentWorkspace() {
     return Math.floor(baseCharsPerPage * scaleFactor * fontSizeMultiplier);
   }, [pageSize, fontSize]);
 
-  // Split content into pages with proper boundaries
-  const splitIntoPages = useCallback(() => {
-    if (!content) return [''];
-    
+  // Calculate how many pages we need based on content length
+  const calculatePageCount = useCallback(() => {
+    if (!content) return 1;
     const charsPerPage = calculateCharactersPerPage();
-    const pages: string[] = [];
-    let remainingContent = content;
-    
-    while (remainingContent.length > 0) {
-      if (remainingContent.length <= charsPerPage) {
-        pages.push(remainingContent);
-        break;
-      }
-      
-      // Find a good break point (end of word/sentence)
-      let breakPoint = charsPerPage;
-      while (breakPoint > charsPerPage * 0.8 && 
-             remainingContent[breakPoint] !== ' ' && 
-             remainingContent[breakPoint] !== '\n' &&
-             remainingContent[breakPoint] !== '.') {
-        breakPoint--;
-      }
-      
-      // If no good break point found, break at character limit
-      if (breakPoint <= charsPerPage * 0.8) {
-        breakPoint = charsPerPage;
-      }
-      
-      pages.push(remainingContent.substring(0, breakPoint));
-      remainingContent = remainingContent.substring(breakPoint).trim();
-    }
-    
-    return pages.length > 0 ? pages : [''];
+    return Math.max(1, Math.ceil(content.length / charsPerPage));
   }, [content, calculateCharactersPerPage]);
 
-  const contentPages = splitIntoPages();
+  const pageCount = calculatePageCount();
+
+  // Get content that should appear on a specific page
+  const getPageContent = useCallback((pageIndex: number) => {
+    const charsPerPage = calculateCharactersPerPage();
+    const startIndex = pageIndex * charsPerPage;
+    const endIndex = startIndex + charsPerPage;
+    return content.slice(startIndex, endIndex);
+  }, [content, calculateCharactersPerPage]);
 
   const formatText = (command: string, value?: string) => {
     if (editorRef.current && typeof window !== 'undefined') {
@@ -95,16 +75,6 @@ export default function DocumentWorkspace() {
       const newContent = editorRef.current.innerText || editorRef.current.textContent || '';
       setContent(newContent);
     }
-  };
-
-  // Update content for a specific page and reflow
-  const updatePageContent = (pageIndex: number, newPageContent: string) => {
-    const pages = [...contentPages];
-    pages[pageIndex] = newPageContent;
-    
-    // Rejoin all pages and let the system re-split with proper boundaries
-    const fullContent = pages.join(' ');
-    setContent(fullContent);
   };
 
   // Fetch current document
@@ -382,7 +352,7 @@ export default function DocumentWorkspace() {
               {currentDocument?.title || 'New Document'}  
             </h2>
             <div className="text-sm text-slate-600 mt-1">
-              Page {currentPageIndex + 1} of {contentPages.length} • {pageSize.width}" × {pageSize.height}"
+              Page 1 of {pageCount} • {pageSize.width}" × {pageSize.height}"
             </div>
           </div>
           
@@ -393,32 +363,59 @@ export default function DocumentWorkspace() {
             ref={pagesContainerRef}
           >
             {currentDocument ? (
-              <div className="flex flex-col items-center space-y-8">
-                {/* Render pages with dynamic sizing and proper content boundaries */}
-                {contentPages.map((pageContent, pageIndex) => (
-                  <div
-                    key={pageIndex}
-                    className="document-page bg-white shadow-xl relative cursor-pointer"
-                    style={{
-                      width: `${pageSize.width * zoomLevel / 100}in`,
-                      height: `${pageSize.height * zoomLevel / 100}in`,
-                      border: '1px solid #d1d5db',
-                      overflow: 'hidden',
-                      marginBottom: pageIndex === contentPages.length - 1 ? '0' : '20px'
-                    }}
-                    onClick={() => setCurrentPageIndex(pageIndex)}
-                  >
-                    {/* Page content area with proportional margins */}
+              <div className="relative">
+                {/* Single continuous editor with page overlays */}
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  className="outline-none relative z-10"
+                  style={{
+                    fontFamily: fontFamily,
+                    fontSize: `${fontSize * zoomLevel / 100}pt`,
+                    lineHeight: Math.max(1.2, 1.5 * (pageSize.height / 11)),
+                    color: textColor,
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    padding: '0',
+                    background: 'transparent',
+                    minHeight: `${pageCount * pageSize.height * zoomLevel / 100}in`
+                  }}
+                  onInput={handleContentChange}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
+                    setContent(prev => prev + paste);
+                    setTimeout(handleContentChange, 10);
+                  }}
+                  data-placeholder="Start writing your document..."
+                >
+                  {content}
+                </div>
+
+                {/* Page boundaries visual overlay */}
+                <div className="absolute inset-0 pointer-events-none z-0">
+                  {Array.from({ length: pageCount }, (_, pageIndex) => (
                     <div
-                      className="absolute inset-0 overflow-hidden"
+                      key={pageIndex}
+                      className="bg-white shadow-xl relative border border-slate-300 mx-auto"
                       style={{
-                        padding: `${Math.min(1, pageSize.width * 0.12) * zoomLevel / 100}in`,
-                        boxSizing: 'border-box'
+                        width: `${pageSize.width * zoomLevel / 100}in`,
+                        height: `${pageSize.height * zoomLevel / 100}in`,
+                        marginBottom: pageIndex === pageCount - 1 ? '0' : '20px',
+                        marginTop: pageIndex === 0 ? '0' : '0'
                       }}
                     >
+                      {/* Page margins visual guide */}
+                      <div
+                        className="absolute inset-0 border-2 border-dashed border-slate-200"
+                        style={{
+                          margin: `${Math.min(1, pageSize.width * 0.12) * zoomLevel / 100}in`,
+                        }}
+                      />
+                      
                       {/* Page number */}
                       <div 
-                        className="absolute bottom-3 right-4 text-xs text-slate-400 pointer-events-none"
+                        className="absolute bottom-3 right-4 text-xs text-slate-400"
                         style={{ 
                           fontSize: `${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt`,
                         }}
@@ -426,38 +423,33 @@ export default function DocumentWorkspace() {
                         {pageIndex + 1}
                       </div>
 
-                      {/* Content for this specific page */}
+                      {/* Content preview for this page (read-only overlay) */}
                       <div
-                        ref={pageIndex === currentPageIndex ? editorRef : null}
-                        contentEditable={pageIndex === currentPageIndex}
-                        className={`w-full outline-none ${pageIndex === currentPageIndex ? 'ring-2 ring-blue-200' : ''}`}
+                        className="absolute inset-0 overflow-hidden pointer-events-none"
                         style={{
-                          fontFamily: fontFamily,
-                          fontSize: `${fontSize * zoomLevel / 100}pt`,
-                          lineHeight: Math.max(1.2, 1.5 * (pageSize.height / 11)), // Adjust line height for page size
-                          color: textColor,
-                          height: `${(pageSize.height - Math.min(2, pageSize.width * 0.24)) * zoomLevel / 100}in`,
-                          overflow: 'hidden',
-                          wordWrap: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          paddingBottom: `${Math.max(20, pageSize.height * 3) * zoomLevel / 100}px`
+                          padding: `${Math.min(1, pageSize.width * 0.12) * zoomLevel / 100}in`,
+                          boxSizing: 'border-box'
                         }}
-                        onInput={pageIndex === currentPageIndex ? handleContentChange : undefined}
-                        onFocus={() => setCurrentPageIndex(pageIndex)}
-                        onPaste={(e) => {
-                          if (pageIndex === currentPageIndex) {
-                            e.preventDefault();
-                            const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
-                            updatePageContent(pageIndex, pageContent + paste);
-                          }
-                        }}
-                        data-placeholder={pageIndex === 0 && !pageContent ? "Start writing your document..." : undefined}
                       >
-                        {pageContent}
+                        <div
+                          style={{
+                            fontFamily: fontFamily,
+                            fontSize: `${fontSize * zoomLevel / 100}pt`,
+                            lineHeight: Math.max(1.2, 1.5 * (pageSize.height / 11)),
+                            color: 'transparent', // Make invisible but preserve layout
+                            height: `${(pageSize.height - Math.min(2, pageSize.width * 0.24)) * zoomLevel / 100}in`,
+                            overflow: 'hidden',
+                            wordWrap: 'break-word',
+                            whiteSpace: 'pre-wrap',
+                            paddingBottom: `${Math.max(20, pageSize.height * 3) * zoomLevel / 100}px`
+                          }}
+                        >
+                          {getPageContent(pageIndex)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
