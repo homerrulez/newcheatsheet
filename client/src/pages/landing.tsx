@@ -22,15 +22,19 @@ export default function Landing() {
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #6B73FF 50%, #9644FF 75%, #000428 100%)' }}>
       {/* Frosted overlay with floating math symbols */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-blue-400/5 to-purple-600/10 backdrop-blur-[1px] z-0">
-        {/* Floating math symbols - subtle and spaced out */}
-        <div className="absolute top-[40%] left-[5%] text-2xl text-white/15 font-light select-none animate-float-right">∫</div>
-        <div className="absolute top-[60%] right-[8%] text-xl text-white/10 font-light select-none animate-float-left">π</div>
-        <div className="absolute top-[75%] left-[20%] text-2xl text-white/15 font-light select-none animate-float-right">√</div>
-        <div className="absolute top-[30%] left-[85%] text-xl text-white/10 font-light select-none animate-float-left">λ</div>
-        <div className="absolute top-[85%] right-[30%] text-2xl text-white/15 font-light select-none animate-float-up">∞</div>
-        <div className="absolute top-[25%] right-[10%] text-xl text-white/10 font-light select-none animate-float-left">∇</div>
-        <div className="absolute top-[90%] left-[70%] text-2xl text-white/15 font-light select-none animate-float-up">θ</div>
-        <div className="absolute top-[35%] left-[3%] text-xl text-white/10 font-light select-none animate-float-right">α</div>
+        {/* Floating math symbols - more visible */}
+        <div className="absolute top-[40%] left-[5%] text-3xl text-white/25 font-light select-none animate-float-right">∫</div>
+        <div className="absolute top-[60%] right-[8%] text-2xl text-white/20 font-light select-none animate-float-left">π</div>
+        <div className="absolute top-[75%] left-[20%] text-3xl text-white/25 font-light select-none animate-float-right">√</div>
+        <div className="absolute top-[30%] left-[85%] text-2xl text-white/20 font-light select-none animate-float-left">λ</div>
+        <div className="absolute top-[85%] right-[30%] text-3xl text-white/25 font-light select-none animate-float-up">∞</div>
+        <div className="absolute top-[25%] right-[10%] text-2xl text-white/20 font-light select-none animate-float-left">∇</div>
+        <div className="absolute top-[90%] left-[70%] text-3xl text-white/25 font-light select-none animate-float-up">θ</div>
+        <div className="absolute top-[35%] left-[3%] text-2xl text-white/20 font-light select-none animate-float-right">α</div>
+        <div className="absolute top-[45%] right-[25%] text-2xl text-white/20 font-light select-none animate-float-up">Σ</div>
+        <div className="absolute top-[20%] left-[40%] text-3xl text-white/25 font-light select-none animate-float-right">∂</div>
+        <div className="absolute top-[80%] left-[45%] text-2xl text-white/20 font-light select-none animate-float-left">Ω</div>
+        <div className="absolute top-[15%] right-[60%] text-2xl text-white/20 font-light select-none animate-float-up">φ</div>
       </div>
       {/* Header */}
       <header className="relative z-10 px-8 py-6">
@@ -63,9 +67,9 @@ export default function Landing() {
           <h1 className="text-8xl font-normal text-white mb-6 leading-tight tracking-wide" style={{ fontFamily: '"Crimson Text", serif' }}>
             StudyFlow
           </h1>
-          <h2 className="text-lg font-bold text-white/90 mb-16 tracking-[0.3em] uppercase" style={{ fontFamily: '"Playfair Display", serif' }}>
-            ACADEMIC PRODUCTIVITY PLATFORM
-          </h2>
+          <p className="text-xl text-white/90 mb-16 font-medium tracking-wide italic" style={{ fontFamily: '"Playfair Display", serif' }}>
+            "Where brilliant minds craft their masterpieces"
+          </p>
         </div>
 
         {/* Workspace Cards and Video Previews */}
@@ -114,6 +118,25 @@ export default function Landing() {
                 <Play className="text-white text-xl ml-1" />
               </div>
             </button>
+
+            {/* Additional Features */}
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-white/20 via-cyan-50/15 to-purple-50/10 backdrop-blur-md border border-white/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                  <BookOpen className="w-4 h-4 mr-2 text-cyan-600" />
+                  Academic Excellence
+                </h4>
+                <p className="text-xs text-gray-700">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
+              </div>
+              
+              <div className="bg-gradient-to-r from-white/20 via-cyan-50/15 to-purple-50/10 backdrop-blur-md border border-white/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                  <Layout className="w-4 h-4 mr-2 text-cyan-600" />
+                  Print Ready
+                </h4>
+                <p className="text-xs text-gray-700">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
+              </div>
+            </div>
           </div>
 
           {/* Cheat Sheet Workspace */}
@@ -160,6 +183,25 @@ export default function Landing() {
                 <Play className="text-white text-xl ml-1" />
               </div>
             </button>
+
+            {/* Additional Features */}
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                  <Calculator className="w-4 h-4 mr-2 text-purple-600" />
+                  Smart Organization
+                </h4>
+                <p className="text-xs text-gray-700">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
+              </div>
+              
+              <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                  <Grid3X3 className="w-4 h-4 mr-2 text-purple-600" />
+                  Dynamic Layouts
+                </h4>
+                <p className="text-xs text-gray-700">Intelligent box sizing and collision detection for optimal space utilization.</p>
+              </div>
+            </div>
           </div>
 
           {/* Document Workspace */}
@@ -206,6 +248,25 @@ export default function Landing() {
                 <Play className="text-white text-xl ml-1" />
               </div>
             </button>
+
+            {/* Additional Features */}
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-white/30 via-blue-50/25 to-green-50/20 backdrop-blur-md border border-white/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                  <PenTool className="w-4 h-4 mr-2 text-blue-600" />
+                  Microsoft Word Level
+                </h4>
+                <p className="text-xs text-gray-700">True pagination with live editing, content flow, and professional document standards.</p>
+              </div>
+              
+              <div className="bg-gradient-to-r from-white/30 via-blue-50/25 to-green-50/20 backdrop-blur-md border border-white/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+                  <Brain className="w-4 h-4 mr-2 text-blue-600" />
+                  AI Integration
+                </h4>
+                <p className="text-xs text-gray-700">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
