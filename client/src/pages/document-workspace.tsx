@@ -100,52 +100,52 @@ function DocumentRenderer({
   
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      <div ref={containerRef} className="space-y-8">
-        {/* Page containers with individual clipped content windows */}
-        {pages.map((_, pageIndex) => (
-          <div
-            key={pageIndex}
-            className="mx-auto bg-white shadow-lg relative"
-            style={{
-              width: `${pageWidth}px`,
-              height: `${pageHeight}px`,
-              overflow: 'hidden',
-            }}
-          >
-            {/* Content window for this specific page */}
-            <div 
-              className="absolute inset-0 p-16 overflow-hidden"
+      <div ref={containerRef} className="relative">
+        {/* Continuous editor container */}
+        <div className="relative mx-auto" style={{ width: `${pageWidth}px` }}>
+          {/* Page backgrounds */}
+          {pages.map((_, pageIndex) => (
+            <div
+              key={`bg-${pageIndex}`}
+              className="bg-white shadow-lg mb-8"
               style={{
-                fontFamily,
-                fontSize: `${fontSize}pt`,
-                color: textColor,
-                lineHeight: '1.6',
+                width: `${pageWidth}px`,
+                height: `${pageHeight}px`,
+                position: 'relative',
               }}
             >
-              {/* Positioned editor content - each page shows a different window */}
-              <div
-                style={{
-                  position: 'relative',
-                  top: `-${pageIndex * contentHeight}px`,
-                  width: '100%',
-                  minHeight: `${pages.length * contentHeight}px`,
-                }}
-              >
-                {pageIndex === 0 && editor && (
-                  <EditorContent 
-                    editor={editor}
-                    className="focus:outline-none prose prose-sm max-w-none"
-                  />
-                )}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+                {pageIndex + 1}
               </div>
             </div>
-            
-            {/* Page number */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-              {pageIndex + 1}
-            </div>
+          ))}
+          
+          {/* Single continuous editor positioned over all pages */}
+          <div
+            className="absolute top-0 left-0"
+            style={{
+              width: `${pageWidth}px`,
+              height: `${pages.length * pageHeight + (pages.length - 1) * 32}px`, // Include margins
+            }}
+          >
+            {editor && (
+              <EditorContent 
+                editor={editor}
+                className="focus:outline-none prose prose-sm max-w-none"
+                style={{
+                  fontFamily,
+                  fontSize: `${fontSize}pt`,
+                  color: textColor,
+                  lineHeight: '1.6',
+                  padding: '64px',
+                  minHeight: '100%',
+                  // Add page break styles
+                  pageBreakInside: 'auto',
+                }}
+              />
+            )}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
