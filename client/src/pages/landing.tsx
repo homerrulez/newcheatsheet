@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Grid3X3, Layout, Play, BookOpen, Calculator, PenTool, Brain } from 'lucide-react';
+import { FileText, Grid3X3, FileSpreadsheet, Play, Check, X, BookOpen, Calculator, PenTool, Layout, Brain } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Landing() {
@@ -18,7 +18,6 @@ export default function Landing() {
   const closeVideoModal = () => {
     setVideoModal({ isOpen: false, type: '', title: '' });
   };
-
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Frosted overlay with floating math symbols */}
@@ -37,7 +36,6 @@ export default function Landing() {
         <div className="absolute top-[80%] left-[45%] text-2xl text-white/20 font-light select-none animate-float-left">Ω</div>
         <div className="absolute top-[15%] right-[60%] text-2xl text-white/20 font-light select-none animate-float-up">φ</div>
       </div>
-
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-10 px-8 py-6">
         <div className="flex items-center justify-between w-full">
@@ -73,166 +71,180 @@ export default function Landing() {
           </p>
         </div>
 
-        {/* Subscription Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
-          {/* Template Workspace - Free Plan */}
+        {/* Workspace Cards and Video Previews */}
+        <div className="grid md:grid-cols-3 gap-16 mb-16 scale-[1.19]">
+          {/* Template Workspace */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-green-500/25 via-emerald-500/25 to-teal-500/25 backdrop-blur-md border border-green-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-green-500/35 hover:via-emerald-500/35 hover:to-teal-500/35 aspect-square flex flex-col justify-between">
-              <div className="flex flex-col items-center mb-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-300/20 via-emerald-300/20 to-teal-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
-                  <Layout className="text-white text-2xl" />
+            <Link href="/template">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-cyan-300/90 hover:via-purple-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between">
+                {/* AI Lighting Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+                <div className="absolute top-2 right-2 w-2 h-2 bg-cyan-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"></div>
+                <div className="absolute bottom-4 left-4 w-1 h-1 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-pulse delay-100"></div>
+                <div className="absolute top-1/2 left-2 w-1.5 h-1.5 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce delay-200"></div>
+                <div className="flex flex-col items-center mb-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                    <Layout className="text-gray-800 text-2xl" />
+                  </div>
+                  <h3 className="text-3xl font-normal text-gray-900 mb-1 text-center" style={{ fontFamily: '"Playfair Display", serif' }}>Template</h3>
+                  <p className="text-sm text-gray-700 text-center">Smart Templates Powered by AI</p>
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>Template</h3>
-                <p className="text-sm text-white/80 text-center">Smart Templates - Free</p>
+
+                {/* Feature List */}
+                <div className="bg-gradient-to-br from-white/60 via-cyan-50/45 to-purple-50/35 backdrop-blur-xl border border-white/50 rounded-xl p-3 space-y-2 shadow-lg shadow-cyan-200/30 ring-1 ring-white/20">
+                  <p className="text-xs text-gray-700 text-center mb-2 font-medium">Pre-designed templates with structured layouts for academic sheets.</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      8.5x11 layout
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Fixed structure
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Professional
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Print ready
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$0</div>
-                <p className="text-xs text-white/70">per month</p>
-              </div>
-              
-              <div className="space-y-2 mb-6">
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  Basic templates
-                </div>
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  5 documents limit
-                </div>
-                <div className="flex items-center text-xs text-white/60">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
-                  No AI assistance
-                </div>
-              </div>
-              
-              <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-0 py-2 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
-                Get Started
-              </Button>
-            </div>
+            </Link>
             
-            <button
-              onClick={() => openVideoModal('template', 'Template Workspace')}
-              className="w-full aspect-video bg-gradient-to-br from-green-300 via-emerald-300 to-teal-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            {/* Embedded Video Preview */}
+            <button 
+              onClick={() => openVideoModal('template', 'Smart Templates Powered by AI')}
+              className="w-full aspect-video bg-gradient-to-br from-cyan-300 via-purple-300 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
               </div>
             </button>
+
+
           </div>
 
-          {/* Document Workspace - Pro Plan */}
+          {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-cyan-500/30 backdrop-blur-md border border-blue-300/60 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 transform scale-110 ring-2 ring-blue-300/60 aspect-square flex flex-col justify-between">
-              <div className="absolute top-4 right-4 bg-blue-400 text-white text-xs px-3 py-1 rounded-full font-medium">
-                Popular
-              </div>
-              <div className="flex flex-col items-center mb-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-300/20 via-purple-300/20 to-cyan-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
-                  <FileText className="text-white text-2xl" />
+            <Link href="/cheatsheet">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-300/90 hover:via-pink-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between">
+                {/* AI Lighting Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/20 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+                <div className="absolute top-3 left-3 w-2 h-2 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping delay-75"></div>
+                <div className="absolute bottom-6 right-6 w-1 h-1 bg-pink-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-pulse delay-150"></div>
+                <div className="absolute top-1/3 right-3 w-1.5 h-1.5 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce delay-300"></div>
+                <div className="flex flex-col items-center mb-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                    <Brain className="text-gray-800 text-2xl" />
+                  </div>
+                  <h3 className="text-3xl font-normal text-gray-900 mb-1 text-center" style={{ fontFamily: '"Playfair Display", serif' }}>Cheatsheet</h3>
+                  <p className="text-sm text-gray-700 text-center">Cheat Sheets Powered by AI</p>
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>Document</h3>
-                <p className="text-sm text-white/80 text-center">Microsoft Word-Level</p>
-              </div>
-              
-              <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$12</div>
-                <p className="text-xs text-white/70">per month</p>
-              </div>
-              
-              <div className="space-y-2 mb-6">
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  Unlimited documents
+
+                {/* Feature List */}
+                <div className="bg-gradient-to-br from-white/65 via-purple-50/50 to-blue-50/40 backdrop-blur-xl border border-white/50 rounded-xl p-3 space-y-2 shadow-lg shadow-purple-200/30 ring-1 ring-white/20">
+                  <p className="text-xs text-gray-700 text-center mb-2 font-medium">Organized cheat sheets with auto-resizing content boxes.</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Auto-sizing
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Formulas
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      History
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Export ready
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  AI-powered assistance
-                </div>
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  Live pagination
-                </div>
               </div>
-              
-              <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white border-0 py-2 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
-                Start Free Trial
-              </Button>
-            </div>
+            </Link>
             
-            <button
-              onClick={() => openVideoModal('document', 'Document Workspace')}
-              className="w-full aspect-video bg-gradient-to-br from-blue-300 via-purple-300 to-cyan-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            {/* Embedded Video Preview */}
+            <button 
+              onClick={() => openVideoModal('cheatsheet', 'Cheat Sheets Powered by AI')}
+              className="w-full aspect-video bg-gradient-to-br from-cyan-300 via-purple-300 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
               </div>
             </button>
+
+
           </div>
 
-          {/* CheatSheet Workspace - Enterprise Plan */}
+          {/* Document Workspace */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-purple-500/25 via-indigo-500/25 to-violet-500/25 backdrop-blur-md border border-purple-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-500/35 hover:via-indigo-500/35 hover:to-violet-500/35 aspect-square flex flex-col justify-between">
-              <div className="flex flex-col items-center mb-3">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-300/20 via-indigo-300/20 to-violet-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
-                  <Grid3X3 className="text-white text-2xl" />
+            <Link href="/document/test-doc-1">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-blue-300/90 hover:via-green-300/90 hover:to-cyan-300/90 aspect-square flex flex-col justify-between">
+                {/* AI Lighting Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+                <div className="absolute top-4 right-4 w-2 h-2 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping delay-100"></div>
+                <div className="absolute bottom-3 left-6 w-1 h-1 bg-green-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-pulse delay-200"></div>
+                <div className="absolute top-2/3 left-2 w-1.5 h-1.5 bg-cyan-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce delay-250"></div>
+                <div className="flex flex-col items-center mb-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                    <PenTool className="text-gray-800 text-2xl" />
+                  </div>
+                  <h3 className="text-3xl font-normal text-gray-900 mb-1 text-center" style={{ fontFamily: '"Playfair Display", serif' }}>Document</h3>
+                  <p className="text-sm text-gray-700 text-center">Smart Documents Powered by AI</p>
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>CheatSheet</h3>
-                <p className="text-sm text-white/80 text-center">Interactive Study Cards</p>
+
+                {/* Feature List */}
+                <div className="bg-gradient-to-br from-white/70 via-blue-50/55 to-green-50/45 backdrop-blur-xl border border-white/50 rounded-xl p-3 space-y-2 shadow-lg shadow-blue-200/30 ring-1 ring-white/20">
+                  <p className="text-xs text-gray-700 text-center mb-2 font-medium">Documents with AI assistance and LaTeX for academic content.</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      Rich editing
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      LaTeX math
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      History
+                    </div>
+                    <div className="flex items-center">
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
+                      AI formatting
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$49</div>
-                <p className="text-xs text-white/70">per month</p>
-              </div>
-              
-              <div className="space-y-2 mb-6">
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  Everything in Pro
-                </div>
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  Team collaboration
-                </div>
-                <div className="flex items-center text-xs text-white/90">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  Advanced AI models
-                </div>
-              </div>
-              
-              <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-0 py-2 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
-                Contact Sales
-              </Button>
-            </div>
+            </Link>
             
-            <button
-              onClick={() => openVideoModal('cheatsheet', 'CheatSheet Workspace')}
-              className="w-full aspect-video bg-gradient-to-br from-purple-300 via-indigo-300 to-violet-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            {/* Embedded Video Preview */}
+            <button 
+              onClick={() => openVideoModal('document', 'Smart Documents Powered by AI')}
+              className="w-full aspect-video bg-gradient-to-br from-cyan-300 via-purple-300 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
               </div>
             </button>
+
+
           </div>
         </div>
 
-        {/* Feature Access Note */}
-        <div className="text-center mb-16">
-          <p className="text-white/80 mb-2 text-lg" style={{ fontFamily: '"Inter", sans-serif' }}>
-            Choose your workspace and pricing plan
-          </p>
-          <p className="text-white/60 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
-            Each workspace type comes with different subscription options
-          </p>
-        </div>
-
-        {/* Feature Boxes - Bottom Section */}
+        {/* Additional Features Section */}
         <div className="mt-40 mx-auto max-w-6xl space-y-8">
           {/* First Row - 2 boxes centered */}
           <div className="flex justify-center gap-8">
             {/* Academic Excellence */}
-            <div className="bg-gradient-to-r from-white/20 via-blue-50/15 to-purple-50/10 backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-200/20 hover:bg-gradient-to-r hover:from-white/25 hover:via-blue-50/20 hover:to-purple-50/15 transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-blue-50/30 hover:to-purple-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
                 <BookOpen className="w-5 h-5 mr-2 text-cyan-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300" />
                 Academic Excellence
@@ -241,7 +253,7 @@ export default function Landing() {
             </div>
             
             {/* Smart Organization */}
-            <div className="bg-gradient-to-r from-white/20 via-purple-50/15 to-blue-50/10 backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-purple-200/20 hover:bg-gradient-to-r hover:from-white/25 hover:via-purple-50/20 hover:to-blue-50/15 transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-purple-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-purple-50/30 hover:to-blue-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
                 <Calculator className="w-5 h-5 mr-2 text-purple-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300" />
                 Smart Organization
@@ -253,7 +265,7 @@ export default function Landing() {
           {/* Second Row - 3 boxes */}
           <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
             {/* Microsoft Word Level */}
-            <div className="bg-gradient-to-r from-white/20 via-blue-50/15 to-green-50/10 backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-blue-200/20 hover:bg-gradient-to-r hover:from-white/25 hover:via-blue-50/20 hover:to-green-50/15 transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-blue-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-blue-50/30 hover:to-green-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
                 <PenTool className="w-5 h-5 mr-2 text-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
                 Microsoft Word Level
@@ -262,7 +274,7 @@ export default function Landing() {
             </div>
             
             {/* Print Ready */}
-            <div className="bg-gradient-to-r from-white/20 via-cyan-50/15 to-purple-50/10 backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-cyan-200/20 hover:bg-gradient-to-r hover:from-white/25 hover:via-cyan-50/20 hover:to-purple-50/15 transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-cyan-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-cyan-50/30 hover:to-purple-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
                 <Layout className="w-5 h-5 mr-2 text-cyan-600 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300" />
                 Print Ready
@@ -271,7 +283,7 @@ export default function Landing() {
             </div>
             
             {/* Dynamic Layouts */}
-            <div className="bg-gradient-to-r from-white/20 via-purple-50/15 to-blue-50/10 backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-purple-200/20 hover:bg-gradient-to-r hover:from-white/25 hover:via-purple-50/20 hover:to-blue-50/15 transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-purple-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-purple-50/30 hover:to-blue-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
                 <Grid3X3 className="w-5 h-5 mr-2 text-purple-600 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
                 Dynamic Layouts
@@ -283,7 +295,7 @@ export default function Landing() {
           {/* Third Row - 1 box centered */}
           <div className="flex justify-center">
             {/* AI Integration */}
-            <div className="bg-gradient-to-r from-white/20 via-blue-50/15 to-green-50/10 backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-blue-200/20 hover:bg-gradient-to-r hover:from-white/25 hover:via-blue-50/20 hover:to-green-50/15 transition-all duration-300 cursor-pointer group">
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-blue-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-blue-50/30 hover:to-green-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
                 <Brain className="w-5 h-5 mr-2 text-blue-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300" />
                 AI Integration
@@ -296,26 +308,37 @@ export default function Landing() {
 
       {/* Video Modal */}
       <Dialog open={videoModal.isOpen} onOpenChange={closeVideoModal}>
-        <DialogContent className="max-w-4xl bg-white/95 backdrop-blur-md border border-white/20">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900" style={{ fontFamily: '"Playfair Display", serif' }}>
-              {videoModal.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <Play className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                {videoModal.type === 'template' && 'Template Workspace Demo Video'}
-                {videoModal.type === 'document' && 'Document Workspace Demo Video'}
-                {videoModal.type === 'cheatsheet' && 'CheatSheet Workspace Demo Video'}
-              </p>
-              <Button 
-                onClick={closeVideoModal}
-                className="mt-4 bg-gray-600 hover:bg-gray-700 text-white"
-              >
-                Close
-              </Button>
+        <DialogContent className="max-w-4xl max-h-[85vh] p-0 border-0 bg-gradient-to-br from-white/40 via-cyan-50/30 to-purple-50/20 backdrop-blur-2xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 backdrop-blur-sm rounded-lg"></div>
+          <div className="relative z-10">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="text-3xl font-black text-gray-900 tracking-tight bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text">
+                {videoModal.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="p-6 pt-4">
+              <div className="aspect-video bg-gradient-to-br from-gray-900/95 via-gray-800/90 to-gray-900/95 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
+                <div className="text-center text-white">
+                  <div className="w-20 h-20 bg-gradient-to-br from-white/20 via-cyan-200/30 to-purple-200/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center shadow-lg mx-auto mb-6">
+                    <Play className="w-10 h-10 text-white ml-1" />
+                  </div>
+                  <p className="text-xl mb-3 font-semibold tracking-wide">Video Demonstration</p>
+                  <p className="text-sm opacity-90 max-w-md mx-auto leading-relaxed">
+                    {videoModal.type === 'template' && 'See how Smart Templates help you create structured academic layouts instantly with AI-powered design assistance'}
+                    {videoModal.type === 'cheatsheet' && 'Watch how Cheat Sheets organize your formulas with intelligent auto-sizing and dynamic layout management'}
+                    {videoModal.type === 'document' && 'Experience Smart Documents with AI assistance and beautiful LaTeX rendering for academic excellence'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 text-center">
+                <Button 
+                  onClick={closeVideoModal} 
+                  variant="outline"
+                  className="bg-gradient-to-r from-white/60 via-cyan-50/50 to-purple-50/40 backdrop-blur-md border-white/40 hover:from-white/70 hover:via-cyan-50/60 hover:to-purple-50/50 hover:backdrop-blur-lg transition-all duration-300 font-medium"
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
