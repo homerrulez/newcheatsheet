@@ -40,13 +40,6 @@ interface DocumentRendererProps {
   onContentChange: (content: string) => void;
 }
 
-// Content splitting engine for proper pagination
-interface PageContent {
-  nodes: any[];
-  htmlContent: string;
-  height: number;
-}
-
 function DocumentRenderer({ 
   editor, 
   pageSize, 
@@ -58,14 +51,28 @@ function DocumentRenderer({
   onContentChange 
 }: DocumentRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pages, setPages] = useState<PageContent[]>([{ nodes: [], htmlContent: '', height: 0 }]);
+  
+  // Document-centric state (not page-based)
+  const [documentJSON, setDocumentJSON] = useState(null);
+  const [pageBreaks, setPageBreaks] = useState<number[]>([0]); // Document positions where pages break
+  const [activeCursorPosition, setActiveCursorPosition] = useState(0);
   
   // Calculate actual page dimensions
   const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
   const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
   const contentHeight = pageHeight - 128; // 64px padding top/bottom
   
-  // Measure element height for pagination
+  // Document position utilities
+  const getNodeTextLength = useCallback((node: any): number => {
+    if (node.type === 'text') {
+      return node.text?.length || 0;
+    }
+    if (node.content) {
+      return node.content.reduce((sum: number, child: any) => sum + getNodeTextLength(child), 0);
+    }
+    return 1; // For block elements, count as 1 position
+  }, []);
+
   const measureElement = useCallback((htmlContent: string): number => {
     const measureDiv = document.createElement('div');
     measureDiv.style.cssText = `
@@ -86,6 +93,22 @@ function DocumentRenderer({
     document.body.removeChild(measureDiv);
     return height;
   }, [pageWidth, fontFamily, fontSize]);
+
+  const getContentForPageRange = useCallback((startPos: number, endPos: number): string => {
+    if (!editor) return '';
+    const fullText = editor.getText();
+    const pageText = fullText.slice(startPos, endPos);
+    return `<div>${pageText.split('\n').map(line => `<p style="margin: 0 0 1em 0; line-height: 1.6;">${line || '<br>'}</p>`).join('')}</div>`;
+  }, [editor]);
+
+  const documentPositionToPageIndex = useCallback((position: number): number => {
+    for (let i = pageBreaks.length - 1; i >= 0; i--) {
+      if (position >= pageBreaks[i]) {
+        return i;
+      }
+    }
+    return 0;
+  }, [pageBreaks]);
   
   // Convert Tiptap node to HTML
   const nodeToHTML = useCallback((node: any): string => {
@@ -135,127 +158,175 @@ function DocumentRenderer({
     }
   }, []);
   
-  // Split content into pages based on height measurements
-  const paginateContent = useCallback(() => {
+  // Calculate page breaks based on document positions
+  const calculatePageBreaks = useCallback(() => {
     if (!editor) return;
     
     try {
       const jsonDoc = editor.getJSON();
       if (!jsonDoc?.content) {
-        setPages([{ nodes: [], htmlContent: '', height: 0 }]);
+        setPageBreaks([0]);
         return;
       }
       
-      const newPages: PageContent[] = [];
-      let currentPage: PageContent = { nodes: [], htmlContent: '', height: 0 };
+      const breaks: number[] = [0]; // Always start at position 0
+      let currentHeight = 0;
+      let documentPosition = 0;
       
-      // Process each node and split across pages
-      for (const node of jsonDoc.content) {
-        const nodeHTML = nodeToHTML(node);
-        const nodeHeight = measureElement(nodeHTML);
-        
-        // Check if node fits on current page
-        if (currentPage.height + nodeHeight > contentHeight && currentPage.nodes.length > 0) {
-          // Start new page
-          newPages.push(currentPage);
-          currentPage = { 
-            nodes: [node], 
-            htmlContent: nodeHTML, 
-            height: nodeHeight 
-          };
-        } else {
-          // Add to current page
-          currentPage.nodes.push(node);
-          currentPage.htmlContent += nodeHTML;
-          currentPage.height += nodeHeight;
-        }
+      // Walk through document nodes and find page break positions
+      const walkNodes = (nodes: any[]) => {
+        nodes.forEach(node => {
+          const nodeHTML = nodeToHTML(node);
+          const nodeHeight = measureElement(nodeHTML);
+          
+          if (currentHeight + nodeHeight > contentHeight && currentHeight > 0) {
+            // Page break needed - record document position
+            breaks.push(documentPosition);
+            currentHeight = nodeHeight;
+          } else {
+            currentHeight += nodeHeight;
+          }
+          
+          // Calculate text length of this node for position tracking
+          const nodeTextLength = getNodeTextLength(node);
+          documentPosition += nodeTextLength;
+        });
+      };
+      
+      if (jsonDoc.content) {
+        walkNodes(jsonDoc.content);
       }
-      
-      // Add final page
-      if (currentPage.nodes.length > 0) {
-        newPages.push(currentPage);
-      }
-      
-      // Ensure at least one page
-      if (newPages.length === 0) {
-        newPages.push({ nodes: [], htmlContent: '', height: 0 });
-      }
-      
-      setPages(newPages);
+      setPageBreaks(breaks);
     } catch (error) {
-      console.error('Content pagination error:', error);
-      setPages([{ nodes: [], htmlContent: '', height: 0 }]);
+      console.error('Page break calculation error:', error);
+      setPageBreaks([0]);
     }
-  }, [editor, nodeToHTML, measureElement, contentHeight]);
+  }, [editor, nodeToHTML, measureElement, contentHeight, getNodeTextLength]);
   
-  // Real-time content splitting
+  // Handle clicks on any page to move cursor
+  const handlePageClick = useCallback((pageIndex: number, event: React.MouseEvent) => {
+    if (!editor) return;
+    
+    const pageStartPosition = pageBreaks[pageIndex];
+    
+    // Calculate approximate position within the page based on click location
+    const pageElement = event.currentTarget as HTMLElement;
+    const rect = pageElement.getBoundingClientRect();
+    const clickY = event.clientY - rect.top;
+    const pageHeight = rect.height;
+    const clickRatio = Math.max(0, Math.min(1, clickY / pageHeight));
+    
+    const pageLength = (pageBreaks[pageIndex + 1] || documentContent.length) - pageStartPosition;
+    const estimatedLocalPosition = Math.floor(clickRatio * pageLength);
+    const globalPosition = pageStartPosition + estimatedLocalPosition;
+    
+    // Move cursor to this position in the document
+    editor.commands.setTextSelection(globalPosition);
+    setActiveCursorPosition(globalPosition);
+    editor.commands.focus();
+  }, [editor, pageBreaks, documentContent]);
+
+  // Real-time document updates
   useEffect(() => {
-    const timer = setTimeout(paginateContent, 300);
+    const timer = setTimeout(calculatePageBreaks, 300);
     return () => clearTimeout(timer);
-  }, [paginateContent, documentContent]);
+  }, [calculatePageBreaks, documentContent]);
   
-  // Listen for editor updates
+  // Listen for editor updates and cursor movement
   useEffect(() => {
     if (!editor) return;
     
-    const handleUpdate = () => {
-      setTimeout(paginateContent, 100);
+    const handleUpdate = ({ editor }: { editor: any }) => {
+      const newContent = editor.getHTML();
+      const newJSON = editor.getJSON();
+      
+      setDocumentJSON(newJSON);
+      onContentChange(newContent);
+      
+      // Update cursor position
+      const selection = editor.state.selection;
+      setActiveCursorPosition(selection.from);
+      
+      // Recalculate page breaks
+      setTimeout(calculatePageBreaks, 100);
     };
     
     editor.on('update', handleUpdate);
-    return () => editor.off('update', handleUpdate);
-  }, [editor, paginateContent]);
+    editor.on('selectionUpdate', handleUpdate);
+    
+    return () => {
+      editor.off('update', handleUpdate);
+      editor.off('selectionUpdate', handleUpdate);
+    };
+  }, [editor, calculatePageBreaks, onContentChange]);
   
+  // Render pages based on document state
+  const renderPages = () => {
+    const pages = [];
+    const currentPageIndex = documentPositionToPageIndex(activeCursorPosition);
+    
+    for (let i = 0; i < pageBreaks.length; i++) {
+      const startPos = pageBreaks[i];
+      const endPos = pageBreaks[i + 1] || documentContent.length;
+      const isActivePage = currentPageIndex === i;
+      
+      pages.push(
+        <div
+          key={i}
+          className="mx-auto bg-white shadow-lg relative cursor-text"
+          style={{
+            width: `${pageWidth}px`,
+            height: `${pageHeight}px`,
+            overflow: 'hidden',
+          }}
+          onClick={(e) => handlePageClick(i, e)}
+        >
+          <div 
+            className="p-16 h-full overflow-hidden"
+            style={{
+              fontFamily,
+              fontSize: `${fontSize}pt`,
+              color: textColor,
+              lineHeight: '1.6',
+            }}
+          >
+            {isActivePage && editor ? (
+              // Active page gets the live editor
+              <EditorContent 
+                editor={editor}
+                className="focus:outline-none prose prose-sm max-w-none"
+              />
+            ) : (
+              // Inactive pages show static content but handle clicks
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ 
+                  __html: getContentForPageRange(startPos, endPos) 
+                }} 
+              />
+            )}
+          </div>
+          
+          {/* Page number */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
+            {i + 1}
+          </div>
+        </div>
+      );
+    }
+    
+    return pages;
+  };
+
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
       {/* Page count status like Microsoft Word */}
       <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Page 1 of {pages.length}
+        Page {documentPositionToPageIndex(activeCursorPosition) + 1} of {pageBreaks.length}
       </div>
       
       <div ref={containerRef} className="space-y-8">
-        {/* Render each page with its unique content */}
-        {pages.map((page, pageIndex) => (
-          <div
-            key={pageIndex}
-            className="mx-auto bg-white shadow-lg relative"
-            style={{
-              width: `${pageWidth}px`,
-              height: `${pageHeight}px`,
-              overflow: 'hidden', // Critical: clips content to page boundaries
-            }}
-          >
-            {/* Page-specific content */}
-            <div 
-              className="p-16 h-full overflow-hidden"
-              style={{
-                fontFamily,
-                fontSize: `${fontSize}pt`,
-                color: textColor,
-                lineHeight: '1.6',
-              }}
-            >
-              {pageIndex === 0 && editor ? (
-                // First page gets the live editor
-                <EditorContent 
-                  editor={editor}
-                  className="focus:outline-none prose prose-sm max-w-none"
-                />
-              ) : (
-                // Other pages show static content splits
-                <div 
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: page.htmlContent }}
-                />
-              )}
-            </div>
-            
-            {/* Page number */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
-              {pageIndex + 1}
-            </div>
-          </div>
-        ))}
+        {renderPages()}
       </div>
     </div>
   );

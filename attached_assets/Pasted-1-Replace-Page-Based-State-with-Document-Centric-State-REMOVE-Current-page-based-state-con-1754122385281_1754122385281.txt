@@ -1,0 +1,163 @@
+1. Replace Page-Based State with Document-Centric State
+// REMOVE: Current page-based state
+// const [pages, setPages] = useState<PageContent[]>([]);
+
+// ADD: Document-centric state
+const [documentContent, setDocumentContent] = useState('');
+const [documentJSON, setDocumentJSON] = useState(null);
+const [pageBreaks, setPageBreaks] = useState<number[]>([]); // Document positions where pages break
+const [activeCursorPosition, setActiveCursorPosition] = useState(0);
+
+2. Transform Your Pagination Function
+// REPLACE: Your current paginateContent function
+const calculatePageBreaks = useCallback(() => {
+  if (!editor) return;
+  
+  const jsonDoc = editor.getJSON();
+  const breaks: number[] = [0]; // Always start at position 0
+  let currentHeight = 0;
+  let documentPosition = 0;
+  
+  // Walk through document nodes and find page break positions
+  const walkNodes = (nodes: any[]) => {
+    nodes.forEach(node => {
+      const nodeHTML = nodeToHTML(node);
+      const nodeHeight = measureElement(nodeHTML);
+      
+      if (currentHeight + nodeHeight > contentHeight && currentHeight > 0) {
+        // Page break needed - record document position
+        breaks.push(documentPosition);
+        currentHeight = nodeHeight;
+      } else {
+        currentHeight += nodeHeight;
+      }
+      
+      // Calculate text length of this node for position tracking
+      const nodeTextLength = getNodeTextLength(node);
+      documentPosition += nodeTextLength;
+    });
+  };
+  
+  walkNodes(jsonDoc.content);
+  setPageBreaks(breaks);
+}, [editor, measureElement, contentHeight]);
+
+3. Add Document Position Utilities
+// ADD: Helper functions for position management
+const getNodeTextLength = (node: any): number => {
+  // Calculate how many characters this node represents in the document
+  if (node.type === 'text') {
+    return node.text?.length || 0;
+  }
+  if (node.content) {
+    return node.content.reduce((sum: number, child: any) => sum + getNodeTextLength(child), 0);
+  }
+  return 1; // For block elements, count as 1 position
+};
+
+const getContentForPageRange = (startPos: number, endPos: number): string => {
+  // Extract content between document positions and convert to HTML
+  const fullText = editor.getText();
+  const pageText = fullText.slice(startPos, endPos);
+  
+  // Convert back to HTML (this is simplified - you'd need proper node extraction)
+  return `<div>${pageText.split('\n').map(line => `<p>${line}</p>`).join('')}</div>`;
+};
+
+const documentPositionToPageIndex = (position: number): number => {
+  // Find which page contains this document position
+  for (let i = pageBreaks.length - 1; i >= 0; i--) {
+    if (position >= pageBreaks[i]) {
+      return i;
+    }
+  }
+  return 0;
+};
+
+
+
+4. Replace Your Rendering Logic
+// REPLACE: Your current page rendering
+const renderPages = () => {
+  const pages = [];
+  
+  for (let i = 0; i < pageBreaks.length; i++) {
+    const startPos = pageBreaks[i];
+    const endPos = pageBreaks[i + 1] || documentContent.length;
+    const isActivePage = documentPositionToPageIndex(activeCursorPosition) === i;
+    
+    pages.push(
+      <div key={i} className="page-container">
+        {isActivePage ? (
+          // Active page gets the live editor
+          <div onClick={(e) => handlePageClick(i, e)}>
+            <EditorContent editor={editor} />
+          </div>
+        ) : (
+          // Inactive pages show static content but handle clicks
+          <div 
+            onClick={(e) => handlePageClick(i, e)}
+            dangerouslySetInnerHTML={{ 
+              __html: getContentForPageRange(startPos, endPos) 
+            }} 
+          />
+        )}
+        <div className="page-number">Page {i + 1}</div>
+      </div>
+    );
+  }
+  
+  return pages;
+};
+
+
+5. Add Click-to-Position Logic
+// ADD: Handle clicks on any page to move cursor
+const handlePageClick = (pageIndex: number, event: React.MouseEvent) => {
+  const pageStartPosition = pageBreaks[pageIndex];
+  
+  // Calculate approximate position within the page based on click location
+  // This is simplified - you'd want more precise position calculation
+  const pageElement = event.currentTarget;
+  const rect = pageElement.getBoundingClientRect();
+  const clickY = event.clientY - rect.top;
+  const pageHeight = rect.height;
+  const clickRatio = clickY / pageHeight;
+  
+  const pageLength = (pageBreaks[pageIndex + 1] || documentContent.length) - pageStartPosition;
+  const estimatedLocalPosition = Math.floor(clickRatio * pageLength);
+  const globalPosition = pageStartPosition + estimatedLocalPosition;
+  
+  // Move cursor to this position in the document
+  editor.commands.setTextSelection(globalPosition);
+  setActiveCursorPosition(globalPosition);
+};
+
+6. Update Your Event Handlers
+// REPLACE: Your current useEffect for editor updates
+useEffect(() => {
+  if (!editor) return;
+  
+  const handleUpdate = ({ editor }: { editor: any }) => {
+    const newContent = editor.getHTML();
+    const newJSON = editor.getJSON();
+    
+    setDocumentContent(newContent);
+    setDocumentJSON(newJSON);
+    
+    // Update cursor position
+    const selection = editor.state.selection;
+    setActiveCursorPosition(selection.from);
+    
+    // Recalculate page breaks
+    setTimeout(calculatePageBreaks, 100);
+  };
+  
+  editor.on('update', handleUpdate);
+  editor.on('selectionUpdate', handleUpdate);
+  
+  return () => {
+    editor.off('update', handleUpdate);
+    editor.off('selectionUpdate', handleUpdate);
+  };
+}, [editor, calculatePageBreaks]);
