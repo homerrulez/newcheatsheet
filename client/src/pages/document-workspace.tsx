@@ -23,7 +23,9 @@ import {
   List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, 
   Undo2, Redo2, History, MessageSquare, Plus, Clock, Send,
   Edit3, Share, Trash2, Copy, Download, Eye, MoreVertical,
-  Brain, Sparkles, Command, ChevronDown, ChevronRight
+  Brain, Sparkles, Command, ChevronDown, ChevronRight,
+  Strikethrough, Scissors, ClipboardPaste, Minus,
+  Indent, Outdent, Layout, Image, Table, Link
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/schema';
@@ -48,6 +50,7 @@ export default function DocumentWorkspace() {
   const [fontFamily, setFontFamily] = useState('Times New Roman');
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
+  const [pageOrientation, setPageOrientation] = useState('portrait');
   
   // Chat state - simplified, always ready
   const [chatInput, setChatInput] = useState('');
@@ -434,12 +437,12 @@ export default function DocumentWorkspace() {
     const textContent = historyItem.content.replace(/<[^>]*>/g, '');
     const blob = new Blob([textContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = url;
     a.download = `${historyItem.title}.txt`;
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast({ title: "Version downloaded" });
   };
@@ -516,123 +519,303 @@ export default function DocumentWorkspace() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
-      {/* Top toolbar */}
-      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-white/20 p-4 shadow-lg">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
+      {/* Enhanced Microsoft Word-Style Toolbar */}
+      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20">
+        {/* Document title bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <FileText className="w-4 h-4 text-white" />
             </div>
-            
-            {/* Formatting toolbar */}
-            <div className="flex items-center space-x-2 ml-8">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => editor?.chain().focus().toggleBold().run()}
-                className={editor?.isActive('bold') ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              >
-                <Bold className="w-4 h-4" />
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
+          </div>
+          <Button variant="outline" size="sm">
+            <Save className="w-4 h-4 mr-2" />
+            Save
+          </Button>
+        </div>
+
+        {/* Ribbon tabs */}
+        <div className="flex items-center space-x-6 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+          <Button variant="ghost" size="sm" className="text-blue-600 border-b-2 border-blue-600">
+            Home
+          </Button>
+          <Button variant="ghost" size="sm">
+            Insert
+          </Button>
+          <Button variant="ghost" size="sm">
+            Layout
+          </Button>
+          <Button variant="ghost" size="sm">
+            References
+          </Button>
+          <Button variant="ghost" size="sm">
+            Review
+          </Button>
+          <Button variant="ghost" size="sm">
+            View
+          </Button>
+        </div>
+
+        {/* Main toolbar content */}
+        <div className="p-3">
+          <div className="flex items-center space-x-4 overflow-x-auto">
+            {/* File operations */}
+            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+              <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText('')}>
+                <Copy className="w-4 h-4 mr-1" />
+                Copy
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => editor?.chain().focus().toggleItalic().run()}
-                className={editor?.isActive('italic') ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              >
-                <Italic className="w-4 h-4" />
+              <Button size="sm" variant="outline">
+                <Scissors className="w-4 h-4 mr-1" />
+                Cut
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => editor?.chain().focus().toggleUnderline().run()}
-                className={editor?.isActive('underline') ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              >
-                <UnderlineIcon className="w-4 h-4" />
+              <Button size="sm" variant="outline">
+                <ClipboardPaste className="w-4 h-4 mr-1" />
+                Paste
               </Button>
-              
-              <Separator orientation="vertical" className="h-6" />
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-                className={editor?.isActive({ textAlign: 'left' }) ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              >
-                <AlignLeft className="w-4 h-4" />
+              <Button size="sm" variant="outline">
+                <Undo2 className="w-4 h-4 mr-1" />
+                Undo
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-                className={editor?.isActive({ textAlign: 'center' }) ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              >
-                <AlignCenter className="w-4 h-4" />
+              <Button size="sm" variant="outline">
+                <Redo2 className="w-4 h-4 mr-1" />
+                Redo
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-                className={editor?.isActive({ textAlign: 'right' }) ? 'bg-blue-100 dark:bg-blue-900' : ''}
-              >
-                <AlignRight className="w-4 h-4" />
-              </Button>
-              
-              <Separator orientation="vertical" className="h-6" />
-              
-              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72].map(size => (
-                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
+            </div>
+
+            {/* Font controls */}
+            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
               <Select value={fontFamily} onValueChange={setFontFamily}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-36">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Times New Roman">Times New Roman</SelectItem>
                   <SelectItem value="Arial">Arial</SelectItem>
-                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                  <SelectItem value="Calibri">Calibri</SelectItem>
                   <SelectItem value="Georgia">Georgia</SelectItem>
                   <SelectItem value="Verdana">Verdana</SelectItem>
+                  <SelectItem value="Helvetica">Helvetica</SelectItem>
                   <SelectItem value="Courier New">Courier New</SelectItem>
+                  <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
+                  <SelectItem value="Impact">Impact</SelectItem>
+                  <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+                <SelectTrigger className="w-16">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8</SelectItem>
+                  <SelectItem value="9">9</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="11">11</SelectItem>
+                  <SelectItem value="12">12</SelectItem>
+                  <SelectItem value="14">14</SelectItem>
+                  <SelectItem value="16">16</SelectItem>
+                  <SelectItem value="18">18</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="22">22</SelectItem>
+                  <SelectItem value="24">24</SelectItem>
+                  <SelectItem value="26">26</SelectItem>
+                  <SelectItem value="28">28</SelectItem>
+                  <SelectItem value="36">36</SelectItem>
+                  <SelectItem value="48">48</SelectItem>
+                  <SelectItem value="72">72</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button size="sm" variant="outline" onClick={() => setFontSize(Math.min(72, fontSize + 2))}>
+                <Plus className="w-3 h-3" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setFontSize(Math.max(8, fontSize - 2))}>
+                <Minus className="w-3 h-3" />
+              </Button>
+            </div>
+
+            {/* Text formatting */}
+            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+              <Button
+                size="sm"
+                variant={editor?.isActive('bold') ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+              >
+                <Bold className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive('italic') ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+              >
+                <Italic className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive('underline') ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().toggleUnderline().run()}
+              >
+                <UnderlineIcon className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive('strike') ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().toggleStrike().run()}
+              >
+                <Strikethrough className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="outline" title="Subscript">
+                <span className="text-xs">X₂</span>
+              </Button>
+              <Button size="sm" variant="outline" title="Superscript">
+                <span className="text-xs">X²</span>
+              </Button>
+              <div className="w-8 h-6 bg-yellow-200 border rounded cursor-pointer" title="Highlight"></div>
+              <div className="w-8 h-6 bg-black border rounded cursor-pointer" title="Font Color"></div>
+            </div>
+
+            {/* Text alignment */}
+            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+              <Button
+                size="sm"
+                variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+              >
+                <AlignLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+              >
+                <AlignCenter className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+              >
+                <AlignRight className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+              >
+                <AlignJustify className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Lists and indentation */}
+            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+              <Button
+                size="sm"
+                variant={editor?.isActive('bulletList') ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={editor?.isActive('orderedList') ? 'default' : 'outline'}
+                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+              >
+                <ListOrdered className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="outline" title="Increase Indent">
+                <Indent className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="outline" title="Decrease Indent">
+                <Outdent className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Page Layout Controls */}
+            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+              <Select value={pageSize} onValueChange={(value: keyof typeof PAGE_SIZES) => setPageSize(value)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Page Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="letter">Letter (8.5" × 11")</SelectItem>
+                  <SelectItem value="legal">Legal (8.5" × 14")</SelectItem>
+                  <SelectItem value="a4">A4 (8.27" × 11.69")</SelectItem>
+                  <SelectItem value="a3">A3 (11.69" × 16.54")</SelectItem>
+                  <SelectItem value="tabloid">Tabloid (11" × 17")</SelectItem>
+                  <SelectItem value="executive">Executive (7.25" × 10.5")</SelectItem>
+                  <SelectItem value="ledger">Ledger (17" × 11")</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={pageOrientation} onValueChange={setPageOrientation}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button size="sm" variant="outline">
+                <Layout className="w-4 h-4 mr-1" />
+                Margins
+              </Button>
+            </div>
+
+            {/* Insert options */}
+            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+              <Button size="sm" variant="outline">
+                <Image className="w-4 h-4 mr-1" />
+                Image
+              </Button>
+              <Button size="sm" variant="outline">
+                <Table className="w-4 h-4 mr-1" />
+                Table
+              </Button>
+              <Button size="sm" variant="outline">
+                <Link className="w-4 h-4 mr-1" />
+                Link
+              </Button>
+              <Button size="sm" variant="outline">
+                <FileText className="w-4 h-4 mr-1" />
+                Page Break
+              </Button>
+            </div>
+
+            {/* Zoom controls */}
+            <div className="flex items-center space-x-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
+              >
+                <Minus className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-medium w-16 text-center">{zoomLevel}%</span>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Select value={zoomLevel.toString()} onValueChange={(value) => setZoomLevel(parseInt(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50%</SelectItem>
+                  <SelectItem value="75">75%</SelectItem>
+                  <SelectItem value="100">100%</SelectItem>
+                  <SelectItem value="125">125%</SelectItem>
+                  <SelectItem value="150">150%</SelectItem>
+                  <SelectItem value="200">200%</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
-            >
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <span className="text-sm font-medium w-12 text-center">{zoomLevel}%</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
-            >
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            <Button variant="outline" size="sm">
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
           </div>
         </div>
       </div>
