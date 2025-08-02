@@ -72,7 +72,7 @@ export default function Landing() {
         </div>
 
         {/* Workspace Cards and Video Previews */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
+        <div className="grid md:grid-cols-3 gap-16 mb-16">
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
@@ -126,18 +126,18 @@ export default function Landing() {
             </button>
 
             {/* Additional Features */}
-            <div className="space-y-6 mt-8">
-              <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                  <BookOpen className="w-4 h-4 mr-2 text-cyan-600" />
+            <div className="flex gap-3 mt-8">
+              <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-4 shadow-lg flex-1">
+                <h4 className="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                  <BookOpen className="w-3 h-3 mr-1 text-cyan-600" />
                   Academic Excellence
                 </h4>
                 <p className="text-xs text-gray-700 leading-relaxed">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
               </div>
               
-              <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                  <Layout className="w-4 h-4 mr-2 text-cyan-600" />
+              <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-4 shadow-lg flex-1">
+                <h4 className="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                  <Layout className="w-3 h-3 mr-1 text-cyan-600" />
                   Print Ready
                 </h4>
                 <p className="text-xs text-gray-700 leading-relaxed">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
@@ -198,18 +198,18 @@ export default function Landing() {
             </button>
 
             {/* Additional Features */}
-            <div className="space-y-6 mt-8">
-              <div className="bg-gradient-to-r from-white/30 via-purple-50/25 to-blue-50/20 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                  <Calculator className="w-4 h-4 mr-2 text-purple-600" />
+            <div className="flex gap-3 mt-8">
+              <div className="bg-gradient-to-r from-white/30 via-purple-50/25 to-blue-50/20 backdrop-blur-md border border-white/40 rounded-xl p-4 shadow-lg flex-1">
+                <h4 className="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                  <Calculator className="w-3 h-3 mr-1 text-purple-600" />
                   Smart Organization
                 </h4>
                 <p className="text-xs text-gray-700 leading-relaxed">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
               </div>
               
-              <div className="bg-gradient-to-r from-white/30 via-purple-50/25 to-blue-50/20 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                  <Grid3X3 className="w-4 h-4 mr-2 text-purple-600" />
+              <div className="bg-gradient-to-r from-white/30 via-purple-50/25 to-blue-50/20 backdrop-blur-md border border-white/40 rounded-xl p-4 shadow-lg flex-1">
+                <h4 className="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                  <Grid3X3 className="w-3 h-3 mr-1 text-purple-600" />
                   Dynamic Layouts
                 </h4>
                 <p className="text-xs text-gray-700 leading-relaxed">Intelligent box sizing and collision detection for optimal space utilization.</p>
@@ -270,18 +270,18 @@ export default function Landing() {
             </button>
 
             {/* Additional Features */}
-            <div className="space-y-6 mt-8">
-              <div className="bg-gradient-to-r from-white/35 via-blue-50/30 to-green-50/25 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                  <PenTool className="w-4 h-4 mr-2 text-blue-600" />
+            <div className="flex gap-3 mt-8">
+              <div className="bg-gradient-to-r from-white/35 via-blue-50/30 to-green-50/25 backdrop-blur-md border border-white/40 rounded-xl p-4 shadow-lg flex-1">
+                <h4 className="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                  <PenTool className="w-3 h-3 mr-1 text-blue-600" />
                   Microsoft Word Level
                 </h4>
                 <p className="text-xs text-gray-700 leading-relaxed">True pagination with live editing, content flow, and professional document standards.</p>
               </div>
               
-              <div className="bg-gradient-to-r from-white/35 via-blue-50/30 to-green-50/25 backdrop-blur-md border border-white/40 rounded-xl p-5 shadow-lg">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                  <Brain className="w-4 h-4 mr-2 text-blue-600" />
+              <div className="bg-gradient-to-r from-white/35 via-blue-50/30 to-green-50/25 backdrop-blur-md border border-white/40 rounded-xl p-4 shadow-lg flex-1">
+                <h4 className="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                  <Brain className="w-3 h-3 mr-1 text-blue-600" />
                   AI Integration
                 </h4>
                 <p className="text-xs text-gray-700 leading-relaxed">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
