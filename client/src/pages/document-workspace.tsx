@@ -360,16 +360,43 @@ export default function DocumentWorkspace() {
     }
   };
 
+  // Generate smart title from document content
+  const generateSmartTitle = (content: string): string => {
+    const textContent = content.replace(/<[^>]*>/g, '').trim();
+    if (!textContent) return 'Untitled Document';
+    
+    // Extract first meaningful sentence or phrase
+    const sentences = textContent.split(/[.!?]+/);
+    let title = sentences[0]?.trim() || '';
+    
+    // If too long, get first few words
+    if (title.length > 50) {
+      const words = title.split(' ').slice(0, 6);
+      title = words.join(' ') + (words.length < title.split(' ').length ? '...' : '');
+    }
+    
+    // If still empty or too short, use first line
+    if (!title || title.length < 10) {
+      const lines = textContent.split('\n').filter(line => line.trim());
+      title = lines[0]?.trim().slice(0, 50) + (lines[0]?.length > 50 ? '...' : '') || 'Document Draft';
+    }
+    
+    return title;
+  };
+
   // Create document history entry
   const createHistoryEntry = async () => {
     try {
+      const content = editor?.getHTML() || '<p></p>';
+      const smartTitle = generateSmartTitle(content);
+      
       const response = await fetch(`/api/documents/${id}/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           documentId: id,
-          title: `Version ${new Date().toLocaleTimeString()}`,
-          content: editor?.getHTML() || '<p></p>',
+          title: smartTitle,
+          content,
           pages: [],
           changeDescription: 'Manual snapshot created'
         }),
@@ -389,6 +416,65 @@ export default function DocumentWorkspace() {
     if (editor && historyItem.content) {
       editor.commands.setContent(historyItem.content);
       toast({ title: `Loaded version: ${historyItem.title}` });
+    }
+  };
+
+  // Copy version content to clipboard
+  const copyVersionContent = async (historyItem: any) => {
+    try {
+      const textContent = historyItem.content.replace(/<[^>]*>/g, '');
+      await navigator.clipboard.writeText(textContent);
+      toast({ title: "Version content copied to clipboard" });
+    } catch (error) {
+      toast({ title: "Failed to copy content", variant: "destructive" });
+    }
+  };
+
+  // Download version as text file
+  const downloadVersion = (historyItem: any) => {
+    const textContent = historyItem.content.replace(/<[^>]*>/g, '');
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${historyItem.title}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: "Version downloaded" });
+  };
+
+  // Delete version (placeholder - would need API endpoint)
+  const deleteVersion = async (historyItem: any) => {
+    try {
+      // For now, just show confirmation
+      if (confirm(`Delete version "${historyItem.title}"?`)) {
+        toast({ title: "Version delete functionality coming soon" });
+      }
+    } catch (error) {
+      toast({ title: "Failed to delete version", variant: "destructive" });
+    }
+  };
+
+  // Rename functionality state
+  const [renamingHistoryId, setRenamingHistoryId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState('');
+
+  // Start renaming
+  const startRenaming = (historyItem: any) => {
+    setRenamingHistoryId(historyItem.id);
+    setRenameTitle(historyItem.title);
+  };
+
+  // Save rename
+  const saveRename = async (historyId: string) => {
+    try {
+      // For now, just update locally (would need API endpoint)
+      setRenamingHistoryId(null);
+      toast({ title: "Version renamed (feature coming soon)" });
+    } catch (error) {
+      toast({ title: "Failed to rename version", variant: "destructive" });
     }
   };
 
@@ -570,11 +656,28 @@ export default function DocumentWorkspace() {
                   <div key={historyItem.id} className="group">
                     <div className="p-3 rounded-lg border bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-1">
                           <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
-                          <span className="font-medium text-gray-900 dark:text-white truncate">
-                            {historyItem.title}
-                          </span>
+                          {renamingHistoryId === historyItem.id ? (
+                            <Input
+                              value={renameTitle}
+                              onChange={(e) => setRenameTitle(e.target.value)}
+                              className="text-sm h-6 px-1"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  saveRename(historyItem.id);
+                                } else if (e.key === 'Escape') {
+                                  setRenamingHistoryId(null);
+                                }
+                              }}
+                              onBlur={() => setRenamingHistoryId(null)}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="font-medium text-gray-900 dark:text-white truncate">
+                              {historyItem.title}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button 
@@ -590,7 +693,17 @@ export default function DocumentWorkspace() {
                             size="sm" 
                             variant="ghost" 
                             className="p-1"
-                            title="Copy version"
+                            onClick={() => startRenaming(historyItem)}
+                            title="Rename version"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="p-1"
+                            onClick={() => copyVersionContent(historyItem)}
+                            title="Copy version content"
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
@@ -598,6 +711,7 @@ export default function DocumentWorkspace() {
                             size="sm" 
                             variant="ghost" 
                             className="p-1"
+                            onClick={() => downloadVersion(historyItem)}
                             title="Download version"
                           >
                             <Download className="w-3 h-3" />
@@ -606,6 +720,7 @@ export default function DocumentWorkspace() {
                             size="sm" 
                             variant="ghost" 
                             className="p-1 text-red-500"
+                            onClick={() => deleteVersion(historyItem)}
                             title="Delete version"
                           >
                             <Trash2 className="w-3 h-3" />
