@@ -25,39 +25,18 @@ export default function DocumentWorkspace() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Calculate pages based on actual content height
-  const calculatePages = useCallback(() => {
-    if (!content || typeof window === 'undefined') return 1;
+  // Calculate number of pages needed based on content
+  const calculatePageCount = useCallback(() => {
+    if (!content) return 1;
     
-    try {
-      // Create a temporary element to measure content height
-      const tempDiv = window.document.createElement('div');
-      tempDiv.style.cssText = `
-        position: absolute;
-        visibility: hidden;
-        width: 612px;
-        font-family: ${fontFamily};
-        font-size: ${fontSize}pt;
-        line-height: 1.15;
-        padding: 0;
-        margin: 0;
-        white-space: pre-wrap;
-      `;
-      tempDiv.innerHTML = content || 'Sample text';
-      window.document.body.appendChild(tempDiv);
-      
-      const contentHeight = tempDiv.scrollHeight;
-      window.document.body.removeChild(tempDiv);
-      
-      const pageHeight = 648; // 9 inches usable height (11in - 2in margins)
-      const pages = Math.max(1, Math.ceil(contentHeight / pageHeight));
-      
-      return pages;
-    } catch (error) {
-      console.warn('Error calculating pages:', error);
-      return 1;
-    }
-  }, [content, fontSize, fontFamily]);
+    // Rough estimation: 500 characters per page (standard document)
+    const charactersPerPage = 2500;
+    const pages = Math.max(1, Math.ceil(content.length / charactersPerPage));
+    
+    return pages;
+  }, [content]);
+
+  const pageCount = calculatePageCount();
 
   const formatText = (command: string, value?: string) => {
     if (editorRef.current && typeof window !== 'undefined') {
@@ -73,15 +52,17 @@ export default function DocumentWorkspace() {
 
   const handleContentChange = () => {
     if (editorRef.current) {
-      const newContent = editorRef.current.innerHTML;
+      const newContent = editorRef.current.innerText || editorRef.current.textContent || '';
       setContent(newContent);
-      
-      // Auto-pagination: split content across pages if needed
-      const pages = calculatePages();
-      if (pages > 1) {
-        // This will trigger re-render with proper page distribution
-      }
     }
+  };
+
+  // Split content into pages for display
+  const getPageContent = (pageIndex: number) => {
+    const charactersPerPage = 2500;
+    const startIndex = pageIndex * charactersPerPage;
+    const endIndex = startIndex + charactersPerPage;
+    return content.slice(startIndex, endIndex);
   };
 
   // Fetch current document
@@ -340,63 +321,92 @@ export default function DocumentWorkspace() {
               {currentDocument?.title || 'New Document'}  
             </h2>
             <div className="text-sm text-slate-600 mt-1">
-              Page 1 of {calculatePages()}
+              Page 1 of {pageCount}
             </div>
           </div>
           
-          {/* Document Editor Area */}
-          <div className="flex-1 overflow-auto p-8" style={{ backgroundColor: '#f8f9fa' }} ref={pagesContainerRef}>
+          {/* Document Editor Area - True Print Layout */}
+          <div 
+            className="flex-1 overflow-auto" 
+            style={{ backgroundColor: '#f8f9fa', padding: '40px 20px' }} 
+            ref={pagesContainerRef}
+          >
             {currentDocument ? (
-              <div className="max-w-4xl mx-auto">
-                {/* Single continuous editor that flows across pages */}
-                <div
-                  className="document-page bg-white shadow-lg mx-auto relative"
-                  style={{
-                    width: '8.5in',
-                    minHeight: `${calculatePages() * 11}in`,
-                    padding: '1in',
-                    transform: `scale(${zoomLevel / 100})`,
-                    transformOrigin: 'top center',
-                    marginBottom: '4rem',
-                    backgroundImage: calculatePages() > 1 ? `repeating-linear-gradient(transparent, transparent 10.5in, #e2e8f0 10.5in, #e2e8f0 11in)` : 'none',
-                    backgroundSize: '100% 11in'
-                  }}
-                >
-                  {/* Page numbers overlay */}
-                  {Array.from({ length: calculatePages() }, (_, pageIndex) => (
+              <div className="flex flex-col items-center space-y-8">
+                {/* Render individual pages with strict boundaries */}
+                {Array.from({ length: pageCount }, (_, pageIndex) => (
+                  <div
+                    key={pageIndex}
+                    className="document-page bg-white shadow-xl relative"
+                    style={{
+                      width: `${8.5 * zoomLevel / 100}in`,
+                      height: `${11 * zoomLevel / 100}in`,
+                      border: '1px solid #d1d5db',
+                      overflow: 'hidden', // Strict clipping
+                      marginBottom: pageIndex === pageCount - 1 ? '0' : '20px'
+                    }}
+                  >
+                    {/* Page content area with margins */}
                     <div
-                      key={pageIndex}
-                      className="absolute text-xs text-slate-400 pointer-events-none"
+                      className="absolute inset-0 overflow-hidden"
                       style={{
-                        bottom: `${(calculatePages() - pageIndex - 1) * 11 + 0.25}in`,
-                        right: '0.25in'
+                        padding: `${1 * zoomLevel / 100}in`,
+                        boxSizing: 'border-box'
                       }}
                     >
-                      Page {pageIndex + 1}
-                    </div>
-                  ))}
+                      {/* Page number */}
+                      <div 
+                        className="absolute bottom-3 right-4 text-xs text-slate-400 pointer-events-none"
+                        style={{ fontSize: `${10 * zoomLevel / 100}pt` }}
+                      >
+                        {pageIndex + 1}
+                      </div>
 
-                  {/* Content editor - single continuous area */}
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    className="w-full outline-none"
-                    style={{
-                      fontFamily: fontFamily,
-                      fontSize: `${fontSize}pt`,
-                      lineHeight: '1.15',
-                      minHeight: `${calculatePages() > 1 ? (calculatePages() * 9) : 9}in`,
-                      color: textColor
-                    }}
-                    onInput={handleContentChange}
-                    onPaste={(e) => {
-                      // Handle paste to maintain formatting
-                      setTimeout(handleContentChange, 10);
-                    }}
-                    dangerouslySetInnerHTML={{ __html: content }}
-                    data-placeholder="Start writing your document..."
-                  />
-                </div>
+                      {/* Content for this page */}
+                      <div
+                        ref={pageIndex === 0 ? editorRef : null}
+                        contentEditable={pageIndex === 0}
+                        className="w-full outline-none"
+                        style={{
+                          fontFamily: fontFamily,
+                          fontSize: `${fontSize * zoomLevel / 100}pt`,
+                          lineHeight: '1.5',
+                          color: textColor,
+                          height: `${9 * zoomLevel / 100}in`,
+                          overflow: 'hidden', // Clip content to page
+                          wordWrap: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                          paddingBottom: '30px' // Space for page number
+                        }}
+                        onInput={pageIndex === 0 ? handleContentChange : undefined}
+                        onPaste={(e) => {
+                          if (pageIndex === 0) {
+                            e.preventDefault();
+                            const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
+                            setContent(prev => prev + paste);
+                            setTimeout(handleContentChange, 10);
+                          }
+                        }}
+                        data-placeholder={pageIndex === 0 ? "Start writing your document..." : undefined}
+                      >
+                        {pageIndex === 0 ? (
+                          // First page is editable
+                          content
+                        ) : (
+                          // Subsequent pages show overflow content
+                          <div style={{ 
+                            whiteSpace: 'pre-wrap',
+                            wordWrap: 'break-word',
+                            height: '100%',
+                            overflow: 'hidden'
+                          }}>
+                            {getPageContent(pageIndex)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
