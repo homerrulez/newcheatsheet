@@ -1,0 +1,42 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#89d2f4;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#6ac4e4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5bb8d8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Brain Section -->
+  <path d="M15 25 C10 20, 10 40, 15 45 C12 50, 20 55, 25 50 C30 55, 40 50, 35 40 C40 35, 35 25, 30 30 C25 20, 15 20, 15 25 Z" 
+        fill="url(#brainGradient)" stroke="none"/>
+  
+  <!-- Brain Lines -->
+  <path d="M18 30 C22 32, 20 35, 18 33" fill="none" stroke="#4a90c2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M22 38 C26 40, 24 43, 22 41" fill="none" stroke="#4a90c2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M28 32 C32 34, 30 37, 28 35" fill="none" stroke="#4a90c2" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Graduation Cap -->
+  <rect x="45" y="20" width="35" height="4" rx="2" fill="url(#brainGradient)"/>
+  <polygon points="43,24 82,24 75,15 50,15" fill="url(#brainGradient)"/>
+  <circle cx="82" cy="22" r="1.5" fill="url(#brainGradient)"/>
+  <line x1="82" y1="24" x2="82" y2="30" stroke="url(#brainGradient)" stroke-width="1.5"/>
+  <polygon points="80,30 84,30 82,33" fill="url(#brainGradient)"/>
+  
+  <!-- Circuit Lines -->
+  <line x1="50" y1="45" x2="70" y2="45" stroke="url(#brainGradient)" stroke-width="2"/>
+  <line x1="50" y1="55" x2="65" y2="55" stroke="url(#brainGradient)" stroke-width="2"/>
+  <line x1="50" y1="65" x2="60" y2="65" stroke="url(#brainGradient)" stroke-width="2"/>
+  
+  <!-- Circuit Nodes -->
+  <circle cx="70" cy="45" r="2" fill="url(#brainGradient)"/>
+  <circle cx="65" cy="55" r="2" fill="url(#brainGradient)"/>
+  <circle cx="60" cy="65" r="2" fill="url(#brainGradient)"/>
+  
+  <!-- Additional circuit connections -->
+  <line x1="70" y1="47" x2="75" y2="52" stroke="url(#brainGradient)" stroke-width="1.5"/>
+  <line x1="65" y1="57" x2="70" y2="62" stroke="url(#brainGradient)" stroke-width="1.5"/>
+  
+  <circle cx="75" cy="52" r="1.5" fill="url(#brainGradient)"/>
+  <circle cx="70" cy="62" r="1.5" fill="url(#brainGradient)"/>
+</svg>
