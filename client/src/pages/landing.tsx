@@ -19,9 +19,9 @@ export default function Landing() {
     setVideoModal({ isOpen: false, type: '', title: '' });
   };
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'radial-gradient(ellipse at top left, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)' }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #6B73FF 50%, #9644FF 75%, #000428 100%)' }}>
       {/* Frosted overlay with floating math symbols */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-purple-50/10 to-blue-50/15 backdrop-blur-[2px] z-0">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-blue-400/5 to-purple-600/10 backdrop-blur-[1px] z-0">
         {/* Floating math symbols - subtle and spaced out */}
         <div className="absolute top-[40%] left-[5%] text-2xl text-white/15 font-light select-none animate-float-right">∫</div>
         <div className="absolute top-[60%] right-[8%] text-xl text-white/10 font-light select-none animate-float-left">π</div>
@@ -60,15 +60,12 @@ export default function Landing() {
       {/* Hero Section */}
       <main className="relative z-10 max-w-6xl mx-auto px-8 py-16">
         <div className="text-center mb-20">
-          <h1 className="text-8xl font-light text-white mb-4 leading-tight tracking-wide" style={{ fontFamily: '"Playfair Display", serif' }}>
+          <h1 className="text-8xl font-normal text-white mb-6 leading-tight tracking-wide" style={{ fontFamily: '"Crimson Text", serif' }}>
             StudyFlow
           </h1>
-          <h2 className="text-lg font-bold text-white/90 mb-6 tracking-[0.3em] uppercase" style={{ fontFamily: '"Inter", sans-serif' }}>
-            ACADEMIC PRODUCTIVITY
+          <h2 className="text-lg font-bold text-white/90 mb-16 tracking-[0.3em] uppercase" style={{ fontFamily: '"Playfair Display", serif' }}>
+            ACADEMIC PRODUCTIVITY PLATFORM
           </h2>
-          <p className="text-xl text-white/80 mb-16 font-normal leading-relaxed max-w-2xl mx-auto">
-            Elevate your academic workflow with AI-powered document creation, intelligent templates, and collaborative study tools designed for modern scholars.
-          </p>
         </div>
 
         {/* Workspace Cards and Video Previews */}
