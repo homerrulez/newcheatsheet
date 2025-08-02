@@ -49,7 +49,7 @@ export default function DocumentWorkspace() {
       }),
       Underline,
     ],
-    content: pages[activePageIndex]?.content || '',
+    content: '<p>Start writing your document...</p>',
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
       updatePageContent(activePageIndex, content);
@@ -57,10 +57,12 @@ export default function DocumentWorkspace() {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
-        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor};`
+        class: 'prose prose-sm focus:outline-none w-full h-full',
+        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor}; min-height: 100%; padding: 0; margin: 0;`,
       },
     },
+    autofocus: true,
+    editable: true,
   });
 
   // Update page content
@@ -72,9 +74,9 @@ export default function DocumentWorkspace() {
 
   // Check if content overflows current page and move to next page
   const checkForPageOverflow = useCallback(() => {
-    if (!editor || typeof document === 'undefined') return;
+    if (!editor || typeof window === 'undefined') return;
 
-    const editorElement = document.querySelector('.ProseMirror');
+    const editorElement = window.document.querySelector('.ProseMirror');
     if (!editorElement) return;
 
     const currentPageSize = PAGE_SIZES[pageSize];
@@ -179,15 +181,19 @@ export default function DocumentWorkspace() {
   const saveDocumentMutation = useMutation({
     mutationFn: async (documentData: Partial<Document>) => {
       if (id && id !== 'new') {
-        return apiRequest(`/api/documents/${id}`, {
+        const response = await fetch(`/api/documents/${id}`, {
           method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(documentData),
         });
+        return response.json();
       } else {
-        return apiRequest('/api/documents', {
+        const response = await fetch('/api/documents', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(documentData),
         });
+        return response.json();
       }
     },
     onSuccess: (savedDocument) => {
@@ -235,14 +241,16 @@ export default function DocumentWorkspace() {
   // Update editor when switching pages
   useEffect(() => {
     if (editor && pages[activePageIndex]) {
-      editor.commands.setContent(pages[activePageIndex].content);
+      const content = pages[activePageIndex].content || '<p>Start writing...</p>';
+      editor.commands.setContent(content);
+      editor.commands.focus();
     }
   }, [editor, activePageIndex, pages]);
 
   // Update editor styles when font/color changes
   useEffect(() => {
-    if (editor && typeof document !== 'undefined') {
-      const editorElement = document.querySelector('.ProseMirror') as HTMLElement;
+    if (editor && typeof window !== 'undefined') {
+      const editorElement = window.document.querySelector('.ProseMirror') as HTMLElement;
       if (editorElement) {
         editorElement.style.fontFamily = fontFamily;
         editorElement.style.fontSize = `${fontSize * zoomLevel / 100}pt`;
@@ -255,7 +263,7 @@ export default function DocumentWorkspace() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <WorkspaceSidebar />
+      <WorkspaceSidebar workspaceType="document" onNewWorkspace={() => navigate('/document/new')} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Document Header */}
@@ -440,20 +448,31 @@ export default function DocumentWorkspace() {
                 >
                   {/* Page Content */}
                   <div
-                    className="w-full h-full p-4 overflow-hidden"
+                    className="w-full h-full p-4 overflow-hidden cursor-text"
                     style={{
                       fontSize: `${fontSize * zoomLevel / 100}pt`,
                       fontFamily,
                       color: textColor,
                       lineHeight: 1.5
                     }}
+                    onClick={() => {
+                      if (index !== activePageIndex) {
+                        switchToPage(index);
+                      }
+                      if (editor) {
+                        editor.commands.focus();
+                      }
+                    }}
                   >
                     {index === activePageIndex ? (
-                      <EditorContent editor={editor} className="h-full overflow-hidden" />
+                      <EditorContent 
+                        editor={editor} 
+                        className="h-full overflow-hidden prose-sm focus:outline-none"
+                      />
                     ) : (
                       <div 
-                        dangerouslySetInnerHTML={{ __html: page.content || '<p>Start writing...</p>' }}
-                        className="h-full overflow-hidden"
+                        dangerouslySetInnerHTML={{ __html: page.content || '<p class="text-gray-400">Click to start writing...</p>' }}
+                        className="h-full overflow-hidden prose-sm"
                       />
                     )}
                   </div>
@@ -472,11 +491,6 @@ export default function DocumentWorkspace() {
             <ChatPanel 
               workspaceType="document" 
               workspaceId={currentDocument?.id || 'new'} 
-              onContentInsert={(content) => {
-                if (editor) {
-                  editor.chain().focus().insertContent(content).run();
-                }
-              }}
             />
           </div>
         </div>
