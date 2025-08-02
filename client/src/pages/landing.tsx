@@ -244,18 +244,18 @@ export default function Landing() {
           {/* First Row - 2 boxes centered */}
           <div className="flex justify-center gap-8">
             {/* Academic Excellence */}
-            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80">
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-blue-50/30 hover:to-purple-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-                <BookOpen className="w-5 h-5 mr-2 text-cyan-600" />
+                <BookOpen className="w-5 h-5 mr-2 text-cyan-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300" />
                 Academic Excellence
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
             </div>
             
             {/* Smart Organization */}
-            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80">
+            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-purple-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-purple-50/30 hover:to-blue-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-                <Calculator className="w-5 h-5 mr-2 text-purple-600" />
+                <Calculator className="w-5 h-5 mr-2 text-purple-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300" />
                 Smart Organization
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
@@ -265,27 +265,27 @@ export default function Landing() {
           {/* Second Row - 3 boxes */}
           <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
             {/* Microsoft Word Level */}
-            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-blue-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-blue-50/30 hover:to-green-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-                <PenTool className="w-5 h-5 mr-2 text-blue-600" />
+                <PenTool className="w-5 h-5 mr-2 text-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
                 Microsoft Word Level
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed">True pagination with live editing, content flow, and professional document standards.</p>
             </div>
             
             {/* Print Ready */}
-            <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
+            <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-cyan-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-cyan-50/30 hover:to-purple-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-                <Layout className="w-5 h-5 mr-2 text-cyan-600" />
+                <Layout className="w-5 h-5 mr-2 text-cyan-600 group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300" />
                 Print Ready
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
             </div>
             
             {/* Dynamic Layouts */}
-            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
+            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg hover:scale-105 hover:shadow-2xl hover:shadow-purple-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-purple-50/30 hover:to-blue-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-                <Grid3X3 className="w-5 h-5 mr-2 text-purple-600" />
+                <Grid3X3 className="w-5 h-5 mr-2 text-purple-600 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
                 Dynamic Layouts
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed">Intelligent box sizing and collision detection for optimal space utilization.</p>
@@ -295,9 +295,9 @@ export default function Landing() {
           {/* Third Row - 1 box centered */}
           <div className="flex justify-center">
             {/* AI Integration */}
-            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80">
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80 hover:scale-105 hover:shadow-2xl hover:shadow-blue-200/30 hover:bg-gradient-to-r hover:from-white/35 hover:via-blue-50/30 hover:to-green-50/25 transition-all duration-300 cursor-pointer group">
               <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-                <Brain className="w-5 h-5 mr-2 text-blue-600" />
+                <Brain className="w-5 h-5 mr-2 text-blue-600 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300" />
                 AI Integration
               </h4>
               <p className="text-sm text-gray-700 leading-relaxed">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
