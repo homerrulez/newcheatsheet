@@ -100,52 +100,61 @@ function DocumentRenderer({
   
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      <div ref={containerRef} className="relative">
-        {/* Continuous editor container */}
-        <div className="relative mx-auto" style={{ width: `${pageWidth}px` }}>
-          {/* Page backgrounds */}
-          {pages.map((_, pageIndex) => (
-            <div
-              key={`bg-${pageIndex}`}
-              className="bg-white shadow-lg mb-8"
-              style={{
-                width: `${pageWidth}px`,
-                height: `${pageHeight}px`,
-                position: 'relative',
-              }}
-            >
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-                {pageIndex + 1}
-              </div>
-            </div>
-          ))}
-          
-          {/* Single continuous editor positioned over all pages */}
+      <div ref={containerRef} className="space-y-8">
+        {/* Individual page containers with clipped editor views */}
+        {pages.map((_, pageIndex) => (
           <div
-            className="absolute top-0 left-0"
+            key={pageIndex}
+            className="mx-auto bg-white shadow-lg relative"
             style={{
               width: `${pageWidth}px`,
-              height: `${pages.length * pageHeight + (pages.length - 1) * 32}px`, // Include margins
+              height: `${pageHeight}px`,
+              overflow: 'hidden', // Critical: clips content to page boundaries
             }}
           >
-            {editor && (
-              <EditorContent 
-                editor={editor}
-                className="focus:outline-none prose prose-sm max-w-none"
+            {/* Editor content window for this page */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '64px',
+                left: '64px',
+                right: '64px',
+                bottom: '64px',
+                overflow: 'hidden',
+                fontFamily,
+                fontSize: `${fontSize}pt`,
+                color: textColor,
+                lineHeight: '1.6',
+              }}
+            >
+              {/* Offset editor content to show correct portion for this page */}
+              <div
                 style={{
-                  fontFamily,
-                  fontSize: `${fontSize}pt`,
-                  color: textColor,
-                  lineHeight: '1.6',
-                  padding: '64px',
-                  minHeight: '100%',
-                  // Add page break styles
-                  pageBreakInside: 'auto',
+                  position: 'relative',
+                  transform: `translateY(-${pageIndex * contentHeight}px)`,
+                  width: '100%',
                 }}
-              />
-            )}
+              >
+                {editor && (
+                  <EditorContent 
+                    editor={editor}
+                    className="focus:outline-none prose prose-sm max-w-none"
+                    style={{
+                      minHeight: `${pages.length * contentHeight}px`,
+                      margin: 0,
+                      padding: 0,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+            
+            {/* Page number */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
+              {pageIndex + 1}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
