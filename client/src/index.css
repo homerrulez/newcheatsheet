@@ -113,6 +113,31 @@
   animation: float-in-from-bottom 24s ease-in-out infinite;
 }
 
+/* Document editor placeholder styles */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+}
+
+[contenteditable]:focus {
+  outline: none;
+}
+
+/* Print styles for document pages */
+@media print {
+  .document-page {
+    page-break-after: always;
+    box-shadow: none !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  
+  .document-page:last-child {
+    page-break-after: avoid;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
