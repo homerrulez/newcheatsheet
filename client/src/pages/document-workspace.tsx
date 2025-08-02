@@ -560,7 +560,7 @@ export default function DocumentWorkspace() {
   if (documentLoading) {
     return (
       <div className="h-screen flex items-center justify-center" style={{
-        background: 'linear-gradient(135deg, #E8D5FF 0%, #F8E8FF 25%, #DCFCE7 50%, #A7F3D0 75%, #67E8F9 100%)'
+        background: 'linear-gradient(to right, #E8D5FF, #F3E8FF, #E0F2FE, #B2F5EA, #7DD3FC)'
       }}>
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -572,7 +572,7 @@ export default function DocumentWorkspace() {
 
   return (
     <div className="h-screen" style={{
-      background: 'linear-gradient(135deg, #E8D5FF 0%, #F8E8FF 25%, #DCFCE7 50%, #A7F3D0 75%, #67E8F9 100%)'
+      background: 'linear-gradient(to right, #E8D5FF, #F3E8FF, #E0F2FE, #B2F5EA, #7DD3FC)'
     }}>
       {/* Enhanced Microsoft Word-Style Toolbar */}
       <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20">
