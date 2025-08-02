@@ -56,148 +56,145 @@ export default function Landing() {
           </p>
         </div>
 
-        {/* Workspace Cards */}
+        {/* Workspace Cards and Video Previews */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           {/* Template Workspace */}
-          <Link href="/template">
-            <div className="bg-gradient-to-br from-green-100 to-green-50 border-2 border-green-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
-              <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
-                  <FileSpreadsheet className="text-white text-3xl" />
+          <div className="space-y-6">
+            <Link href="/template">
+              <div className="bg-gradient-to-br from-green-100 to-green-50 border-2 border-green-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+                <div className="flex justify-center mb-6">
+                  <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
+                    <FileSpreadsheet className="text-white text-3xl" />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Template</h3>
-              <p className="text-lg text-gray-700 mb-4 text-center">Smart Templates Powered by AI</p>
-              
-              {/* Video Icon */}
-              <div className="flex justify-center mb-6">
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openVideoModal('template', 'Smart Templates Powered by AI');
-                  }}
-                  className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200"
-                >
-                  <Play className="text-white text-lg ml-1" />
-                </button>
-              </div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Template</h3>
+                <p className="text-lg text-gray-700 mb-6 text-center">Smart Templates Powered by AI</p>
 
-              {/* Feature List */}
-              <div className="bg-white/60 rounded-xl p-4 space-y-3">
-                <p className="text-sm text-gray-600 text-center mb-3">Use pre-designed templates with structured layouts perfect for academic reference sheets.</p>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  8.5x11 print layout
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Fixed structure
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Professional design
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Ready to print
+                {/* Feature List */}
+                <div className="bg-white/60 rounded-xl p-4 space-y-3">
+                  <p className="text-sm text-gray-600 text-center mb-3">Use pre-designed templates with structured layouts perfect for academic reference sheets.</p>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    8.5x11 print layout
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Fixed structure
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Professional design
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Ready to print
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+            
+            {/* Embedded Video Preview */}
+            <button 
+              onClick={() => openVideoModal('template', 'Smart Templates Powered by AI')}
+              className="w-full aspect-video bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Play className="text-white text-xl ml-1" />
+              </div>
+            </button>
+          </div>
 
           {/* Cheat Sheet Workspace */}
-          <Link href="/cheatsheet">
-            <div className="bg-gradient-to-br from-purple-100 to-pink-50 border-2 border-purple-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
-              <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
-                  <Grid3X3 className="text-white text-3xl" />
+          <div className="space-y-6">
+            <Link href="/cheatsheet">
+              <div className="bg-gradient-to-br from-purple-100 to-pink-50 border-2 border-purple-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+                <div className="flex justify-center mb-6">
+                  <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
+                    <Grid3X3 className="text-white text-3xl" />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Cheatsheet</h3>
-              <p className="text-lg text-gray-700 mb-4 text-center">Cheat Sheets Powered by AI</p>
-              
-              {/* Video Icon */}
-              <div className="flex justify-center mb-6">
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openVideoModal('cheatsheet', 'Cheat Sheets Powered by AI');
-                  }}
-                  className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200"
-                >
-                  <Play className="text-white text-lg ml-1" />
-                </button>
-              </div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Cheatsheet</h3>
+                <p className="text-lg text-gray-700 mb-6 text-center">Cheat Sheets Powered by AI</p>
 
-              {/* Feature List */}
-              <div className="bg-white/60 rounded-xl p-4 space-y-3">
-                <p className="text-sm text-gray-600 text-center mb-3">Generate organized cheat sheets with auto-resizing content boxes and intelligent formatting.</p>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Auto-sizing boxes
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Formula organization
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Sheet history
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Export ready
+                {/* Feature List */}
+                <div className="bg-white/60 rounded-xl p-4 space-y-3">
+                  <p className="text-sm text-gray-600 text-center mb-3">Generate organized cheat sheets with auto-resizing content boxes and intelligent formatting.</p>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Auto-sizing boxes
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Formula organization
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Sheet history
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Export ready
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+            
+            {/* Embedded Video Preview */}
+            <button 
+              onClick={() => openVideoModal('cheatsheet', 'Cheat Sheets Powered by AI')}
+              className="w-full aspect-video bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Play className="text-white text-xl ml-1" />
+              </div>
+            </button>
+          </div>
 
           {/* Document Workspace */}
-          <Link href="/document">
-            <div className="bg-gradient-to-br from-blue-100 to-cyan-50 border-2 border-blue-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
-              <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
-                  <FileText className="text-white text-3xl" />
+          <div className="space-y-6">
+            <Link href="/document">
+              <div className="bg-gradient-to-br from-blue-100 to-cyan-50 border-2 border-blue-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+                <div className="flex justify-center mb-6">
+                  <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
+                    <FileText className="text-white text-3xl" />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Document</h3>
-              <p className="text-lg text-gray-700 mb-4 text-center">Smart Documents Powered by AI</p>
-              
-              {/* Video Icon */}
-              <div className="flex justify-center mb-6">
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openVideoModal('document', 'Smart Documents Powered by AI');
-                  }}
-                  className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200"
-                >
-                  <Play className="text-white text-lg ml-1" />
-                </button>
-              </div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Document</h3>
+                <p className="text-lg text-gray-700 mb-6 text-center">Smart Documents Powered by AI</p>
 
-              {/* Feature List */}
-              <div className="bg-white/60 rounded-xl p-4 space-y-3">
-                <p className="text-sm text-gray-600 text-center mb-3">Create and edit documents with AI-powered assistance and beautiful LaTeX rendering for mathematical content.</p>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Rich text editing
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  LaTeX math support
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  Document history
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
-                  AI auto-formatting
+                {/* Feature List */}
+                <div className="bg-white/60 rounded-xl p-4 space-y-3">
+                  <p className="text-sm text-gray-600 text-center mb-3">Create and edit documents with AI-powered assistance and beautiful LaTeX rendering for mathematical content.</p>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Rich text editing
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    LaTeX math support
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    Document history
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-600 mr-3 flex-shrink-0" />
+                    AI auto-formatting
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+            
+            {/* Embedded Video Preview */}
+            <button 
+              onClick={() => openVideoModal('document', 'Smart Documents Powered by AI')}
+              className="w-full aspect-video bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Play className="text-white text-xl ml-1" />
+              </div>
+            </button>
+          </div>
         </div>
       </main>
 
