@@ -1,0 +1,46 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A855F7;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="circuitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Brain left side -->
+  <path d="M8 20c0-2 1-4 3-5.5C12-1 16-1 18 2c1-2 3-2 5-1.5c2-1.5 5-1 6.5 1c1.5-1 3.5-0.5 4.5 1.5c1-0.5 2.5 0 3 2c0.5 1.5 0 3-1 4c1 1 1.5 3 0.5 4.5c0.5 1.5 0 3.5-1.5 4.5c0.5 2-0.5 4-2.5 4.5c0 2-2 3.5-4 3c-1.5 1.5-4 1-5.5-0.5c-2 1-4.5 0.5-6-1.5c-2 0.5-4-0.5-5-2.5c-1.5 0.5-3-0.5-3.5-2C8 22 8 21 8 20z" fill="url(#brainGradient)" opacity="0.9"/>
+  
+  <!-- Brain texture lines -->
+  <path d="M12 14c1.5 0.5 2.5 1.5 2 3" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M15 18c1 0.5 1.5 1.5 1 2.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M13 22c1.5 0 2.5 1 2 2.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M11 26c1 0 2 0.5 1.5 2" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  
+  <!-- Graduation cap -->
+  <path d="M28 8l12 4-12 4-12-4z" fill="url(#capGradient)"/>
+  <path d="M28 16v8l8-2.5V13.5" fill="url(#capGradient)" opacity="0.8"/>
+  <path d="M40 12v6l2 4h1l-1-5V12" fill="url(#capGradient)"/>
+  
+  <!-- Circuit board elements -->
+  <rect x="24" y="20" width="20" height="2" fill="url(#circuitGradient)" rx="1"/>
+  <rect x="24" y="26" width="16" height="2" fill="url(#circuitGradient)" rx="1"/>
+  <rect x="26" y="32" width="14" height="2" fill="url(#circuitGradient)" rx="1"/>
+  
+  <!-- Circuit nodes -->
+  <circle cx="42" cy="21" r="2.5" fill="url(#circuitGradient)"/>
+  <circle cx="38" cy="27" r="2.5" fill="url(#circuitGradient)"/>
+  <circle cx="38" cy="33" r="2.5" fill="url(#circuitGradient)"/>
+  
+  <!-- Connecting lines -->
+  <path d="M24 21v6h2" stroke="url(#circuitGradient)" stroke-width="2" fill="none"/>
+  <path d="M26 27v6h12" stroke="url(#circuitGradient)" stroke-width="2" fill="none"/>
+</svg>

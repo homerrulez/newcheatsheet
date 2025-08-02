@@ -575,8 +575,12 @@ export default function DocumentWorkspace() {
         {/* Document title bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <FileText className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img 
+                src="/src/assets/studyflow-logo.svg" 
+                alt="StudyFlow" 
+                className="w-8 h-8"
+              />
             </div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
           </div>
