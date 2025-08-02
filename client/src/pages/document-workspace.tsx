@@ -22,7 +22,7 @@ export default function DocumentWorkspace() {
   const [highlightColor, setHighlightColor] = useState('#FFFF00');
   const [pageSize, setPageSize] = useState({ width: 8.5, height: 11 }); // inches
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLIFrameElement>(null);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -59,11 +59,13 @@ export default function DocumentWorkspace() {
   }, [content, calculateCharactersPerPage]);
 
   const formatText = (command: string, value?: string) => {
-    if (editorRef.current && typeof window !== 'undefined') {
+    if (editorRef.current?.contentWindow) {
       try {
-        editorRef.current.focus();
-        window.document.execCommand(command, false, value);
-        setContent(editorRef.current.innerHTML);
+        editorRef.current.contentWindow.postMessage({
+          type: 'formatCommand',
+          command,
+          value
+        }, '*');
       } catch (error) {
         console.warn('Error executing format command:', error);
       }
@@ -71,10 +73,7 @@ export default function DocumentWorkspace() {
   };
 
   const handleContentChange = () => {
-    if (editorRef.current) {
-      const newContent = editorRef.current.innerText || editorRef.current.textContent || '';
-      setContent(newContent);
-    }
+    // Content change is now handled via postMessage from iframe
   };
 
   // Fetch current document
@@ -89,6 +88,30 @@ export default function DocumentWorkspace() {
       setContent((document as Document).content || '');
     }
   }, [document]);
+
+  // Sync style changes with iframe
+  useEffect(() => {
+    if (editorRef.current?.contentWindow) {
+      editorRef.current.contentWindow.postMessage({
+        type: 'updateStyles',
+        fontFamily,
+        fontSize: fontSize * zoomLevel / 100,
+        textColor
+      }, '*');
+    }
+  }, [fontFamily, fontSize, textColor, zoomLevel]);
+
+  // Set up message listener
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'contentChange') {
+        setContent(event.data.content);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Create new document
   const createDocumentMutation = useMutation({
@@ -124,11 +147,13 @@ export default function DocumentWorkspace() {
   });
 
   const handleAIResponse = (response: any) => {
-    if (response.content) {
-      setContent(prev => prev + '\n\n' + response.content);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = content + '\n\n' + response.content;
-      }
+    if (response.content && editorRef.current?.contentWindow) {
+      const newContent = content + '\n\n' + response.content;
+      setContent(newContent);
+      editorRef.current.contentWindow.postMessage({
+        type: 'insertContent',
+        content: '\n\n' + response.content
+      }, '*');
     }
   };
 
@@ -377,113 +402,215 @@ export default function DocumentWorkspace() {
                     <html>
                     <head>
                       <style>
-                        body {
+                        html, body {
                           margin: 0;
-                          padding: ${1 * zoomLevel / 100}in;
+                          padding: 0;
+                          height: 100%;
+                          background: #f8f9fa;
                           font-family: ${fontFamily};
+                          overflow-y: auto;
+                        }
+                        
+                        .page-container {
+                          padding: 20px;
+                          display: flex;
+                          flex-direction: column;
+                          align-items: center;
+                          gap: 20px;
+                          min-height: 100%;
+                        }
+                        
+                        .page {
+                          width: ${pageSize.width * zoomLevel / 100}in;
+                          height: ${pageSize.height * zoomLevel / 100}in;
+                          background: white;
+                          border: 1px solid #d1d5db;
+                          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                          padding: ${1 * zoomLevel / 100}in;
+                          box-sizing: border-box;
+                          position: relative;
+                          overflow: hidden;
+                        }
+                        
+                        .page-content {
+                          width: 100%;
+                          height: 100%;
                           font-size: ${fontSize * zoomLevel / 100}pt;
                           line-height: 1.5;
                           color: ${textColor};
-                          background: white;
-                          width: ${(pageSize.width - 2) * zoomLevel / 100}in;
-                          min-height: calc(100vh - ${2 * zoomLevel / 100}in);
-                          box-sizing: border-box;
                           word-wrap: break-word;
                           overflow-wrap: break-word;
-                          page-break-inside: avoid;
+                          outline: none;
+                          border: none;
+                          resize: none;
+                          overflow: hidden;
+                        }
+                        
+                        .page-number {
+                          position: absolute;
+                          bottom: 10px;
+                          right: 15px;
+                          font-size: ${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt;
+                          color: #9ca3af;
+                          pointer-events: none;
+                        }
+                        
+                        .page-content:empty:before {
+                          content: "Start writing your document...";
+                          color: #9ca3af;
+                          font-style: italic;
                         }
                         
                         @media print {
-                          body {
+                          html, body {
+                            background: white;
+                          }
+                          .page-container {
+                            padding: 0;
+                            gap: 0;
+                          }
+                          .page {
                             width: ${pageSize.width}in;
                             height: ${pageSize.height}in;
+                            box-shadow: none;
+                            border: none;
                             margin: 0;
-                            padding: 1in;
+                            page-break-after: always;
                           }
-                          @page {
-                            size: ${pageSize.width}in ${pageSize.height}in;
-                            margin: 0;
-                          }
-                        }
-                        
-                        /* Page break indicators */
-                        .page-break {
-                          border-top: 2px dashed #ccc;
-                          margin: 20px 0;
-                          position: relative;
-                        }
-                        
-                        .page-break::after {
-                          content: 'Page Break';
-                          position: absolute;
-                          top: -10px;
-                          left: 50%;
-                          transform: translateX(-50%);
-                          background: white;
-                          padding: 0 10px;
-                          font-size: 10px;
-                          color: #999;
-                        }
-                        
-                        p {
-                          margin: 0 0 12px 0;
-                        }
-                        
-                        [contenteditable]:empty:before {
-                          content: "Start writing your document...";
-                          color: #999;
-                          font-style: italic;
                         }
                       </style>
                     </head>
-                    <body contenteditable="true" spellcheck="true">
-                      ${content || ''}
-                    </body>
-                    <script>
-                      // Handle content changes
-                      document.body.addEventListener('input', function() {
-                        const content = document.body.innerHTML;
-                        window.parent.postMessage({ type: 'contentChange', content }, '*');
-                      });
+                    <body>
+                      <div class="page-container" id="pageContainer">
+                        <div class="page" id="page1">
+                          <div class="page-content" contenteditable="true" id="pageContent1">${content || ''}</div>
+                          <div class="page-number">1</div>
+                        </div>
+                      </div>
                       
-                      // Handle paste
-                      document.body.addEventListener('paste', function(e) {
-                        e.preventDefault();
-                        const paste = e.clipboardData.getData('text/plain');
-                        document.execCommand('insertText', false, paste);
-                      });
-                      
-                      // Auto-focus
-                      document.body.focus();
-                      
-                      // Insert page breaks automatically based on content height
-                      function checkPageBreaks() {
-                        const pageHeight = ${(pageSize.height - 2) * 72 * zoomLevel / 100}; // Convert to pixels
-                        const content = document.body;
-                        const currentHeight = content.scrollHeight;
+                      <script>
+                        let pageCount = 1;
+                        const CHARS_PER_PAGE = ${calculateCharactersPerPage()};
                         
-                        if (currentHeight > pageHeight) {
-                          // Logic for page breaking would go here
-                          // For now, just ensure content fits
+                        // Handle content changes
+                        function handleContentChange() {
+                          const allContent = getAllContent();
+                          window.parent.postMessage({ type: 'contentChange', content: allContent }, '*');
+                          checkPagination();
                         }
-                      }
-                      
-                      // Check page breaks on content change
-                      document.body.addEventListener('input', checkPageBreaks);
-                    </script>
+                        
+                        function getAllContent() {
+                          let content = '';
+                          for (let i = 1; i <= pageCount; i++) {
+                            const pageContent = document.getElementById('pageContent' + i);
+                            if (pageContent) {
+                              content += pageContent.innerText || pageContent.textContent || '';
+                              if (i < pageCount) content += '\\n';
+                            }
+                          }
+                          return content;
+                        }
+                        
+                        function checkPagination() {
+                          const content = getAllContent();
+                          const neededPages = Math.max(1, Math.ceil(content.length / CHARS_PER_PAGE));
+                          
+                          if (neededPages > pageCount) {
+                            // Add pages
+                            for (let i = pageCount + 1; i <= neededPages; i++) {
+                              addPage(i);
+                            }
+                          } else if (neededPages < pageCount && pageCount > 1) {
+                            // Remove empty pages
+                            for (let i = pageCount; i > neededPages; i--) {
+                              removePage(i);
+                            }
+                          }
+                          
+                          redistributeContent();
+                        }
+                        
+                        function addPage(pageNum) {
+                          const pageContainer = document.getElementById('pageContainer');
+                          const pageDiv = document.createElement('div');
+                          pageDiv.className = 'page';
+                          pageDiv.id = 'page' + pageNum;
+                          pageDiv.innerHTML = \`
+                            <div class="page-content" contenteditable="true" id="pageContent\${pageNum}"></div>
+                            <div class="page-number">\${pageNum}</div>
+                          \`;
+                          pageContainer.appendChild(pageDiv);
+                          
+                          const pageContent = document.getElementById('pageContent' + pageNum);
+                          pageContent.addEventListener('input', handleContentChange);
+                          pageContent.addEventListener('paste', handlePaste);
+                          
+                          pageCount = pageNum;
+                        }
+                        
+                        function removePage(pageNum) {
+                          const page = document.getElementById('page' + pageNum);
+                          if (page) {
+                            page.remove();
+                            pageCount--;
+                          }
+                        }
+                        
+                        function redistributeContent() {
+                          const allContent = getAllContent();
+                          
+                          for (let i = 1; i <= pageCount; i++) {
+                            const startIndex = (i - 1) * CHARS_PER_PAGE;
+                            const endIndex = startIndex + CHARS_PER_PAGE;
+                            const pageContent = document.getElementById('pageContent' + i);
+                            
+                            if (pageContent) {
+                              const pageText = allContent.slice(startIndex, endIndex);
+                              pageContent.innerText = pageText;
+                            }
+                          }
+                        }
+                        
+                        function handlePaste(e) {
+                          e.preventDefault();
+                          const paste = e.clipboardData.getData('text/plain');
+                          document.execCommand('insertText', false, paste);
+                        }
+                        
+                        // Listen for messages from parent
+                        window.addEventListener('message', function(event) {
+                          if (event.data.type === 'formatCommand') {
+                            document.execCommand(event.data.command, false, event.data.value);
+                          } else if (event.data.type === 'insertContent') {
+                            const firstPage = document.getElementById('pageContent1');
+                            if (firstPage) {
+                              const currentText = firstPage.innerText || '';
+                              firstPage.innerText = currentText + event.data.content;
+                              handleContentChange();
+                            }
+                          } else if (event.data.type === 'updateStyles') {
+                            // Update document styles when toolbar changes
+                            document.body.style.fontFamily = event.data.fontFamily;
+                            const pages = document.querySelectorAll('.page-content');
+                            pages.forEach(page => {
+                              page.style.fontSize = event.data.fontSize + 'pt';
+                              page.style.color = event.data.textColor;
+                            });
+                          }
+                        });
+                        
+                        // Set up event listeners
+                        document.getElementById('pageContent1').addEventListener('input', handleContentChange);
+                        document.getElementById('pageContent1').addEventListener('paste', handlePaste);
+                        
+                        // Auto-focus first page
+                        setTimeout(() => {
+                          document.getElementById('pageContent1').focus();
+                        }, 100);
+                      </script>
                     </html>
                   `}
-                  onLoad={() => {
-                    // Handle messages from iframe
-                    const handleMessage = (event: MessageEvent) => {
-                      if (event.data.type === 'contentChange') {
-                        setContent(event.data.content);
-                      }
-                    };
-                    
-                    window.addEventListener('message', handleMessage);
-                    return () => window.removeEventListener('message', handleMessage);
-                  }}
+
                 />
               </div>
             ) : (
