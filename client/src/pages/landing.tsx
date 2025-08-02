@@ -240,59 +240,68 @@ export default function Landing() {
         </div>
 
         {/* Additional Features Section */}
-        <div className="grid grid-cols-3 gap-6 mt-32 mx-auto max-w-5xl">
-          {/* Academic Excellence */}
-          <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <BookOpen className="w-5 h-5 mr-2 text-cyan-600" />
-              Academic Excellence
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
+        <div className="mt-40 mx-auto max-w-6xl space-y-8">
+          {/* First Row - 2 boxes centered */}
+          <div className="flex justify-center gap-8">
+            {/* Academic Excellence */}
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80">
+              <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+                <BookOpen className="w-5 h-5 mr-2 text-cyan-600" />
+                Academic Excellence
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">Structured layouts designed for research papers, thesis documents, and academic publications.</p>
+            </div>
+            
+            {/* Smart Organization */}
+            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80">
+              <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+                <Calculator className="w-5 h-5 mr-2 text-purple-600" />
+                Smart Organization
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
+            </div>
           </div>
           
-          {/* Smart Organization */}
-          <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <Calculator className="w-5 h-5 mr-2 text-purple-600" />
-              Smart Organization
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">AI-powered content placement with automatic formula categorization and visual hierarchy.</p>
+          {/* Second Row - 3 boxes */}
+          <div className="grid grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Microsoft Word Level */}
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
+              <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+                <PenTool className="w-5 h-5 mr-2 text-blue-600" />
+                Microsoft Word Level
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">True pagination with live editing, content flow, and professional document standards.</p>
+            </div>
+            
+            {/* Print Ready */}
+            <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
+              <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+                <Layout className="w-5 h-5 mr-2 text-cyan-600" />
+                Print Ready
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
+            </div>
+            
+            {/* Dynamic Layouts */}
+            <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
+              <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+                <Grid3X3 className="w-5 h-5 mr-2 text-purple-600" />
+                Dynamic Layouts
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">Intelligent box sizing and collision detection for optimal space utilization.</p>
+            </div>
           </div>
           
-          {/* Microsoft Word Level */}
-          <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <PenTool className="w-5 h-5 mr-2 text-blue-600" />
-              Microsoft Word Level
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">True pagination with live editing, content flow, and professional document standards.</p>
-          </div>
-          
-          {/* Print Ready */}
-          <div className="bg-gradient-to-r from-white/25 via-cyan-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <Layout className="w-5 h-5 mr-2 text-cyan-600" />
-              Print Ready
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">Perfect formatting with IEEE, APA, and MLA compliance for professional submissions.</p>
-          </div>
-          
-          {/* Dynamic Layouts */}
-          <div className="bg-gradient-to-r from-white/25 via-purple-50/20 to-blue-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <Grid3X3 className="w-5 h-5 mr-2 text-purple-600" />
-              Dynamic Layouts
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">Intelligent box sizing and collision detection for optimal space utilization.</p>
-          </div>
-          
-          {/* AI Integration */}
-          <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
-            <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
-              <Brain className="w-5 h-5 mr-2 text-blue-600" />
-              AI Integration
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
+          {/* Third Row - 1 box centered */}
+          <div className="flex justify-center">
+            {/* AI Integration */}
+            <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-green-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg w-80">
+              <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
+                <Brain className="w-5 h-5 mr-2 text-blue-600" />
+                AI Integration
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">Real-time ChatGPT assistance with direct document insertion and contextual suggestions.</p>
+            </div>
           </div>
         </div>
       </main>
