@@ -383,7 +383,7 @@ export default function DocumentWorkspace() {
           
           {/* Embedded Document Editor - Isolated from React */}
           <div 
-            className="flex-1 overflow-hidden" 
+            className="flex-1 overflow-auto" 
             style={{ backgroundColor: '#f8f9fa', padding: '20px' }} 
             ref={pagesContainerRef}
           >
@@ -394,8 +394,10 @@ export default function DocumentWorkspace() {
                   className="border border-slate-300 shadow-xl"
                   style={{
                     width: `${pageSize.width * zoomLevel / 100}in`,
-                    height: '100%',
-                    backgroundColor: 'white'
+                    height: `${pageSize.height * zoomLevel / 100}in`,
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                   }}
                   srcDoc={`
                     <!DOCTYPE html>
@@ -406,226 +408,69 @@ export default function DocumentWorkspace() {
                           margin: 0;
                           padding: 0;
                           height: 100%;
-                          background: #f8f9fa;
-                          font-family: ${fontFamily};
-                          overflow-y: auto;
-                        }
-                        
-                        .page-container {
-                          padding: 20px;
-                          display: flex;
-                          flex-direction: column;
-                          align-items: center;
-                          gap: 20px;
-                          min-height: 100%;
-                        }
-                        
-                        .page {
-                          width: ${pageSize.width * zoomLevel / 100}in;
-                          height: ${pageSize.height * zoomLevel / 100}in;
+                          width: 100%;
                           background: white;
-                          border: 1px solid #d1d5db;
-                          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                          padding: ${1 * zoomLevel / 100}in;
-                          box-sizing: border-box;
-                          position: relative;
+                          font-family: ${fontFamily};
                           overflow: hidden;
                         }
                         
-                        .page-content {
+                        .document-page {
                           width: 100%;
-                          height: ${(pageSize.height - 2) * zoomLevel / 100}in;
+                          height: 100%;
+                          padding: ${1 * zoomLevel / 100}in;
+                          box-sizing: border-box;
                           font-size: ${fontSize * zoomLevel / 100}pt;
                           line-height: 1.5;
                           color: ${textColor};
-                          word-wrap: break-word;
-                          overflow-wrap: break-word;
                           outline: none;
                           border: none;
                           resize: none;
                           overflow: hidden;
                           white-space: pre-wrap;
-                          box-sizing: border-box;
+                          word-wrap: break-word;
+                          overflow-wrap: break-word;
                         }
                         
-                        .page-number {
-                          position: absolute;
-                          bottom: 10px;
-                          right: 15px;
-                          font-size: ${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt;
-                          color: #9ca3af;
-                          pointer-events: none;
-                        }
-                        
-                        .page-content:empty:before {
+                        .document-page:empty:before {
                           content: "Start writing your document...";
                           color: #9ca3af;
                           font-style: italic;
                         }
                         
+                        .page-number {
+                          position: fixed;
+                          bottom: 10px;
+                          right: 15px;
+                          font-size: ${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt;
+                          color: #9ca3af;
+                          pointer-events: none;
+                          background: white;
+                          padding: 2px 4px;
+                          border-radius: 2px;
+                        }
+                        
                         @media print {
-                          html, body {
-                            background: white;
-                          }
-                          .page-container {
-                            padding: 0;
-                            gap: 0;
-                          }
-                          .page {
+                          .document-page {
                             width: ${pageSize.width}in;
                             height: ${pageSize.height}in;
-                            box-shadow: none;
-                            border: none;
+                            padding: 1in;
+                          }
+                          @page {
+                            size: ${pageSize.width}in ${pageSize.height}in;
                             margin: 0;
-                            page-break-after: always;
                           }
                         }
                       </style>
                     </head>
                     <body>
-                      <div class="page-container" id="pageContainer">
-                        <div class="page" id="page1">
-                          <div class="page-content" contenteditable="true" id="pageContent1">${content || ''}</div>
-                          <div class="page-number">1</div>
-                        </div>
-                      </div>
+                      <div class="document-page" contenteditable="true" id="documentContent">${content || ''}</div>
+                      <div class="page-number">1</div>
                       
                       <script>
-                        let pageCount = 1;
-                        const CHARS_PER_PAGE = ${calculateCharactersPerPage()};
-                        
                         // Handle content changes
                         function handleContentChange() {
-                          const allContent = getAllContent();
-                          window.parent.postMessage({ type: 'contentChange', content: allContent }, '*');
-                          checkPagination();
-                        }
-                        
-                        function getAllContent() {
-                          let content = '';
-                          for (let i = 1; i <= pageCount; i++) {
-                            const pageContent = document.getElementById('pageContent' + i);
-                            if (pageContent) {
-                              content += pageContent.innerText || pageContent.textContent || '';
-                              if (i < pageCount) content += '\\n';
-                            }
-                          }
-                          return content;
-                        }
-                        
-                        function checkPagination() {
-                          // Check if current page content exceeds page height
-                          for (let i = 1; i <= pageCount; i++) {
-                            const pageContent = document.getElementById('pageContent' + i);
-                            if (pageContent) {
-                              const contentHeight = pageContent.scrollHeight;
-                              const pageHeight = pageContent.offsetHeight;
-                              
-                              if (contentHeight > pageHeight) {
-                                // Content overflow - need to move excess to next page
-                                moveOverflowToNextPage(i);
-                                break;
-                              }
-                            }
-                          }
-                          
-                          // Remove empty trailing pages
-                          removeEmptyTrailingPages();
-                        }
-                        
-                        function addPage(pageNum) {
-                          const pageContainer = document.getElementById('pageContainer');
-                          const pageDiv = document.createElement('div');
-                          pageDiv.className = 'page';
-                          pageDiv.id = 'page' + pageNum;
-                          pageDiv.innerHTML = \`
-                            <div class="page-content" contenteditable="true" id="pageContent\${pageNum}"></div>
-                            <div class="page-number">\${pageNum}</div>
-                          \`;
-                          pageContainer.appendChild(pageDiv);
-                          
-                          const pageContent = document.getElementById('pageContent' + pageNum);
-                          pageContent.addEventListener('input', handleContentChange);
-                          pageContent.addEventListener('paste', handlePaste);
-                          pageContent.addEventListener('keydown', handleKeyDown);
-                          
-                          pageCount = pageNum;
-                        }
-                        
-                        function removePage(pageNum) {
-                          const page = document.getElementById('page' + pageNum);
-                          if (page) {
-                            page.remove();
-                            pageCount--;
-                          }
-                        }
-                        
-                        function moveOverflowToNextPage(pageNum) {
-                          const pageContent = document.getElementById('pageContent' + pageNum);
-                          if (!pageContent) return;
-                          
-                          // Create next page if it doesn't exist
-                          if (pageNum === pageCount) {
-                            addPage(pageNum + 1);
-                          }
-                          
-                          const nextPageContent = document.getElementById('pageContent' + (pageNum + 1));
-                          if (!nextPageContent) return;
-                          
-                          // Use a temporary container to measure content that fits
-                          const tempDiv = document.createElement('div');
-                          tempDiv.style.cssText = pageContent.style.cssText;
-                          tempDiv.style.position = 'absolute';
-                          tempDiv.style.visibility = 'hidden';
-                          tempDiv.style.height = pageContent.offsetHeight + 'px';
-                          document.body.appendChild(tempDiv);
-                          
-                          const originalContent = pageContent.innerText;
-                          let fitContent = '';
-                          let remainingContent = '';
-                          
-                          // Binary search to find maximum content that fits
-                          let low = 0;
-                          let high = originalContent.length;
-                          
-                          while (low < high) {
-                            const mid = Math.floor((low + high + 1) / 2);
-                            tempDiv.innerText = originalContent.slice(0, mid);
-                            
-                            if (tempDiv.scrollHeight <= tempDiv.offsetHeight) {
-                              low = mid;
-                            } else {
-                              high = mid - 1;
-                            }
-                          }
-                          
-                          fitContent = originalContent.slice(0, low);
-                          remainingContent = originalContent.slice(low);
-                          
-                          // Apply the split
-                          pageContent.innerText = fitContent;
-                          
-                          // Prepend remaining content to next page
-                          const nextPageText = nextPageContent.innerText || '';
-                          nextPageContent.innerText = remainingContent + nextPageText;
-                          
-                          document.body.removeChild(tempDiv);
-                          
-                          // Check if next page also needs splitting
-                          if (nextPageContent.scrollHeight > nextPageContent.offsetHeight) {
-                            moveOverflowToNextPage(pageNum + 1);
-                          }
-                        }
-                        
-                        function removeEmptyTrailingPages() {
-                          for (let i = pageCount; i > 1; i--) {
-                            const pageContent = document.getElementById('pageContent' + i);
-                            if (pageContent && pageContent.innerText.trim() === '') {
-                              removePage(i);
-                            } else {
-                              break;
-                            }
-                          }
+                          const content = document.getElementById('documentContent').innerText || '';
+                          window.parent.postMessage({ type: 'contentChange', content }, '*');
                         }
                         
                         function handlePaste(e) {
@@ -639,86 +484,31 @@ export default function DocumentWorkspace() {
                           if (event.data.type === 'formatCommand') {
                             document.execCommand(event.data.command, false, event.data.value);
                           } else if (event.data.type === 'insertContent') {
-                            const firstPage = document.getElementById('pageContent1');
-                            if (firstPage) {
-                              const currentText = firstPage.innerText || '';
-                              firstPage.innerText = currentText + event.data.content;
+                            const documentContent = document.getElementById('documentContent');
+                            if (documentContent) {
+                              const currentText = documentContent.innerText || '';
+                              documentContent.innerText = currentText + event.data.content;
                               handleContentChange();
                             }
                           } else if (event.data.type === 'updateStyles') {
                             // Update document styles when toolbar changes
-                            document.body.style.fontFamily = event.data.fontFamily;
-                            const pages = document.querySelectorAll('.page-content');
-                            pages.forEach(page => {
-                              page.style.fontSize = event.data.fontSize + 'pt';
-                              page.style.color = event.data.textColor;
-                            });
+                            const documentContent = document.getElementById('documentContent');
+                            if (documentContent) {
+                              document.body.style.fontFamily = event.data.fontFamily;
+                              documentContent.style.fontSize = event.data.fontSize + 'pt';
+                              documentContent.style.color = event.data.textColor;
+                            }
                           }
                         });
                         
-                        // Handle cursor navigation between pages
-                        function handleKeyDown(e) {
-                          const currentPage = e.target;
-                          const pageNum = parseInt(currentPage.id.replace('pageContent', ''));
-                          
-                          // Handle cursor at end of page
-                          if (e.key === 'ArrowDown' || e.key === 'End') {
-                            const selection = window.getSelection();
-                            const range = selection.getRangeAt(0);
-                            const rect = range.getBoundingClientRect();
-                            const pageRect = currentPage.getBoundingClientRect();
-                            
-                            // If cursor is near bottom of page, move to next page
-                            if (rect.bottom >= pageRect.bottom - 20) {
-                              const nextPage = document.getElementById('pageContent' + (pageNum + 1));
-                              if (nextPage) {
-                                e.preventDefault();
-                                nextPage.focus();
-                                // Set cursor to beginning of next page
-                                const range = document.createRange();
-                                range.setStart(nextPage, 0);
-                                range.collapse(true);
-                                selection.removeAllRanges();
-                                selection.addRange(range);
-                              }
-                            }
-                          }
-                          
-                          // Handle cursor at top of page
-                          if (e.key === 'ArrowUp' || e.key === 'Home') {
-                            if (pageNum > 1) {
-                              const selection = window.getSelection();
-                              const range = selection.getRangeAt(0);
-                              const rect = range.getBoundingClientRect();
-                              const pageRect = currentPage.getBoundingClientRect();
-                              
-                              // If cursor is near top of page, move to previous page
-                              if (rect.top <= pageRect.top + 20) {
-                                const prevPage = document.getElementById('pageContent' + (pageNum - 1));
-                                if (prevPage) {
-                                  e.preventDefault();
-                                  prevPage.focus();
-                                  // Set cursor to end of previous page
-                                  const range = document.createRange();
-                                  range.selectNodeContents(prevPage);
-                                  range.collapse(false);
-                                  selection.removeAllRanges();
-                                  selection.addRange(range);
-                                }
-                              }
-                            }
-                          }
-                        }
+                        // Set up event listeners
+                        const documentContent = document.getElementById('documentContent');
+                        documentContent.addEventListener('input', handleContentChange);
+                        documentContent.addEventListener('paste', handlePaste);
                         
-                        // Set up event listeners for first page
-                        const page1Content = document.getElementById('pageContent1');
-                        page1Content.addEventListener('input', handleContentChange);
-                        page1Content.addEventListener('paste', handlePaste);
-                        page1Content.addEventListener('keydown', handleKeyDown);
-                        
-                        // Auto-focus first page
+                        // Auto-focus
                         setTimeout(() => {
-                          page1Content.focus();
+                          documentContent.focus();
                         }, 100);
                       </script>
                     </html>
