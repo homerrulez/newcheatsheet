@@ -49,11 +49,9 @@ export default function DocumentWorkspace() {
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
   
-  // Chat state
+  // Chat state - simplified, always ready
   const [chatInput, setChatInput] = useState('');
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
-  const [sessionTitle, setSessionTitle] = useState('');
+  const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
   // Editor setup with extensive functionality
@@ -77,7 +75,7 @@ export default function DocumentWorkspace() {
     content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full',
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full w-full',
         style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
       },
     },
@@ -109,16 +107,46 @@ export default function DocumentWorkspace() {
     enabled: !!id,
   });
 
-  // Fetch messages for selected session
+  // Fetch messages for default session
   const { data: chatMessages = [], refetch: refetchMessages } = useQuery<ChatMessage[]>({
-    queryKey: ['chatMessages', selectedSessionId],
+    queryKey: ['chatMessages', defaultSessionId],
     queryFn: async () => {
-      const response = await fetch(`/api/chat-sessions/${selectedSessionId}/messages`);
+      const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`);
       if (!response.ok) throw new Error('Failed to fetch chat messages');
       return response.json();
     },
-    enabled: !!selectedSessionId,
+    enabled: !!defaultSessionId,
   });
+
+  // Create default session automatically when document loads
+  useEffect(() => {
+    if (document && !defaultSessionId && chatSessions.length === 0) {
+      createDefaultSession();
+    } else if (chatSessions.length > 0 && !defaultSessionId) {
+      setDefaultSessionId(chatSessions[0].id);
+    }
+  }, [document, chatSessions, defaultSessionId]);
+
+  // Create default chat session automatically
+  const createDefaultSession = async () => {
+    try {
+      const response = await fetch(`/api/documents/${id}/chat-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Chat Session ${new Date().toLocaleDateString()}`,
+          documentSnapshot: editor?.getHTML() || '<p></p>',
+        }),
+      });
+      if (response.ok) {
+        const session = await response.json();
+        setDefaultSessionId(session.id);
+        refetchSessions();
+      }
+    } catch (error) {
+      console.error('Failed to create default session:', error);
+    }
+  };
 
   // Update document mutation
   const updateDocumentMutation = useMutation({
@@ -136,31 +164,16 @@ export default function DocumentWorkspace() {
     },
   });
 
-  // Create chat session mutation
-  const createSessionMutation = useMutation({
-    mutationFn: async (data: { title: string; documentSnapshot: string }) => {
-      const response = await fetch(`/api/documents/${id}/chat-sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error('Failed to create chat session');
-      return response.json();
-    },
-    onSuccess: (session: ChatSession) => {
-      setSelectedSessionId(session.id);
-      setIsCreatingSession(false);
-      setSessionTitle('');
-      refetchSessions();
-      toast({ title: "Chat session created successfully" });
-    },
-  });
-
   // Send chat message mutation with document command parsing
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      // If no default session, create one first
+      if (!defaultSessionId) {
+        await createDefaultSession();
+      }
+      
       const documentContent = editor?.getHTML() || '';
-      const response = await fetch(`/api/chat-sessions/${selectedSessionId}/messages`, {
+      const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -294,7 +307,7 @@ export default function DocumentWorkspace() {
       editor.setOptions({
         editorProps: {
           attributes: {
-            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full',
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full w-full',
             style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
           },
         },
@@ -307,32 +320,31 @@ export default function DocumentWorkspace() {
   const pageHeight = PAGE_SIZES[pageSize].height * (zoomLevel / 100);
   const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
 
-  // Calculate number of pages based on content height
+  // Calculate number of pages based on content height - FIXED PAGINATION
   const [pageCount, setPageCount] = useState(1);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (contentRef.current) {
-      const contentHeight = contentRef.current.scrollHeight;
-      const availableHeight = pageHeight - (padding * 2);
-      const calculatedPages = Math.max(1, Math.ceil(contentHeight / availableHeight));
-      setPageCount(calculatedPages);
+    if (editor && editorRef.current) {
+      const updatePageCount = () => {
+        const editorElement = editorRef.current?.querySelector('.ProseMirror');
+        if (editorElement) {
+          const contentHeight = editorElement.scrollHeight;
+          const availableHeight = pageHeight - (padding * 2);
+          const calculatedPages = Math.max(1, Math.ceil(contentHeight / availableHeight));
+          setPageCount(calculatedPages);
+        }
+      };
+
+      // Update page count when content changes
+      const timer = setTimeout(updatePageCount, 100);
+      return () => clearTimeout(timer);
     }
   }, [editor?.getHTML(), pageHeight, padding, zoomLevel]);
 
-  // Handle session creation
-  const handleCreateSession = () => {
-    if (sessionTitle.trim() && editor) {
-      createSessionMutation.mutate({
-        title: sessionTitle.trim(),
-        documentSnapshot: editor.getHTML(),
-      });
-    }
-  };
-
   // Handle send message
   const handleSendMessage = () => {
-    if (chatInput.trim() && selectedSessionId) {
+    if (chatInput.trim()) {
       sendMessageMutation.mutate(chatInput.trim());
     }
   };
@@ -488,42 +500,13 @@ export default function DocumentWorkspace() {
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
           <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-r border-white/20">
             <div className="p-4 border-b border-white/20">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                  <History className="w-5 h-5 mr-2" />
-                  Chat History
-                </h2>
-                <Button
-                  size="sm"
-                  onClick={() => setIsCreatingSession(true)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              {isCreatingSession && (
-                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <Input
-                    placeholder="Session title..."
-                    value={sessionTitle}
-                    onChange={(e) => setSessionTitle(e.target.value)}
-                    className="mb-2"
-                    onKeyPress={(e) => e.key === 'Enter' && handleCreateSession()}
-                  />
-                  <div className="flex space-x-2">
-                    <Button size="sm" onClick={handleCreateSession} disabled={!sessionTitle.trim()}>
-                      Create
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => {
-                      setIsCreatingSession(false);
-                      setSessionTitle('');
-                    }}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <History className="w-5 h-5 mr-2" />
+                Chat History
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                All conversations with your document
+              </p>
             </div>
             
             <ScrollArea className="h-full p-4">
@@ -532,12 +515,12 @@ export default function DocumentWorkspace() {
                   <div key={session.id} className="group">
                     <div
                       className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                        selectedSessionId === session.id
+                        defaultSessionId === session.id
                           ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
                           : 'bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                       }`}
                       onClick={() => {
-                        setSelectedSessionId(session.id);
+                        setDefaultSessionId(session.id);
                         toggleSessionExpansion(session.id);
                       }}
                     >
@@ -569,35 +552,17 @@ export default function DocumentWorkspace() {
                         {new Date(session.createdAt || Date.now()).toLocaleDateString()}
                       </div>
                     </div>
-                    
-                    {expandedSessions.has(session.id) && selectedSessionId === session.id && (
-                      <div className="mt-2 ml-6 space-y-1">
-                        {chatMessages.slice(0, 3).map((message: ChatMessage, index: number) => (
-                          <div key={message.id} className="text-xs p-2 bg-gray-50 dark:bg-slate-800 rounded">
-                            <div className="flex items-center space-x-1 mb-1">
-                              {message.role === 'user' ? (
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              ) : (
-                                <Brain className="w-3 h-3 text-purple-500" />
-                              )}
-                              <span className="font-medium text-gray-600 dark:text-gray-300">
-                                {message.role === 'user' ? 'You' : 'AI'}
-                              </span>
-                            </div>
-                            <p className="text-gray-700 dark:text-gray-300 truncate">
-                              {message.content}
-                            </p>
-                          </div>
-                        ))}
-                        {chatMessages.length > 3 && (
-                          <div className="text-xs text-gray-500 text-center py-1">
-                            +{chatMessages.length - 3} more messages
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))}
+                
+                {chatSessions.length === 0 && (
+                  <div className="text-center py-8">
+                    <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Start chatting to see conversation history
+                    </p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </div>
@@ -605,7 +570,7 @@ export default function DocumentWorkspace() {
 
         <ResizableHandle />
 
-        {/* Center panel - Document Editor */}
+        {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative">
             {/* Page status bar */}
@@ -618,7 +583,7 @@ export default function DocumentWorkspace() {
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
               <div className="min-h-full p-8 flex flex-col items-center">
-                {/* Render pages */}
+                {/* Render pages with proper content distribution */}
                 {Array.from({ length: pageCount }, (_, pageIndex) => (
                   <div
                     key={pageIndex}
@@ -636,26 +601,42 @@ export default function DocumentWorkspace() {
                     
                     {/* Page content */}
                     <div
-                      ref={pageIndex === 0 ? contentRef : undefined}
-                      className="w-full h-full relative overflow-hidden"
-                      style={{ padding: `${padding}px` }}
+                      ref={pageIndex === 0 ? editorRef : undefined}
+                      className="w-full h-full relative"
+                      style={{ 
+                        padding: `${padding}px`,
+                        overflow: 'hidden'
+                      }}
                     >
                       {pageIndex === 0 ? (
-                        // First page gets the editor
-                        <EditorContent
-                          editor={editor}
-                          className="w-full h-full focus:outline-none prose prose-sm max-w-none"
+                        // Single continuous editor that flows across pages visually
+                        <div 
+                          className="w-full h-full"
                           style={{
-                            fontFamily,
-                            fontSize: `${fontSize}pt`,
-                            color: textColor,
-                            lineHeight: '1.6',
+                            // Create a scrollable container that allows content to flow
+                            maxHeight: 'none',
+                            overflow: 'visible'
                           }}
-                        />
+                        >
+                          <EditorContent
+                            editor={editor}
+                            className="w-full focus:outline-none prose prose-sm max-w-none"
+                            style={{
+                              fontFamily,
+                              fontSize: `${fontSize}pt`,
+                              color: textColor,
+                              lineHeight: '1.6',
+                              minHeight: `${pageHeight - (padding * 2)}px`,
+                            }}
+                          />
+                        </div>
                       ) : (
-                        // Subsequent pages show overflow content (simplified)
-                        <div className="text-gray-400 dark:text-gray-600 italic text-center pt-20">
-                          Additional content would appear here...
+                        // Subsequent pages show continuation indicator
+                        <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-600 italic">
+                          <div className="text-center">
+                            <div className="w-8 h-8 border-2 border-dashed border-gray-300 rounded-full mb-2 mx-auto"></div>
+                            <p className="text-sm">Content continues here...</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -675,7 +656,7 @@ export default function DocumentWorkspace() {
 
         <ResizableHandle />
 
-        {/* Right panel - ChatGPT Integration */}
+        {/* Right panel - Always-On ChatGPT Interface */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
           <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-l border-white/20 flex flex-col">
             {/* Chat header */}
@@ -684,101 +665,94 @@ export default function DocumentWorkspace() {
                 <Brain className="w-5 h-5 mr-2 text-purple-600" />
                 ChatGPT Assistant
               </h2>
-              {selectedSessionId && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Document control commands available
-                </p>
-              )}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Ask me to edit, format, or improve your document
+              </p>
             </div>
             
-            {selectedSessionId ? (
-              <>
-                {/* Chat messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {chatMessages.map((message: ChatMessage) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[80%] p-3 rounded-lg ${
-                            message.role === 'user'
-                              ? 'bg-blue-600 text-white ml-4'
-                              : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white mr-4 border border-gray-200 dark:border-slate-600'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2 mb-1">
-                            {message.role === 'user' ? (
-                              <div className="w-4 h-4 bg-white/20 rounded-full"></div>
-                            ) : (
-                              <Sparkles className="w-4 h-4 text-purple-500" />
-                            )}
-                            <span className="text-xs opacity-75">
-                              {message.role === 'user' ? 'You' : 'ChatGPT'}
-                            </span>
-                          </div>
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                          {message.documentCommand && (
-                            <div className="mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs">
-                              <Command className="w-3 h-3 inline mr-1" />
-                              Document command executed
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+            {/* Chat messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Ready to Help!
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Try commands like:
+                    </p>
+                    <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                      <p>"Make the title bold"</p>
+                      <p>"Add a conclusion paragraph"</p>
+                      <p>"Delete page 2"</p>
+                      <p>"Replace 'old text' with 'new text'"</p>
+                    </div>
                   </div>
-                </ScrollArea>
+                )}
                 
-                {/* Chat input */}
-                <div className="p-4 border-t border-white/20">
-                  <div className="flex space-x-2">
-                    <Textarea
-                      placeholder="Ask ChatGPT to edit your document... Try: 'Make the title bold' or 'Add a conclusion paragraph'"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      className="flex-1 min-h-[60px] resize-none"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={!chatInput.trim() || sendMessageMutation.isPending}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    <strong>Commands:</strong> "delete page 2", "make 'text' bold", "add paragraph to page 3"
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div className="text-center">
-                  <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Start a Chat Session
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Create a new chat session to get AI assistance with your document
-                  </p>
-                  <Button
-                    onClick={() => setIsCreatingSession(true)}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                {chatMessages.map((message: ChatMessage) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Chat Session
-                  </Button>
-                </div>
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        message.role === 'user'
+                          ? 'bg-blue-600 text-white ml-4'
+                          : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white mr-4 border border-gray-200 dark:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2 mb-1">
+                        {message.role === 'user' ? (
+                          <div className="w-4 h-4 bg-white/20 rounded-full"></div>
+                        ) : (
+                          <Sparkles className="w-4 h-4 text-purple-500" />
+                        )}
+                        <span className="text-xs opacity-75">
+                          {message.role === 'user' ? 'You' : 'ChatGPT'}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      {message.documentCommand && (
+                        <div className="mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs">
+                          <Command className="w-3 h-3 inline mr-1" />
+                          Document command executed
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </ScrollArea>
+            
+            {/* Chat input - Always available */}
+            <div className="p-4 border-t border-white/20">
+              <div className="flex space-x-2">
+                <Textarea
+                  placeholder="Ask me to help with your document..."
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  className="flex-1 min-h-[60px] resize-none"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim() || sendMessageMutation.isPending}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <strong>Commands:</strong> "delete page 2", "make 'text' bold", "add paragraph"
+              </div>
+            </div>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

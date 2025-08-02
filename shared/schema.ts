@@ -97,7 +97,6 @@ export const insertDocumentHistorySchema = createInsertSchema(documentHistory).p
 });
 
 export const insertChatSessionSchema = createInsertSchema(chatSessions).pick({
-  documentId: true,
   title: true,
   documentSnapshot: true,
 });
