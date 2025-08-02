@@ -48,31 +48,25 @@
   --radius: 0.5rem;
 }
 
-/* StudyFlow gradient background - exact 1:1 replica from Math Company */
+/* StudyFlow gradient background - exact 1:1 replica from Math Company reference */
 .studyflow-gradient {
-  background: linear-gradient(to right, 
-    #E8D5FF 0%,     /* Light lavender */
-    #F3E8FF 15%,    /* Very light purple */
-    #F8BBD9 30%,    /* Light pink */
-    #E0F2FE 45%,    /* Light blue */
-    #B2F5EA 60%,    /* Light mint */
-    #7DD3FC 75%,    /* Light cyan */
-    #67E8F9 90%,    /* Bright cyan */
-    #22D3EE 100%    /* Turquoise */
+  background: linear-gradient(135deg, 
+    #F8F0FF 0%,     /* Very light lavender */
+    #F3E8FF 25%,    /* Light purple */
+    #F8E1F4 50%,    /* Soft pink */
+    #E8F4FD 75%,    /* Light blue */
+    #E0F7FA 100%    /* Very light cyan */
   );
 }
 
-/* Global background for all pages */
+/* Global background for all pages - soft pastel gradient */
 body {
-  background: linear-gradient(to right, 
-    #E8D5FF 0%,     /* Light lavender */
-    #F3E8FF 15%,    /* Very light purple */
-    #F8BBD9 30%,    /* Light pink */
-    #E0F2FE 45%,    /* Light blue */
-    #B2F5EA 60%,    /* Light mint */
-    #7DD3FC 75%,    /* Light cyan */
-    #67E8F9 90%,    /* Bright cyan */
-    #22D3EE 100%    /* Turquoise */
+  background: linear-gradient(135deg, 
+    #F8F0FF 0%,     /* Very light lavender */
+    #F3E8FF 25%,    /* Light purple */
+    #F8E1F4 50%,    /* Soft pink */
+    #E8F4FD 75%,    /* Light blue */
+    #E0F7FA 100%    /* Very light cyan */
   ) !important;
   background-size: cover;
   background-repeat: no-repeat;
