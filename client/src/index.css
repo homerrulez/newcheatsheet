@@ -48,6 +48,27 @@
   --radius: 0.5rem;
 }
 
+/* StudyFlow gradient background - exact match */
+.studyflow-gradient {
+  background: linear-gradient(135deg, 
+    #E8D5FF 0%,     /* Light purple */
+    #F8E8FF 25%,    /* Very light purple/pink */
+    #DCFCE7 50%,    /* Light mint */
+    #A7F3D0 75%,    /* Light cyan */
+    #67E8F9 100%    /* Bright cyan */
+  );
+}
+
+.studyflow-gradient-dark {
+  background: linear-gradient(135deg, 
+    #4C1D95 0%,     /* Dark purple */
+    #7C2D92 25%,    /* Purple */
+    #065F46 50%,    /* Dark green */
+    #0E7490 75%,    /* Dark cyan */
+    #0891B2 100%    /* Dark cyan-blue */
+  );
+}
+
 /* Floating animations for background symbols */
 @keyframes float-in-from-left {
   0% {

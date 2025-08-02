@@ -569,7 +569,7 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+    <div className="h-screen studyflow-gradient dark:studyflow-gradient-dark">
       {/* Enhanced Microsoft Word-Style Toolbar */}
       <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20">
         {/* Document title bar */}
