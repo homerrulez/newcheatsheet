@@ -106,25 +106,82 @@ function DocumentRenderer({
     }
   }, [pageWidth, fontFamily, fontSize]);
   
-  // Calculate page count based on total content height (simplified approach)
-  const calculatePageCount = useCallback(() => {
+  // Split content into actual page chunks based on height
+  const splitContentIntoPages = useCallback(() => {
     if (!editor) return;
     
     try {
-      // Get the full document as HTML
       const fullHTML = editor.getHTML();
-      const totalContentHeight = measureContentHeight(fullHTML);
+      const doc = new DOMParser().parseFromString(fullHTML, 'text/html');
+      const paragraphs = Array.from(doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote'));
       
-      // Calculate how many pages we need
-      const pagesNeeded = Math.max(1, Math.ceil(totalContentHeight / contentHeight));
-      
-      // Create simple page layouts
       const layouts: DocumentPageLayout[] = [];
-      for (let i = 0; i < pagesNeeded; i++) {
+      let currentPage: DocumentPageLayout = {
+        pageIndex: 0,
+        nodes: [],
+        totalHeight: 0,
+        startPos: 0,
+        endPos: 0
+      };
+      
+      let accumulatedHTML = '';
+      
+      paragraphs.forEach((element, index) => {
+        const elementHTML = element.outerHTML;
+        const elementHeight = measureContentHeight(elementHTML);
+        
+        // Check if adding this element would exceed page height
+        if (currentPage.totalHeight + elementHeight > contentHeight && currentPage.nodes.length > 0) {
+          // Finalize current page with accumulated HTML
+          currentPage.nodes = [{ 
+            node: accumulatedHTML, 
+            nodeIndex: index,
+            startPos: 0,
+            endPos: 0,
+            height: currentPage.totalHeight 
+          }];
+          layouts.push(currentPage);
+          
+          // Start new page
+          currentPage = {
+            pageIndex: layouts.length,
+            nodes: [],
+            totalHeight: elementHeight,
+            startPos: 0,
+            endPos: 0
+          };
+          accumulatedHTML = elementHTML;
+        } else {
+          // Add to current page
+          accumulatedHTML += elementHTML;
+          currentPage.totalHeight += elementHeight;
+        }
+      });
+      
+      // Add final page
+      if (accumulatedHTML) {
+        currentPage.nodes = [{ 
+          node: accumulatedHTML, 
+          nodeIndex: paragraphs.length,
+          startPos: 0,
+          endPos: 0,
+          height: currentPage.totalHeight 
+        }];
+        layouts.push(currentPage);
+      }
+      
+      // Ensure at least one page
+      if (layouts.length === 0) {
         layouts.push({
-          pageIndex: i,
-          nodes: [], // Simplified - we'll use HTML splitting instead
-          totalHeight: i === pagesNeeded - 1 ? totalContentHeight % contentHeight : contentHeight,
+          pageIndex: 0,
+          nodes: [{ 
+            node: '<p><br></p>', 
+            nodeIndex: 0,
+            startPos: 0,
+            endPos: 0,
+            height: 20 
+          }],
+          totalHeight: 20,
           startPos: 0,
           endPos: 0
         });
@@ -132,11 +189,17 @@ function DocumentRenderer({
       
       setPageLayouts(layouts);
     } catch (error) {
-      console.error('Page calculation error:', error);
+      console.error('Content splitting error:', error);
       setPageLayouts([{
         pageIndex: 0,
-        nodes: [],
-        totalHeight: 0,
+        nodes: [{ 
+          node: '<p><br></p>', 
+          nodeIndex: 0,
+          startPos: 0,
+          endPos: 0,
+          height: 20 
+        }],
+        totalHeight: 20,
         startPos: 0,
         endPos: 0
       }]);
@@ -153,44 +216,36 @@ function DocumentRenderer({
     return 0;
   }, [pageLayouts]);
   
-  // Handle page clicks to position cursor correctly
+  // Handle page clicks to focus on that page
   const handlePageClick = useCallback((pageIndex: number, event: React.MouseEvent) => {
-    if (!editor || !pageLayouts[pageIndex]) return;
+    if (!editor) return;
     
-    const pageLayout = pageLayouts[pageIndex];
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const clickY = event.clientY - rect.top - 64; // Account for padding
-    
-    // Find which node was clicked based on Y position
-    let accumulatedHeight = 0;
-    let targetPosition = pageLayout.startPos;
-    
-    for (const pageNode of pageLayout.nodes) {
-      if (clickY <= accumulatedHeight + pageNode.height) {
-        // Calculate approximate position within the node
-        const nodeClickRatio = Math.max(0, Math.min(1, (clickY - accumulatedHeight) / pageNode.height));
-        const nodeSize = pageNode.endPos - pageNode.startPos;
-        targetPosition = pageNode.startPos + Math.floor(nodeClickRatio * nodeSize);
-        break;
-      }
-      accumulatedHeight += pageNode.height;
-      targetPosition = pageNode.endPos;
-    }
-    
-    // Set cursor position and focus
-    editor.commands.setTextSelection(targetPosition);
-    editor.commands.focus();
-    setCursorPosition(targetPosition);
     setCurrentPage(pageIndex);
-  }, [editor, pageLayouts]);
+    editor.commands.focus();
+    
+    // Move cursor to beginning of the page content
+    // For now, just focus - precise positioning would need more complex logic
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const clickY = event.clientY - rect.top - 64;
+    
+    // Simple approximation - move cursor based on click position
+    if (clickY < 100) {
+      editor.commands.setTextSelection(0); // Top of document
+    } else {
+      // Try to position cursor roughly where clicked
+      const text = editor.getText();
+      const approximatePosition = Math.floor((clickY / (contentHeight - 128)) * text.length);
+      editor.commands.setTextSelection(Math.min(approximatePosition, text.length));
+    }
+  }, [editor, contentHeight]);
   
   // Listen for editor updates and cursor changes
   useEffect(() => {
     if (!editor) return;
     
     const handleUpdate = () => {
-      // Recalculate page count when content changes
-      setTimeout(calculatePageCount, 100);
+      // Recalculate page splits when content changes
+      setTimeout(splitContentIntoPages, 100);
     };
     
     const handleSelectionUpdate = ({ editor }: { editor: any }) => {
@@ -204,19 +259,19 @@ function DocumentRenderer({
     editor.on('selectionUpdate', handleSelectionUpdate);
     
     // Initial calculation
-    calculatePageCount();
+    splitContentIntoPages();
     
     return () => {
       editor.off('update', handleUpdate);
       editor.off('selectionUpdate', handleSelectionUpdate);
     };
-  }, [editor, calculatePageCount, getPageForPosition]);
+  }, [editor, splitContentIntoPages, getPageForPosition]);
   
   // Real-time layout updates
   useEffect(() => {
-    const timer = setTimeout(calculatePageCount, 300);
+    const timer = setTimeout(splitContentIntoPages, 300);
     return () => clearTimeout(timer);
-  }, [calculatePageCount, documentContent]);
+  }, [splitContentIntoPages, documentContent]);
 
   // Simplified rendering - just show the continuous editor
   const renderPageContent = (pageLayout: DocumentPageLayout) => {
@@ -229,53 +284,68 @@ function DocumentRenderer({
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
       {/* Page count status like Microsoft Word */}
       <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Page 1 of {pageLayouts.length}
+        Page {currentPage + 1} of {pageLayouts.length}
       </div>
       
       <div ref={containerRef} className="space-y-8">
-        {/* Render each page with clipped content */}
+        {/* Render each page with its specific content */}
         {pageLayouts.map((pageLayout, pageIndex) => (
           <div
             key={pageLayout.pageIndex}
-            className="mx-auto bg-white shadow-lg relative overflow-hidden"
+            className="mx-auto bg-white shadow-lg relative overflow-hidden cursor-text"
             style={{
               width: `${pageWidth}px`,
               height: `${pageHeight}px`,
             }}
+            onClick={(e) => handlePageClick(pageIndex, e)}
           >
-            {/* Content wrapper that clips to page boundaries */}
+            {/* Page content area with height constraint */}
             <div 
-              className="absolute inset-0 overflow-hidden"
+              className="p-16 h-full overflow-hidden"
               style={{
-                padding: '64px',
+                fontFamily,
+                fontSize: `${fontSize}pt`,
+                color: textColor,
+                lineHeight: '1.6',
               }}
             >
-              {/* Editor positioned to show only this page's content */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: `${-pageIndex * contentHeight + 64}px`,
-                  left: '64px',
-                  right: '64px',
-                  fontFamily,
-                  fontSize: `${fontSize}pt`,
-                  color: textColor,
-                  lineHeight: '1.6',
-                }}
-              >
-                {editor && (
+              {pageLayout.pageIndex === currentPage ? (
+                // Active page: Show live editor with content constrained to this page
+                <div 
+                  style={{ 
+                    height: `${contentHeight - 128}px`,
+                    overflow: 'hidden',
+                  }}
+                >
                   <EditorContent 
                     editor={editor}
                     className="focus:outline-none prose prose-sm max-w-none"
                   />
-                )}
-              </div>
+                </div>
+              ) : (
+                // Inactive page: Show static HTML content for this page only
+                <div 
+                  className="prose prose-sm max-w-none"
+                  style={{ 
+                    height: `${contentHeight - 128}px`,
+                    overflow: 'hidden',
+                  }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: pageLayout.nodes[0]?.node || '<p><br></p>'
+                  }}
+                />
+              )}
             </div>
             
             {/* Page number */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
               {pageLayout.pageIndex + 1}
             </div>
+            
+            {/* Active page indicator */}
+            {pageLayout.pageIndex === currentPage && (
+              <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full pointer-events-none"></div>
+            )}
           </div>
         ))}
       </div>
