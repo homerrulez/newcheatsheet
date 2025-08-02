@@ -20,23 +20,63 @@ export default function DocumentWorkspace() {
   const [fontFamily, setFontFamily] = useState('Times New Roman');
   const [textColor, setTextColor] = useState('#000000');
   const [highlightColor, setHighlightColor] = useState('#FFFF00');
+  const [pageSize, setPageSize] = useState({ width: 8.5, height: 11 }); // inches
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Calculate number of pages needed based on content
-  const calculatePageCount = useCallback(() => {
-    if (!content) return 1;
+  // Calculate characters per page based on page size and font
+  const calculateCharactersPerPage = useCallback(() => {
+    // Base calculation: characters per line × lines per page
+    const pageArea = (pageSize.width - 2) * (pageSize.height - 2); // Minus margins
+    const baseArea = 6.5 * 9; // 8.5x11 minus 1" margins on each side
+    const scaleFactor = pageArea / baseArea;
     
-    // Rough estimation: 500 characters per page (standard document)
-    const charactersPerPage = 2500;
-    const pages = Math.max(1, Math.ceil(content.length / charactersPerPage));
+    // Adjust base character count by scale factor and font size
+    const baseCharsPerPage = 2500;
+    const fontSizeMultiplier = 12 / fontSize; // Smaller font = more chars
     
-    return pages;
-  }, [content]);
+    return Math.floor(baseCharsPerPage * scaleFactor * fontSizeMultiplier);
+  }, [pageSize, fontSize]);
 
-  const pageCount = calculatePageCount();
+  // Split content into pages with proper boundaries
+  const splitIntoPages = useCallback(() => {
+    if (!content) return [''];
+    
+    const charsPerPage = calculateCharactersPerPage();
+    const pages: string[] = [];
+    let remainingContent = content;
+    
+    while (remainingContent.length > 0) {
+      if (remainingContent.length <= charsPerPage) {
+        pages.push(remainingContent);
+        break;
+      }
+      
+      // Find a good break point (end of word/sentence)
+      let breakPoint = charsPerPage;
+      while (breakPoint > charsPerPage * 0.8 && 
+             remainingContent[breakPoint] !== ' ' && 
+             remainingContent[breakPoint] !== '\n' &&
+             remainingContent[breakPoint] !== '.') {
+        breakPoint--;
+      }
+      
+      // If no good break point found, break at character limit
+      if (breakPoint <= charsPerPage * 0.8) {
+        breakPoint = charsPerPage;
+      }
+      
+      pages.push(remainingContent.substring(0, breakPoint));
+      remainingContent = remainingContent.substring(breakPoint).trim();
+    }
+    
+    return pages.length > 0 ? pages : [''];
+  }, [content, calculateCharactersPerPage]);
+
+  const contentPages = splitIntoPages();
 
   const formatText = (command: string, value?: string) => {
     if (editorRef.current && typeof window !== 'undefined') {
@@ -57,12 +97,14 @@ export default function DocumentWorkspace() {
     }
   };
 
-  // Split content into pages for display
-  const getPageContent = (pageIndex: number) => {
-    const charactersPerPage = 2500;
-    const startIndex = pageIndex * charactersPerPage;
-    const endIndex = startIndex + charactersPerPage;
-    return content.slice(startIndex, endIndex);
+  // Update content for a specific page and reflow
+  const updatePageContent = (pageIndex: number, newPageContent: string) => {
+    const pages = [...contentPages];
+    pages[pageIndex] = newPageContent;
+    
+    // Rejoin all pages and let the system re-split with proper boundaries
+    const fullContent = pages.join(' ');
+    setContent(fullContent);
   };
 
   // Fetch current document
@@ -286,6 +328,25 @@ export default function DocumentWorkspace() {
 
           <Separator orientation="vertical" className="h-6" />
 
+          {/* Page size controls */}
+          <select
+            value={`${pageSize.width}x${pageSize.height}`}
+            onChange={(e) => {
+              const [width, height] = e.target.value.split('x').map(Number);
+              setPageSize({ width, height });
+            }}
+            className="border border-slate-300 rounded px-2 py-1 text-sm"
+          >
+            <option value="8.5x11">Letter (8.5" × 11")</option>
+            <option value="8.5x14">Legal (8.5" × 14")</option>
+            <option value="11x17">Tabloid (11" × 17")</option>
+            <option value="5.5x8.5">Half Letter (5.5" × 8.5")</option>
+            <option value="4x6">4" × 6"</option>
+            <option value="8.27x11.69">A4 (8.27" × 11.69")</option>
+          </select>
+
+          <Separator orientation="vertical" className="h-6" />
+
           {/* View controls */}
           <Button variant="ghost" size="sm" onClick={() => setZoomLevel(prev => Math.min(200, prev + 10))} className="p-2">
             <ZoomIn className="w-4 h-4" />
@@ -321,7 +382,7 @@ export default function DocumentWorkspace() {
               {currentDocument?.title || 'New Document'}  
             </h2>
             <div className="text-sm text-slate-600 mt-1">
-              Page 1 of {pageCount}
+              Page {currentPageIndex + 1} of {contentPages.length} • {pageSize.width}" × {pageSize.height}"
             </div>
           </div>
           
@@ -333,76 +394,66 @@ export default function DocumentWorkspace() {
           >
             {currentDocument ? (
               <div className="flex flex-col items-center space-y-8">
-                {/* Render individual pages with strict boundaries */}
-                {Array.from({ length: pageCount }, (_, pageIndex) => (
+                {/* Render pages with dynamic sizing and proper content boundaries */}
+                {contentPages.map((pageContent, pageIndex) => (
                   <div
                     key={pageIndex}
-                    className="document-page bg-white shadow-xl relative"
+                    className="document-page bg-white shadow-xl relative cursor-pointer"
                     style={{
-                      width: `${8.5 * zoomLevel / 100}in`,
-                      height: `${11 * zoomLevel / 100}in`,
+                      width: `${pageSize.width * zoomLevel / 100}in`,
+                      height: `${pageSize.height * zoomLevel / 100}in`,
                       border: '1px solid #d1d5db',
-                      overflow: 'hidden', // Strict clipping
-                      marginBottom: pageIndex === pageCount - 1 ? '0' : '20px'
+                      overflow: 'hidden',
+                      marginBottom: pageIndex === contentPages.length - 1 ? '0' : '20px'
                     }}
+                    onClick={() => setCurrentPageIndex(pageIndex)}
                   >
-                    {/* Page content area with margins */}
+                    {/* Page content area with proportional margins */}
                     <div
                       className="absolute inset-0 overflow-hidden"
                       style={{
-                        padding: `${1 * zoomLevel / 100}in`,
+                        padding: `${Math.min(1, pageSize.width * 0.12) * zoomLevel / 100}in`,
                         boxSizing: 'border-box'
                       }}
                     >
                       {/* Page number */}
                       <div 
                         className="absolute bottom-3 right-4 text-xs text-slate-400 pointer-events-none"
-                        style={{ fontSize: `${10 * zoomLevel / 100}pt` }}
+                        style={{ 
+                          fontSize: `${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt`,
+                        }}
                       >
                         {pageIndex + 1}
                       </div>
 
-                      {/* Content for this page */}
+                      {/* Content for this specific page */}
                       <div
-                        ref={pageIndex === 0 ? editorRef : null}
-                        contentEditable={pageIndex === 0}
-                        className="w-full outline-none"
+                        ref={pageIndex === currentPageIndex ? editorRef : null}
+                        contentEditable={pageIndex === currentPageIndex}
+                        className={`w-full outline-none ${pageIndex === currentPageIndex ? 'ring-2 ring-blue-200' : ''}`}
                         style={{
                           fontFamily: fontFamily,
                           fontSize: `${fontSize * zoomLevel / 100}pt`,
-                          lineHeight: '1.5',
+                          lineHeight: Math.max(1.2, 1.5 * (pageSize.height / 11)), // Adjust line height for page size
                           color: textColor,
-                          height: `${9 * zoomLevel / 100}in`,
-                          overflow: 'hidden', // Clip content to page
+                          height: `${(pageSize.height - Math.min(2, pageSize.width * 0.24)) * zoomLevel / 100}in`,
+                          overflow: 'hidden',
                           wordWrap: 'break-word',
                           whiteSpace: 'pre-wrap',
-                          paddingBottom: '30px' // Space for page number
+                          paddingBottom: `${Math.max(20, pageSize.height * 3) * zoomLevel / 100}px`
                         }}
-                        onInput={pageIndex === 0 ? handleContentChange : undefined}
+                        onInput={pageIndex === currentPageIndex ? handleContentChange : undefined}
+                        onFocus={() => setCurrentPageIndex(pageIndex)}
                         onPaste={(e) => {
-                          if (pageIndex === 0) {
+                          if (pageIndex === currentPageIndex) {
                             e.preventDefault();
                             const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
-                            setContent(prev => prev + paste);
-                            setTimeout(handleContentChange, 10);
+                            updatePageContent(pageIndex, pageContent + paste);
                           }
                         }}
-                        data-placeholder={pageIndex === 0 ? "Start writing your document..." : undefined}
+                        data-placeholder={pageIndex === 0 && !pageContent ? "Start writing your document..." : undefined}
                       >
-                        {pageIndex === 0 ? (
-                          // First page is editable
-                          content
-                        ) : (
-                          // Subsequent pages show overflow content
-                          <div style={{ 
-                            whiteSpace: 'pre-wrap',
-                            wordWrap: 'break-word',
-                            height: '100%',
-                            overflow: 'hidden'
-                          }}>
-                            {getPageContent(pageIndex)}
-                          </div>
-                        )}
+                        {pageContent}
                       </div>
                     </div>
                   </div>

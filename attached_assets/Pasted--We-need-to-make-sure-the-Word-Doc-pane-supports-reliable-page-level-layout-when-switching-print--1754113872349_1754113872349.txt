@@ -1,0 +1,36 @@
+
+
+We need to make sure the Word Doc pane supports reliable page-level layout when switching print sizes (e.g., from 8x11 to 4x6), **without breaking content boundaries between pages**. There are two main strategies worth considering:
+
+### Option 1: Full Document Scaling (harder to control but preserves fidelity)
+
+1. Wrap all the generated pages (vertically stacked) in a container.
+2. Use a `ref` to measure that container’s dimensions at runtime.
+3. Calculate the scale factor relative to the target print size, then apply `transform: scale(...)` and `transform-origin: top left` on the wrapper.
+4. This shrinks everything proportionally, but **does not guarantee that content on Page 1 stays only on Page 1**, especially with live content changes or text overflow.
+
+**Why it’s risky:**
+The scaling approach doesn’t respect page barriers. If a page was originally filled perfectly, scaling might push a few lines from Page 1 into Page 2 due to rounding errors or layout quirks. It also introduces visual scaling artifacts when printed/exported.
+
+---
+
+### Option 2: Dynamic Font and Layout Scaling (safer and easier to control per page)
+
+1. Each page container should have a **fixed height and width** based on its virtual print size (e.g., 8x11 inches converted to px).
+2. When the user selects a new print size (like 4x6), calculate the ratio of the new size to the original and **adjust font size, line height, padding, and spacing** accordingly using CSS variables or inline styles.
+3. Maintain **overflow boundaries per page** — anything that would overflow Page 1 gets moved to Page 2 automatically, like how a real word processor works.
+4. To avoid layout breakage, build a layout manager that re-measures content blocks and ensures they fit before rendering to a new page.
+
+**Why this works better:**
+
+* It keeps all text **within its assigned page**.
+* Easier to adapt for screen vs print media.
+* Gives finer control over typography and padding without distorting the UI.
+
+---
+
+### Recommendation:
+
+Use **Option 2 (dynamic font/layout scaling)** if precision is the priority. Scaling the full container visually looks good, but can’t reliably preserve per-page logic when space is constrained. The font-resize method keeps everything clean, readable, and accurate to each page's print box.
+
+
