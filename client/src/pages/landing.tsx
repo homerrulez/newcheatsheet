@@ -86,7 +86,7 @@ export default function Landing() {
                   <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
                     <Layout className="text-gray-800 text-2xl" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-1 text-center">Splendid</h3>
+                  <h3 className="text-3xl font-normal text-gray-900 mb-1 text-center" style={{ fontFamily: '"Playfair Display", serif' }}>Template</h3>
                   <p className="text-sm text-gray-700 text-center">Smart Templates Powered by AI</p>
                 </div>
 
@@ -141,7 +141,7 @@ export default function Landing() {
                   <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
                     <Brain className="text-gray-800 text-2xl" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-1 text-center">Splendid</h3>
+                  <h3 className="text-3xl font-normal text-gray-900 mb-1 text-center" style={{ fontFamily: '"Playfair Display", serif' }}>Cheatsheet</h3>
                   <p className="text-sm text-gray-700 text-center">Cheat Sheets Powered by AI</p>
                 </div>
 
@@ -196,7 +196,7 @@ export default function Landing() {
                   <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
                     <PenTool className="text-gray-800 text-2xl" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-1 text-center">Splendid</h3>
+                  <h3 className="text-3xl font-normal text-gray-900 mb-1 text-center" style={{ fontFamily: '"Playfair Display", serif' }}>Document</h3>
                   <p className="text-sm text-gray-700 text-center">Smart Documents Powered by AI</p>
                 </div>
 
@@ -240,7 +240,7 @@ export default function Landing() {
         </div>
 
         {/* Additional Features Section */}
-        <div className="grid grid-cols-3 gap-6 mt-16">
+        <div className="grid grid-cols-3 gap-8 mt-16 scale-[1.4]">
           {/* Academic Excellence */}
           <div className="bg-gradient-to-r from-white/25 via-blue-50/20 to-purple-50/15 backdrop-blur-md border border-white/40 rounded-xl p-6 shadow-lg">
             <h4 className="text-base font-semibold text-gray-800 mb-3 flex items-center">
