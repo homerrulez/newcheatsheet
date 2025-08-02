@@ -1,8 +1,23 @@
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { FileText, Grid3X3, FileSpreadsheet, Play, Check } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FileText, Grid3X3, FileSpreadsheet, Play, Check, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Landing() {
+  const [videoModal, setVideoModal] = useState<{ isOpen: boolean; type: string; title: string }>({
+    isOpen: false,
+    type: '',
+    title: ''
+  });
+
+  const openVideoModal = (type: string, title: string) => {
+    setVideoModal({ isOpen: true, type, title });
+  };
+
+  const closeVideoModal = () => {
+    setVideoModal({ isOpen: false, type: '', title: '' });
+  };
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 50%, #e8f5e8 100%)' }}>
       {/* Header */}
@@ -56,9 +71,15 @@ export default function Landing() {
               
               {/* Video Icon */}
               <div className="flex justify-center mb-6">
-                <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openVideoModal('template', 'Smart Templates Powered by AI');
+                  }}
+                  className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200"
+                >
                   <Play className="text-white text-lg ml-1" />
-                </div>
+                </button>
               </div>
 
               {/* Feature List */}
@@ -97,9 +118,15 @@ export default function Landing() {
               
               {/* Video Icon */}
               <div className="flex justify-center mb-6">
-                <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openVideoModal('cheatsheet', 'Cheat Sheets Powered by AI');
+                  }}
+                  className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200"
+                >
                   <Play className="text-white text-lg ml-1" />
-                </div>
+                </button>
               </div>
 
               {/* Feature List */}
@@ -138,9 +165,15 @@ export default function Landing() {
               
               {/* Video Icon */}
               <div className="flex justify-center mb-6">
-                <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openVideoModal('document', 'Smart Documents Powered by AI');
+                  }}
+                  className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200"
+                >
                   <Play className="text-white text-lg ml-1" />
-                </div>
+                </button>
               </div>
 
               {/* Feature List */}
@@ -166,16 +199,34 @@ export default function Landing() {
             </div>
           </Link>
         </div>
+      </main>
 
-        {/* Video Showcase Section */}
-        <div className="flex justify-center">
-          <div className="bg-gradient-to-r from-green-200 via-purple-200 to-blue-200 rounded-3xl p-8 shadow-lg">
-            <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto">
-              <Play className="text-white text-3xl ml-1" />
+      {/* Video Modal */}
+      <Dialog open={videoModal.isOpen} onOpenChange={closeVideoModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="text-2xl font-bold">{videoModal.title}</DialogTitle>
+          </DialogHeader>
+          <div className="p-6 pt-4">
+            <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
+              <div className="text-center text-white">
+                <Play className="w-16 h-16 mx-auto mb-4 opacity-60" />
+                <p className="text-lg mb-2">Video Demonstration</p>
+                <p className="text-sm opacity-75">
+                  {videoModal.type === 'template' && 'See how Smart Templates help you create structured academic layouts instantly'}
+                  {videoModal.type === 'cheatsheet' && 'Watch how Cheat Sheets organize your formulas with intelligent auto-sizing'}
+                  {videoModal.type === 'document' && 'Experience Smart Documents with AI assistance and beautiful LaTeX rendering'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 text-center">
+              <Button onClick={closeVideoModal} variant="outline">
+                Close
+              </Button>
             </div>
           </div>
-        </div>
-      </main>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
