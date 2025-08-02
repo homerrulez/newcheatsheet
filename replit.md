@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### August 2, 2025 - CRITICAL FIX: ChatGPT Natural Language Intelligence 
+- **Major Issue Resolved**: ChatGPT was adding command text ("FORMAT_TEXT", "CENTER") directly to document instead of executing internally
+- **Enhanced System Prompt**: Completely redesigned to distinguish between content creation vs command execution
+- **Smart Response Detection**: Added CENTER_TEXT command parsing and execution in frontend
+- **Natural Language Understanding**: "the title should be in the middle" now centers text, doesn't add command text
+- **Content vs Commands**: Clear separation - "create X" generates content, "center X" executes commands
+- **Status**: ✓ Fixed - ChatGPT now intelligently understands natural language without polluting documents
+
 ### August 2, 2025 - Fixed ChatGPT Layout & Panel Separation
 - **Issues Resolved**: 
   - ChatGPT interface now always visible at top of right panel - no scrolling needed

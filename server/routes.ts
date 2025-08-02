@@ -148,32 +148,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "OpenAI API key not configured" });
       }
 
-      // Natural language system prompt for document editing
-      const systemPrompt = `You are an intelligent writing assistant for a Microsoft Word-like document editor. You understand natural language requests and help users create and edit documents.
+      // Enhanced natural language system prompt
+      const systemPrompt = `You are an intelligent writing assistant for a document editor. You help users in two distinct ways:
 
-IMPORTANT: When users ask for content creation (like "create a title about Ali and make it adventurous"), respond ONLY with the actual content they want added to their document. DO NOT include commands or explanations in the content.
+1. CONTENT CREATION: When users ask to create/write/add content, respond with ONLY the pure content
+2. DOCUMENT COMMANDS: When users ask to format/edit existing text, use command syntax
 
-Examples:
-- User: "create a title about Ali and make it adventurous" 
-  Response: "The Life and Adventures of Ali"
-- User: "add a paragraph about cats"
-  Response: "Cats are fascinating creatures known for their independence and grace..."
-- User: "make the word 'exciting' bold"
-  Response: FORMAT_TEXT "exciting" BOLD
+CONTENT CREATION (respond with content only, no commands):
+- "create a title about Ali and make it adventurous" → "The Epic Adventures of Ali"
+- "write a paragraph about nature" → "Nature provides sanctuary and peace..."
+- "add a conclusion" → "In conclusion, this demonstrates..."
 
-DOCUMENT COMMANDS (only use when user explicitly asks for document manipulation):
-- DELETE_PAGE <number>: Delete/clear a specific page
-- FORMAT_TEXT "<text>" BOLD|ITALIC|UNDERLINE: Apply formatting to specific text  
-- REPLACE_TEXT "<old>" WITH "<new>": Replace text in the document
+DOCUMENT COMMANDS (use exact syntax):
+- "center the title" → CENTER_TEXT "The Epic Adventures of Ali"
+- "make the title bold" → FORMAT_TEXT "The Epic Adventures of Ali" BOLD
+- "italicize this word" → FORMAT_TEXT "word" ITALIC
 
-RESPONSE GUIDELINES:
-1. For content creation requests: Provide ONLY the content to be inserted
-2. For formatting requests: Use the appropriate FORMAT_TEXT command
-3. For document manipulation: Use the appropriate document command
-4. Keep content concise and relevant to the request
+CRITICAL INTELLIGENCE:
+1. "create X" = content creation (respond with pure content)
+2. "format/center/bold X" = command execution (respond with command only)
+3. NEVER mix content and commands in one response
+4. NEVER add explanatory text or commands when creating content
 
-Current document content:
-${documentContent}
+Current document: ${documentContent}
 
 User request: ${content}`;
 
@@ -194,13 +191,21 @@ User request: ${content}`;
       let insertText = null;
       let insertAtEnd = false;
 
-      // Simple command parsing (could be enhanced with more sophisticated NLP)
+      // Enhanced command parsing for natural language
       if (responseContent.includes('DELETE_PAGE')) {
         const pageMatch = responseContent.match(/DELETE_PAGE (\d+)/);
         if (pageMatch) {
           documentCommand = {
             type: 'delete_page',
             params: { pageNumber: parseInt(pageMatch[1]) }
+          };
+        }
+      } else if (responseContent.includes('CENTER_TEXT')) {
+        const centerMatch = responseContent.match(/CENTER_TEXT "([^"]+)"/);
+        if (centerMatch) {
+          documentCommand = {
+            type: 'center_text',
+            params: { text: centerMatch[1] }
           };
         }
       } else if (responseContent.includes('FORMAT_TEXT')) {

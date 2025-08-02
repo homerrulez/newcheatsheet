@@ -247,6 +247,40 @@ export default function DocumentWorkspace() {
         }
         break;
         
+      case 'center_text':
+        const { text: centerText } = command.params;
+        if (centerText) {
+          // Find and center the specific text using Tiptap commands
+          const content = editor.getHTML();
+          if (content.includes(centerText)) {
+            // Use Tiptap's search and select functionality
+            const doc = editor.state.doc;
+            let found = false;
+            
+            doc.descendants((node, pos) => {
+              if (found) return false;
+              
+              if (node.isText && node.text && node.text.includes(centerText)) {
+                const textStart = pos + node.text.indexOf(centerText);
+                const textEnd = textStart + centerText.length;
+                
+                // Select the text and center it
+                editor.chain()
+                  .focus()
+                  .setTextSelection({ from: textStart, to: textEnd })
+                  .setTextAlign('center')
+                  .run();
+                
+                found = true;
+                return false;
+              }
+            });
+            
+            toast({ title: `Centered text: "${centerText}"` });
+          }
+        }
+        break;
+        
       case 'format_text':
         const { text, formatting } = command.params;
         if (text && formatting) {
