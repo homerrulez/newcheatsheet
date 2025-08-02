@@ -40,11 +40,11 @@ export default function Landing() {
       <header className="relative z-10 px-4 py-4">
         <nav className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 flex items-center justify-center">
+            <div className="w-12 h-12 flex items-center justify-center">
               <img 
-                src="/src/assets/studyflow-logo-brain.svg" 
+                src="/src/assets/brain-logo.png" 
                 alt="StudyFlow" 
-                className="w-8 h-8"
+                className="w-12 h-12 brightness-110 contrast-125"
               />
             </div>
             <h1 className="text-lg font-light text-white tracking-wider" style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: '300', letterSpacing: '0.15em' }}>StudyFlow</h1>
