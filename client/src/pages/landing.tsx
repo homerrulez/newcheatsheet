@@ -164,7 +164,7 @@ export default function Landing() {
 
           {/* Document Workspace */}
           <div className="space-y-6">
-            <Link href="/document">
+            <Link href="/document/16f5d635-4e09-48a7-b92d-a1fd08c167b1">
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">

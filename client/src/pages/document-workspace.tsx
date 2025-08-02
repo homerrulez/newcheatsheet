@@ -56,8 +56,7 @@ export default function DocumentWorkspace() {
   const [fontFamily, setFontFamily] = useState('Times New Roman');
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
-  const [pages, setPages] = useState<DocumentPage[]>([{ id: '1', content: '<p>Start writing your document...</p>', pageNumber: 1 }]);
-  const [activePageIndex, setActivePageIndex] = useState(0);
+  const [documentContent, setDocumentContent] = useState('<p>Start writing your document...</p>');
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isProcessingChat, setIsProcessingChat] = useState(false);
@@ -108,80 +107,23 @@ export default function DocumentWorkspace() {
       }),
       ListItem,
     ],
-    content: pages[activePageIndex]?.content || '<p>Start writing your document...</p>',
+    content: documentContent,
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
-      updatePageContent(activePageIndex, content);
-      setTimeout(() => manageContentFlow(), 100);
+      setDocumentContent(content);
       debouncedSave();
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm focus:outline-none w-full h-full max-w-none',
-        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor}; min-height: 100%; padding: 32px; margin: 0; line-height: 1.6;`,
+        class: 'prose prose-sm focus:outline-none w-full max-w-none',
+        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor}; line-height: 1.6; min-height: 100%;`,
       },
     },
     autofocus: true,
     editable: true,
   });
 
-  // Update page content
-  const updatePageContent = useCallback((pageIndex: number, content: string) => {
-    setPages(prev => prev.map((page, index) => 
-      index === pageIndex ? { ...page, content } : page
-    ));
-  }, []);
 
-  // Advanced content flow management for true page-based layout
-  const manageContentFlow = useCallback(() => {
-    if (!editor || !pagesContainerRef.current) return;
-
-    const currentPageSize = PAGE_SIZES[pageSize];
-    const pageHeightPx = (currentPageSize.height * 96 * zoomLevel / 100) - 128; // 96 DPI, minus padding
-    const pageWidthPx = (currentPageSize.width * 96 * zoomLevel / 100) - 64;
-
-    // Create a measurement container
-    const measureDiv = window.document.createElement('div');
-    measureDiv.style.cssText = `
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-      width: ${pageWidthPx}px;
-      font-family: ${fontFamily};
-      font-size: ${fontSize * zoomLevel / 100}pt;
-      line-height: 1.6;
-      padding: 32px;
-      box-sizing: border-box;
-      visibility: hidden;
-    `;
-    window.document.body.appendChild(measureDiv);
-
-    try {
-      const content = editor.getHTML();
-      measureDiv.innerHTML = content;
-      
-      if (measureDiv.scrollHeight > pageHeightPx) {
-        // Content overflows, need to split into multiple pages
-        handleContentOverflow(content, pageHeightPx, pageWidthPx);
-      }
-    } finally {
-      window.document.body.removeChild(measureDiv);
-    }
-  }, [editor, pageSize, zoomLevel, fontSize, fontFamily, activePageIndex]);
-
-  // Handle content overflow by creating new pages
-  const handleContentOverflow = useCallback((content: string, maxHeight: number, maxWidth: number) => {
-    // For now, we'll create a new page if content is too long
-    // This is a simplified approach - a full implementation would need more sophisticated text splitting
-    if (pages.length === activePageIndex + 1) {
-      const newPage: DocumentPage = {
-        id: `page-${pages.length + 1}`,
-        content: '<p></p>',
-        pageNumber: pages.length + 1
-      };
-      setPages(prev => [...prev, newPage]);
-    }
-  }, [pages, activePageIndex]);
 
   // Debounced auto-save function
   const debouncedSave = useCallback(
@@ -190,7 +132,7 @@ export default function DocumentWorkspace() {
         saveDocument();
       }
     }, 1000),
-    [currentDocument, pages, pageSize, fontSize, fontFamily, textColor]
+    [currentDocument, documentContent, pageSize, fontSize, fontFamily, textColor]
   );
 
   // Save document mutation
@@ -200,8 +142,8 @@ export default function DocumentWorkspace() {
       
       const payload = {
         title: currentDocument.title,
-        content: editor?.getHTML() || '',
-        pages: pages,
+        content: documentContent,
+        pages: [],
         pageSize,
         fontSize: fontSize.toString(),
         fontFamily,
@@ -238,7 +180,7 @@ export default function DocumentWorkspace() {
         documentContent: editor?.getHTML() || '',
         documentId: id,
       });
-      return response;
+      return response as { content: string };
     },
     onSuccess: (response) => {
       const assistantMessage = {
@@ -297,47 +239,27 @@ export default function DocumentWorkspace() {
   const formatUndo = () => editor?.chain().focus().undo().run();
   const formatRedo = () => editor?.chain().focus().redo().run();
 
-  // Page navigation
-  const goToPage = (pageIndex: number) => {
-    if (pageIndex >= 0 && pageIndex < pages.length) {
-      setActivePageIndex(pageIndex);
-      if (editor) {
-        editor.commands.setContent(pages[pageIndex].content);
-        editor.commands.focus();
-      }
-    }
-  };
 
-  const addNewPage = () => {
-    const newPage: DocumentPage = {
-      id: `page-${pages.length + 1}`,
-      content: '<p></p>',
-      pageNumber: pages.length + 1
-    };
-    setPages(prev => [...prev, newPage]);
-    goToPage(pages.length);
-  };
 
   // Load document data when it arrives
   useEffect(() => {
     if (document) {
-      setCurrentDocument(document as Document);
-      if (document.pages && Array.isArray(document.pages) && document.pages.length > 0) {
-        setPages(document.pages as DocumentPage[]);
-      }
-      setPageSize((document.pageSize as keyof typeof PAGE_SIZES) || 'letter');
-      setFontSize(parseInt(document.fontSize) || 12);
-      setFontFamily(document.fontFamily || 'Times New Roman');
-      setTextColor(document.textColor || '#000000');
+      const doc = document as Document;
+      setCurrentDocument(doc);
+      setDocumentContent(doc.content || '<p>Start writing your document...</p>');
+      setPageSize((doc.pageSize as keyof typeof PAGE_SIZES) || 'letter');
+      setFontSize(parseInt(doc.fontSize) || 12);
+      setFontFamily(doc.fontFamily || 'Times New Roman');
+      setTextColor(doc.textColor || '#000000');
     }
   }, [document]);
 
-  // Update editor when active page changes
+  // Update editor when document content changes
   useEffect(() => {
-    if (editor && pages[activePageIndex]) {
-      editor.commands.setContent(pages[activePageIndex].content);
+    if (editor && documentContent !== editor.getHTML()) {
+      editor.commands.setContent(documentContent);
     }
-  }, [activePageIndex, editor, pages]);
+  }, [documentContent, editor]);
 
   // Update editor props when formatting changes
   useEffect(() => {
@@ -537,74 +459,41 @@ export default function DocumentWorkspace() {
         {/* Document Editor Panel */}
         <ResizablePanel defaultSize={55} minSize={40}>
           <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-            <div className="max-w-none mx-auto">
-              {/* Page Navigation */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Page {activePageIndex + 1} of {pages.length}
-                  </span>
-                  <Button size="sm" variant="outline" onClick={addNewPage}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Page
-                  </Button>
-                </div>
-                <div className="flex gap-1">
-                  {pages.map((_, index) => (
-                    <Button
-                      key={index}
-                      size="sm"
-                      variant={index === activePageIndex ? "default" : "outline"}
-                      onClick={() => goToPage(index)}
-                      className="w-8 h-8 p-0"
-                    >
-                      {index + 1}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Document Pages */}
-              <div ref={pagesContainerRef} className="space-y-8">
-                {pages.map((page, index) => (
-                  <div
-                    key={page.id}
-                    className={`mx-auto bg-white dark:bg-white shadow-lg ${
-                      index === activePageIndex ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                    style={{
-                      width: `${PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100}px`,
-                      height: `${PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100}px`,
-                      transform: `scale(${zoomLevel / 100})`,
-                      transformOrigin: 'top center',
-                    }}
-                    onClick={() => goToPage(index)}
-                  >
-                    {index === activePageIndex && editor && (
-                      <EditorContent 
-                        editor={editor} 
-                        className="h-full w-full overflow-hidden"
-                        style={{
-                          fontFamily,
-                          fontSize: `${fontSize}pt`,
-                          color: textColor,
-                        }}
-                      />
-                    )}
-                    {index !== activePageIndex && (
-                      <div 
-                        className="h-full w-full p-8 cursor-pointer"
-                        style={{
-                          fontFamily,
-                          fontSize: `${fontSize}pt`,
-                          color: textColor,
-                        }}
-                        dangerouslySetInnerHTML={{ __html: page.content }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+            {/* Single Document Page - Microsoft Word Style */}
+            <div 
+              className="mx-auto bg-white shadow-lg relative"
+              style={{
+                width: `${PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100}px`,
+                minHeight: `${PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100}px`,
+              }}
+            >
+              {editor && (
+                <EditorContent 
+                  editor={editor} 
+                  className="w-full min-h-full"
+                  style={{
+                    fontFamily,
+                    fontSize: `${fontSize}pt`,
+                    color: textColor,
+                    padding: '64px',
+                    lineHeight: '1.6',
+                    // Add page break CSS for printing
+                    pageBreakAfter: 'auto',
+                    pageBreakInside: 'avoid',
+                  }}
+                />
+              )}
+              
+              {/* Page break lines for visual guidance */}
+              <div 
+                className="absolute left-0 right-0 pointer-events-none"
+                style={{
+                  top: `${PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100}px`,
+                  height: '1px',
+                  backgroundColor: '#e2e8f0',
+                  borderTop: '1px dashed #94a3b8',
+                }}
+              />
             </div>
           </div>
         </ResizablePanel>
