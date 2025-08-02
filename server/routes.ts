@@ -16,6 +16,18 @@ const openai = new OpenAI({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Create default test document
+  const testDoc = await storage.createDocument({
+    title: "My First Document",
+    content: "<p>Welcome to your new document workspace! Start typing here...</p>",
+    pages: [{ id: "1", content: "<p>Welcome to your new document workspace! Start typing here...</p>", pageNumber: 1 }],
+    pageSize: "letter",
+    fontSize: "12",
+    fontFamily: "Times New Roman",
+    textColor: "#000000",
+    userId: "default-user"
+  });
+  
   // Documents API
   app.get("/api/documents", async (req, res) => {
     try {
@@ -53,13 +65,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/documents/:id", async (req, res) => {
+  app.patch("/api/documents/:id", async (req, res) => {
     try {
       const updates = req.body;
       const document = await storage.updateDocument(req.params.id, updates);
       res.json(document);
     } catch (error) {
       res.status(500).json({ message: "Failed to update document" });
+    }
+  });
+
+  // Document History API
+  app.get("/api/documents/:id/history", async (req, res) => {
+    try {
+      const history = await storage.getDocumentHistory(req.params.id);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch document history" });
+    }
+  });
+
+  // AI Chat API for documents
+  app.post("/api/chat/document", async (req, res) => {
+    try {
+      const { message, documentContent, documentId } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ message: "OpenAI API key not configured" });
+      }
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful writing assistant for a document editor. Help users improve their documents, write content, format text, and answer questions about writing. Keep responses concise and focused on the user's request. When generating content, provide it in a way that can be directly inserted into the document."
+          },
+          {
+            role: "user",
+            content: `Current document content: ${documentContent}\n\nUser request: ${message}`
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const content = completion.choices[0]?.message?.content || "I couldn't generate a response. Please try again.";
+      
+      // Save the chat message
+      await storage.createChatMessage({
+        workspaceId: documentId,
+        workspaceType: 'document',
+        role: 'user',
+        content: message,
+      });
+
+      await storage.createChatMessage({
+        workspaceId: documentId,
+        workspaceType: 'document',
+        role: 'assistant',
+        content,
+      });
+
+      res.json({ content });
+    } catch (error) {
+      console.error('Chat error:', error);
+      res.status(500).json({ message: "Failed to process chat request" });
     }
   });
 

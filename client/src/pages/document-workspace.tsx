@@ -5,14 +5,27 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { FontFamily } from '@tiptap/extension-font-family';
+import { BulletList } from '@tiptap/extension-bullet-list';
+import { OrderedList } from '@tiptap/extension-ordered-list';
+import { ListItem } from '@tiptap/extension-list-item';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, FileText, Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, Highlighter, Strikethrough, Subscript, Superscript, Indent, Outdent, Copy, Scissors, Clipboard, Undo2, Redo2 } from 'lucide-react';
-import WorkspaceSidebar from '@/components/workspace-sidebar';
-import ChatPanel from '@/components/chat-panel';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { 
+  Save, FileText, Bold, Italic, Underline as UnderlineIcon, 
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, 
+  Undo2, Redo2, History, MessageSquare, Plus, Clock
+} from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { Document } from '@shared/schema';
+import { Document, DocumentHistory, DocumentPage } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 
 // Page size configurations (in inches)
@@ -25,6 +38,15 @@ const PAGE_SIZES = {
   'index': { width: 4, height: 6, name: '4" × 6"' }
 };
 
+// Font families
+const FONT_FAMILIES = [
+  'Times New Roman', 'Arial', 'Helvetica', 'Georgia', 'Verdana', 
+  'Courier New', 'Comic Sans MS', 'Impact', 'Trebuchet MS', 'Calibri'
+];
+
+// Font sizes
+const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
+
 export default function DocumentWorkspace() {
   const { id } = useParams();
   const [, navigate] = useLocation();
@@ -34,32 +56,69 @@ export default function DocumentWorkspace() {
   const [fontFamily, setFontFamily] = useState('Times New Roman');
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
-  const [pages, setPages] = useState<{ content: string; id: string }[]>([{ content: '', id: '1' }]);
+  const [pages, setPages] = useState<DocumentPage[]>([{ id: '1', content: '<p>Start writing your document...</p>', pageNumber: 1 }]);
   const [activePageIndex, setActivePageIndex] = useState(0);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [isProcessingChat, setIsProcessingChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{id: string; role: 'user' | 'assistant'; content: string; timestamp: Date}>>([]);
+  
   const pagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Initialize Tiptap editor
+  // Fetch document data
+  const { data: document } = useQuery({
+    queryKey: ['/api/documents', id],
+    enabled: !!id,
+  });
+
+  // Fetch document history
+  const { data: documentHistory } = useQuery({
+    queryKey: ['/api/documents', id, 'history'],
+    enabled: !!id,
+  });
+
+  // Initialize Tiptap editor with extensive formatting capabilities
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
+      }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
       Underline,
+      Color.configure({ types: [TextStyle.name, ListItem.name] }),
+      TextStyle,
+      FontFamily.configure({
+        types: [TextStyle.name, ListItem.name],
+      }),
+      BulletList.configure({
+        HTMLAttributes: {
+          class: 'bullet-list',
+        },
+      }),
+      OrderedList.configure({
+        HTMLAttributes: {
+          class: 'ordered-list',
+        },
+      }),
+      ListItem,
     ],
-    content: '<p>Start writing your document...</p>',
+    content: pages[activePageIndex]?.content || '<p>Start writing your document...</p>',
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
       updatePageContent(activePageIndex, content);
-      // Trigger content flow management after a short delay
-      setTimeout(() => manageContentFlow(), 200);
+      setTimeout(() => manageContentFlow(), 100);
+      debouncedSave();
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm focus:outline-none w-full h-full',
-        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor}; min-height: 100%; padding: 0; margin: 0;`,
+        class: 'prose prose-sm focus:outline-none w-full h-full max-w-none',
+        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor}; min-height: 100%; padding: 32px; margin: 0; line-height: 1.6;`,
       },
     },
     autofocus: true,
@@ -73,462 +132,574 @@ export default function DocumentWorkspace() {
     ));
   }, []);
 
-  // Proper content flow management - measures and splits content between pages
+  // Advanced content flow management for true page-based layout
   const manageContentFlow = useCallback(() => {
-    if (!editor || typeof window === 'undefined' || !window.document) return;
+    if (!editor || !pagesContainerRef.current) return;
 
-    const content = editor.getHTML();
     const currentPageSize = PAGE_SIZES[pageSize];
-    // Available height in pixels minus padding (96 DPI conversion)
-    const availableHeight = (currentPageSize.height - 2) * (zoomLevel / 100) * 96 - 64; // 64px for padding
-    const availableWidth = (currentPageSize.width - 2) * (zoomLevel / 100) * 96 - 64;
+    const pageHeightPx = (currentPageSize.height * 96 * zoomLevel / 100) - 128; // 96 DPI, minus padding
+    const pageWidthPx = (currentPageSize.width * 96 * zoomLevel / 100) - 64;
 
-    // Create measurement container with exact page dimensions
+    // Create a measurement container
     const measureDiv = window.document.createElement('div');
     measureDiv.style.cssText = `
       position: absolute;
       top: -9999px;
       left: -9999px;
-      width: ${availableWidth}px;
+      width: ${pageWidthPx}px;
       font-family: ${fontFamily};
       font-size: ${fontSize * zoomLevel / 100}pt;
-      line-height: 1.5;
+      line-height: 1.6;
       padding: 32px;
       box-sizing: border-box;
-      overflow: hidden;
+      visibility: hidden;
     `;
     window.document.body.appendChild(measureDiv);
 
-    // Parse content into individual paragraphs
-    measureDiv.innerHTML = content;
-    const paragraphs = Array.from(measureDiv.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote'));
-    
-    // Split content across pages based on actual height measurements
-    const newPages = [];
-    let currentPageContent = '';
-    let currentHeight = 0;
-
-    for (const paragraph of paragraphs) {
-      const elementHeight = paragraph.offsetHeight + 16; // Add some margin
+    try {
+      const content = editor.getHTML();
+      measureDiv.innerHTML = content;
       
-      // If adding this element would overflow the page and we have content
-      if (currentHeight + elementHeight > availableHeight && currentPageContent) {
-        // Save current page and start new one
-        newPages.push(currentPageContent);
-        currentPageContent = paragraph.outerHTML;
-        currentHeight = elementHeight;
-      } else {
-        // Add element to current page
-        currentPageContent += paragraph.outerHTML;
-        currentHeight += elementHeight;
+      if (measureDiv.scrollHeight > pageHeightPx) {
+        // Content overflows, need to split into multiple pages
+        handleContentOverflow(content, pageHeightPx, pageWidthPx);
       }
+    } finally {
+      window.document.body.removeChild(measureDiv);
     }
+  }, [editor, pageSize, zoomLevel, fontSize, fontFamily, activePageIndex]);
 
-    // Add the last page if it has content
-    if (currentPageContent) {
-      newPages.push(currentPageContent);
+  // Handle content overflow by creating new pages
+  const handleContentOverflow = useCallback((content: string, maxHeight: number, maxWidth: number) => {
+    // For now, we'll create a new page if content is too long
+    // This is a simplified approach - a full implementation would need more sophisticated text splitting
+    if (pages.length === activePageIndex + 1) {
+      const newPage: DocumentPage = {
+        id: `page-${pages.length + 1}`,
+        content: '<p></p>',
+        pageNumber: pages.length + 1
+      };
+      setPages(prev => [...prev, newPage]);
     }
+  }, [pages, activePageIndex]);
 
-    window.document.body.removeChild(measureDiv);
-
-    // Update pages with properly split content
-    if (newPages.length > 0) {
-      // Update existing pages and add new ones as needed
-      const updatedPages = [...pages];
-      
-      // Update current and following pages with new content
-      for (let i = 0; i < newPages.length; i++) {
-        const pageIndex = activePageIndex + i;
-        if (pageIndex < updatedPages.length) {
-          updatedPages[pageIndex] = { ...updatedPages[pageIndex], content: newPages[i] };
-        } else {
-          updatedPages.push({ content: newPages[i], id: String(pageIndex + 1) });
-        }
+  // Debounced auto-save function
+  const debouncedSave = useCallback(
+    debounce(() => {
+      if (currentDocument) {
+        saveDocument();
       }
-      
-      setPages(updatedPages);
-    }
-  }, [editor, pageSize, zoomLevel, fontFamily, fontSize, activePageIndex, pages]);
-
-  // Format text using Tiptap commands
-  const formatText = (command: string, value?: string) => {
-    if (!editor) return;
-
-    switch (command) {
-      case 'bold':
-        editor.chain().focus().toggleBold().run();
-        break;
-      case 'italic':
-        editor.chain().focus().toggleItalic().run();
-        break;
-      case 'underline':
-        editor.chain().focus().toggleUnderline().run();
-        break;
-      case 'justifyLeft':
-        editor.chain().focus().setTextAlign('left').run();
-        break;
-      case 'justifyCenter':
-        editor.chain().focus().setTextAlign('center').run();
-        break;
-      case 'justifyRight':
-        editor.chain().focus().setTextAlign('right').run();
-        break;
-      case 'justifyFull':
-        editor.chain().focus().setTextAlign('justify').run();
-        break;
-      case 'insertUnorderedList':
-        editor.chain().focus().toggleBulletList().run();
-        break;
-      case 'insertOrderedList':
-        editor.chain().focus().toggleOrderedList().run();
-        break;
-      case 'undo':
-        editor.chain().focus().undo().run();
-        break;
-      case 'redo':
-        editor.chain().focus().redo().run();
-        break;
-      case 'foreColor':
-        // Color functionality to be implemented later
-        break;
-      case 'fontName':
-        // Font family functionality to be implemented later
-        break;
-    }
-  };
-
-  // Switch to different page
-  const switchToPage = useCallback((pageIndex: number) => {
-    if (pageIndex >= 0 && pageIndex < pages.length && editor) {
-      setActivePageIndex(pageIndex);
-      editor.commands.setContent(pages[pageIndex].content);
-    }
-  }, [pages, editor]);
-
-  // Fetch current document
-  const { data: document } = useQuery({
-    queryKey: ['/api/documents', id],
-    enabled: !!id,
-  });
+    }, 1000),
+    [currentDocument, pages, pageSize, fontSize, fontFamily, textColor]
+  );
 
   // Save document mutation
   const saveDocumentMutation = useMutation({
-    mutationFn: async (documentData: Partial<Document>) => {
-      if (id && id !== 'new') {
-        const response = await fetch(`/api/documents/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(documentData),
-        });
-        return response.json();
-      } else {
-        const response = await fetch('/api/documents', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(documentData),
-        });
-        return response.json();
-      }
+    mutationFn: async () => {
+      if (!currentDocument) return;
+      
+      const payload = {
+        title: currentDocument.title,
+        content: editor?.getHTML() || '',
+        pages: pages,
+        pageSize,
+        fontSize: fontSize.toString(),
+        fontFamily,
+        textColor,
+      };
+      
+      return await apiRequest(`/api/documents/${currentDocument.id}`, 'PATCH', payload);
     },
-    onSuccess: (savedDocument) => {
-      if (id === 'new') {
-        navigate(`/document/${savedDocument.id}`);
-      }
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
-      toast({ title: 'Document saved successfully' });
+      setIsAutoSaving(false);
     },
-    onError: () => {
-      toast({ title: 'Failed to save document', variant: 'destructive' });
-    },
+    onError: (error) => {
+      console.error('Save failed:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save document. Please try again.",
+        variant: "destructive",
+      });
+      setIsAutoSaving(false);
+    }
   });
 
-  // Auto-save functionality
-  useEffect(() => {
-    if (currentDocument && pages.length > 0) {
-      const allContent = pages.map(page => page.content).join('\n<!-- PAGE_BREAK -->\n');
-      const saveTimeout = setTimeout(() => {
-        saveDocumentMutation.mutate({
-          ...currentDocument,
-          content: allContent,
-        });
-      }, 2000);
+  const saveDocument = () => {
+    setIsAutoSaving(true);
+    saveDocumentMutation.mutate();
+  };
 
-      return () => clearTimeout(saveTimeout);
+  // Chat with AI mutation
+  const chatMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const response = await apiRequest('/api/chat/document', 'POST', {
+        message,
+        documentContent: editor?.getHTML() || '',
+        documentId: id,
+      });
+      return response;
+    },
+    onSuccess: (response) => {
+      const assistantMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant' as const,
+        content: response.content,
+        timestamp: new Date(),
+      };
+      
+      setChatMessages(prev => [...prev, assistantMessage]);
+      
+      // Insert AI response into document at current cursor position
+      if (editor && response.content) {
+        editor.chain().focus().insertContent(response.content).run();
+      }
+      
+      setIsProcessingChat(false);
+      setChatInput('');
+    },
+    onError: (error) => {
+      console.error('Chat failed:', error);
+      toast({
+        title: "Chat Failed",
+        description: "Failed to process your request. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessingChat(false);
     }
-  }, [pages, currentDocument, saveDocumentMutation]);
+  });
 
-  // Load document content into pages
+  const handleChatSubmit = () => {
+    if (!chatInput.trim()) return;
+    
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user' as const,
+      content: chatInput,
+      timestamp: new Date(),
+    };
+    
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsProcessingChat(true);
+    chatMutation.mutate(chatInput);
+  };
+
+  // Formatting functions
+  const formatBold = () => editor?.chain().focus().toggleBold().run();
+  const formatItalic = () => editor?.chain().focus().toggleItalic().run();
+  const formatUnderline = () => editor?.chain().focus().toggleUnderline().run();
+  const formatAlignLeft = () => editor?.chain().focus().setTextAlign('left').run();
+  const formatAlignCenter = () => editor?.chain().focus().setTextAlign('center').run();
+  const formatAlignRight = () => editor?.chain().focus().setTextAlign('right').run();
+  const formatAlignJustify = () => editor?.chain().focus().setTextAlign('justify').run();
+  const formatBulletList = () => editor?.chain().focus().toggleBulletList().run();
+  const formatOrderedList = () => editor?.chain().focus().toggleOrderedList().run();
+  const formatUndo = () => editor?.chain().focus().undo().run();
+  const formatRedo = () => editor?.chain().focus().redo().run();
+
+  // Page navigation
+  const goToPage = (pageIndex: number) => {
+    if (pageIndex >= 0 && pageIndex < pages.length) {
+      setActivePageIndex(pageIndex);
+      if (editor) {
+        editor.commands.setContent(pages[pageIndex].content);
+        editor.commands.focus();
+      }
+    }
+  };
+
+  const addNewPage = () => {
+    const newPage: DocumentPage = {
+      id: `page-${pages.length + 1}`,
+      content: '<p></p>',
+      pageNumber: pages.length + 1
+    };
+    setPages(prev => [...prev, newPage]);
+    goToPage(pages.length);
+  };
+
+  // Load document data when it arrives
   useEffect(() => {
     if (document) {
       setCurrentDocument(document as Document);
-      const content = (document as Document).content || '';
-      
-      if (content.includes('<!-- PAGE_BREAK -->')) {
-        const pageContents = content.split('\n<!-- PAGE_BREAK -->\n');
-        setPages(pageContents.map((content, index) => ({ content, id: String(index + 1) })));
-      } else {
-        setPages([{ content, id: '1' }]);
+      if (document.pages && Array.isArray(document.pages) && document.pages.length > 0) {
+        setPages(document.pages as DocumentPage[]);
       }
+      setPageSize((document.pageSize as keyof typeof PAGE_SIZES) || 'letter');
+      setFontSize(parseInt(document.fontSize) || 12);
+      setFontFamily(document.fontFamily || 'Times New Roman');
+      setTextColor(document.textColor || '#000000');
     }
   }, [document]);
 
-  // Update editor when switching pages
+  // Update editor when active page changes
   useEffect(() => {
     if (editor && pages[activePageIndex]) {
-      const content = pages[activePageIndex].content || '<p>Start writing...</p>';
-      editor.commands.setContent(content);
-      editor.commands.focus();
+      editor.commands.setContent(pages[activePageIndex].content);
     }
-  }, [editor, activePageIndex, pages]);
+  }, [activePageIndex, editor, pages]);
 
-  // Update editor styles when font/color changes
+  // Update editor props when formatting changes
   useEffect(() => {
-    if (editor && typeof window !== 'undefined') {
-      const editorElement = window.document.querySelector('.ProseMirror') as HTMLElement;
-      if (editorElement) {
-        editorElement.style.fontFamily = fontFamily;
-        editorElement.style.fontSize = `${fontSize * zoomLevel / 100}pt`;
-        editorElement.style.color = textColor;
-      }
+    if (editor) {
+      editor.view.dom.style.fontFamily = fontFamily;
+      editor.view.dom.style.fontSize = `${fontSize * zoomLevel / 100}pt`;
+      editor.view.dom.style.color = textColor;
     }
   }, [editor, fontFamily, fontSize, textColor, zoomLevel]);
 
-  const currentPageSize = PAGE_SIZES[pageSize];
-
   return (
-    <div className="flex h-screen bg-gray-50">
-      <WorkspaceSidebar workspaceType="document" onNewWorkspace={() => navigate('/document/new')} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Document Header */}
-        <div className="bg-white border-b border-slate-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <span className="text-lg font-semibold text-slate-800">
-                  {currentDocument?.title || 'New Document'}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const allContent = pages.map(page => page.content).join('\n<!-- PAGE_BREAK -->\n');
-                  saveDocumentMutation.mutate({
-                    ...currentDocument,
-                    content: allContent,
-                  });
-                }}
-                disabled={saveDocumentMutation.isPending}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {saveDocumentMutation.isPending ? 'Saving...' : 'Save'}
-              </Button>
-            </div>
-            
-            <div className="text-sm text-slate-600">
-              Page {activePageIndex + 1} of {pages.length} • {currentPageSize.width}" × {currentPageSize.height}"
-            </div>
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Toolbar */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {currentDocument?.title || 'Untitled Document'}
+          </h1>
+          <div className="flex items-center gap-2">
+            {isAutoSaving && <span className="text-sm text-gray-500">Saving...</span>}
+            <Button onClick={saveDocument} size="sm">
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="bg-white border-b border-slate-200 p-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Undo/Redo */}
-            <Button variant="ghost" size="sm" onClick={() => formatText('undo')}>
-              <Undo2 className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => formatText('redo')}>
-              <Redo2 className="w-4 h-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            {/* Basic Formatting */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => formatText('bold')}
-              className={editor?.isActive('bold') ? 'bg-slate-200' : ''}
-            >
-              <Bold className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => formatText('italic')}
-              className={editor?.isActive('italic') ? 'bg-slate-200' : ''}
-            >
-              <Italic className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => formatText('underline')}
-              className={editor?.isActive('underline') ? 'bg-slate-200' : ''}
-            >
-              <UnderlineIcon className="w-4 h-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            {/* Alignment */}
-            <Button variant="ghost" size="sm" onClick={() => formatText('justifyLeft')}>
-              <AlignLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => formatText('justifyCenter')}>
-              <AlignCenter className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => formatText('justifyRight')}>
-              <AlignRight className="w-4 h-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            {/* Lists */}
-            <Button variant="ghost" size="sm" onClick={() => formatText('insertUnorderedList')}>
-              <List className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => formatText('insertOrderedList')}>
-              <ListOrdered className="w-4 h-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            {/* Font Controls */}
-            <Select value={fontFamily} onValueChange={setFontFamily}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Calibri">Calibri</SelectItem>
-                <SelectItem value="Georgia">Georgia</SelectItem>
-                <SelectItem value="Verdana">Verdana</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
-              <SelectTrigger className="w-16">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="8">8</SelectItem>
-                <SelectItem value="9">9</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="11">11</SelectItem>
-                <SelectItem value="12">12</SelectItem>
-                <SelectItem value="14">14</SelectItem>
-                <SelectItem value="16">16</SelectItem>
-                <SelectItem value="18">18</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="24">24</SelectItem>
-                <SelectItem value="28">28</SelectItem>
-                <SelectItem value="32">32</SelectItem>
-              </SelectContent>
-            </Select>
-            
+        {/* Formatting Toolbar */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Undo/Redo */}
+          <Button variant="outline" size="sm" onClick={formatUndo}>
+            <Undo2 className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatRedo}>
+            <Redo2 className="w-4 h-4" />
+          </Button>
+          
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Font Family */}
+          <Select value={fontFamily} onValueChange={setFontFamily}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FONT_FAMILIES.map((font) => (
+                <SelectItem key={font} value={font}>{font}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Font Size */}
+          <Select value={fontSize.toString()} onValueChange={(size) => setFontSize(parseInt(size))}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FONT_SIZES.map((size) => (
+                <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Text Formatting */}
+          <Button variant="outline" size="sm" onClick={formatBold} 
+                  className={editor?.isActive('bold') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <Bold className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatItalic}
+                  className={editor?.isActive('italic') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <Italic className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatUnderline}
+                  className={editor?.isActive('underline') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <UnderlineIcon className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Alignment */}
+          <Button variant="outline" size="sm" onClick={formatAlignLeft}
+                  className={editor?.isActive({textAlign: 'left'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <AlignLeft className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatAlignCenter}
+                  className={editor?.isActive({textAlign: 'center'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <AlignCenter className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatAlignRight}
+                  className={editor?.isActive({textAlign: 'right'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <AlignRight className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatAlignJustify}
+                  className={editor?.isActive({textAlign: 'justify'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <AlignJustify className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Lists */}
+          <Button variant="outline" size="sm" onClick={formatBulletList}
+                  className={editor?.isActive('bulletList') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <List className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={formatOrderedList}
+                  className={editor?.isActive('orderedList') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+            <ListOrdered className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Text Color */}
+          <div className="flex items-center gap-2">
+            <Palette className="w-4 h-4" />
             <input
               type="color"
               value={textColor}
-              onChange={(e) => setTextColor(e.target.value)}
-              className="w-8 h-8 border border-slate-300 rounded cursor-pointer"
-              title="Text Color"
+              onChange={(e) => {
+                setTextColor(e.target.value);
+                editor?.chain().focus().setColor(e.target.value).run();
+              }}
+              className="w-8 h-8 rounded border"
             />
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            {/* Page Size */}
-            <Select value={pageSize} onValueChange={(value: keyof typeof PAGE_SIZES) => setPageSize(value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAGE_SIZES).map(([key, size]) => (
-                  <SelectItem key={key} value={key}>{size.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Zoom */}
-            <Button variant="ghost" size="sm" onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))}>
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <span className="text-sm text-slate-600 min-w-[3rem] text-center">{zoomLevel}%</span>
-            <Button variant="ghost" size="sm" onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))}>
-              <ZoomIn className="w-4 h-4" />
-            </Button>
           </div>
-        </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* Document Pages */}
-          <div className="flex-1 overflow-auto bg-gray-100 p-8" ref={pagesContainerRef}>
-            <div className="flex flex-col items-center gap-6">
-              {pages.map((page, index) => (
-                <div
-                  key={page.id}
-                  className={`bg-white shadow-lg relative ${index === activePageIndex ? 'ring-2 ring-blue-500' : ''}`}
-                  style={{
-                    width: `${currentPageSize.width * zoomLevel / 100}in`,
-                    height: `${currentPageSize.height * zoomLevel / 100}in`,
-                    maxHeight: `${currentPageSize.height * zoomLevel / 100}in`,
-                    overflow: 'hidden'
-                  }}
-                  onClick={() => switchToPage(index)}
-                >
-                  {/* Page Content */}
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Zoom */}
+          <Button variant="outline" size="sm" onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))}>
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <span className="text-sm font-medium w-12 text-center">{zoomLevel}%</span>
+          <Button variant="outline" size="sm" onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))}>
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Page Size */}
+          <Select value={pageSize} onValueChange={(size) => setPageSize(size as keyof typeof PAGE_SIZES)}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(PAGE_SIZES).map(([key, size]) => (
+                <SelectItem key={key} value={key}>{size.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        {/* Document History Panel */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+          <Card className="h-full rounded-none border-0 border-r">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <History className="w-5 h-5" />
+                Document History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[calc(100vh-180px)]">
+                <div className="p-4 space-y-2">
+                  {(documentHistory as DocumentHistory[])?.map((historyItem: DocumentHistory) => (
+                    <div key={historyItem.id} 
+                         className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm font-medium">{historyItem.title}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {historyItem.createdAt ? new Date(historyItem.createdAt).toLocaleString() : 'Unknown date'}
+                      </p>
+                      {historyItem.changeDescription && (
+                        <p className="text-xs text-gray-500 mt-1">{historyItem.changeDescription}</p>
+                      )}
+                    </div>
+                  )) || (
+                    <div className="text-center text-gray-500 py-8">
+                      <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No history yet</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </ResizablePanel>
+
+        <ResizableHandle />
+
+        {/* Document Editor Panel */}
+        <ResizablePanel defaultSize={55} minSize={40}>
+          <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
+            <div className="max-w-none mx-auto">
+              {/* Page Navigation */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Page {activePageIndex + 1} of {pages.length}
+                  </span>
+                  <Button size="sm" variant="outline" onClick={addNewPage}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Page
+                  </Button>
+                </div>
+                <div className="flex gap-1">
+                  {pages.map((_, index) => (
+                    <Button
+                      key={index}
+                      size="sm"
+                      variant={index === activePageIndex ? "default" : "outline"}
+                      onClick={() => goToPage(index)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {index + 1}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Document Pages */}
+              <div ref={pagesContainerRef} className="space-y-8">
+                {pages.map((page, index) => (
                   <div
-                    className="w-full h-full p-4 overflow-hidden cursor-text"
+                    key={page.id}
+                    className={`mx-auto bg-white dark:bg-white shadow-lg ${
+                      index === activePageIndex ? 'ring-2 ring-blue-500' : ''
+                    }`}
                     style={{
-                      fontSize: `${fontSize * zoomLevel / 100}pt`,
-                      fontFamily,
-                      color: textColor,
-                      lineHeight: 1.5
+                      width: `${PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100}px`,
+                      height: `${PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100}px`,
+                      transform: `scale(${zoomLevel / 100})`,
+                      transformOrigin: 'top center',
                     }}
-                    onClick={() => {
-                      if (index !== activePageIndex) {
-                        switchToPage(index);
-                      }
-                      if (editor) {
-                        editor.commands.focus();
-                      }
-                    }}
+                    onClick={() => goToPage(index)}
                   >
-                    {index === activePageIndex ? (
+                    {index === activePageIndex && editor && (
                       <EditorContent 
                         editor={editor} 
-                        className="h-full overflow-hidden prose-sm focus:outline-none"
+                        className="h-full w-full overflow-hidden"
+                        style={{
+                          fontFamily,
+                          fontSize: `${fontSize}pt`,
+                          color: textColor,
+                        }}
                       />
-                    ) : (
+                    )}
+                    {index !== activePageIndex && (
                       <div 
-                        dangerouslySetInnerHTML={{ __html: page.content || '<p class="text-gray-400">Click to start writing...</p>' }}
-                        className="h-full overflow-hidden prose-sm"
+                        className="h-full w-full p-8 cursor-pointer"
+                        style={{
+                          fontFamily,
+                          fontSize: `${fontSize}pt`,
+                          color: textColor,
+                        }}
+                        dangerouslySetInnerHTML={{ __html: page.content }}
                       />
                     )}
                   </div>
-                  
-                  {/* Page Number */}
-                  <div className="absolute bottom-4 right-4 text-xs text-gray-500">
-                    {index + 1}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
+        </ResizablePanel>
 
-          {/* Chat Panel */}
-          <div className="w-96 border-l border-slate-200 bg-white">
-            <ChatPanel 
-              workspaceType="document" 
-              workspaceId={currentDocument?.id || 'new'} 
-            />
-          </div>
-        </div>
-      </div>
+        <ResizableHandle />
+
+        {/* AI Chat Panel */}
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+          <Card className="h-full rounded-none border-0 border-l">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MessageSquare className="w-5 h-5" />
+                AI Assistant
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 h-[calc(100%-80px)] flex flex-col">
+              {/* Chat Messages */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Ask AI to help with your document</p>
+                      <p className="text-xs mt-1">AI responses will be added to your document</p>
+                    </div>
+                  ) : (
+                    chatMessages.map((message) => (
+                      <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-lg ${
+                          message.role === 'user' 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                        }`}>
+                          <p className="text-sm">{message.content}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {message.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {isProcessingChat && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Chat Input */}
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2">
+                  <Input
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask AI to help with your document..."
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleChatSubmit();
+                      }
+                    }}
+                    disabled={isProcessingChat}
+                  />
+                  <Button 
+                    onClick={handleChatSubmit} 
+                    disabled={!chatInput.trim() || isProcessingChat}
+                    size="sm"
+                  >
+                    Send
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  AI responses will be inserted into your document at the current cursor position.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
+}
+
+// Utility function for debouncing
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
 }

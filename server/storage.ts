@@ -3,6 +3,8 @@ import {
   type InsertUser, 
   type Document, 
   type InsertDocument,
+  type DocumentHistory,
+  type InsertDocumentHistory,
   type CheatSheet,
   type InsertCheatSheet,
   type Template,
@@ -24,6 +26,10 @@ export interface IStorage {
   createDocument(document: InsertDocument & { userId: string }): Promise<Document>;
   updateDocument(id: string, updates: Partial<Document>): Promise<Document>;
   
+  // Document History methods
+  getDocumentHistory(documentId: string): Promise<DocumentHistory[]>;
+  createDocumentHistory(history: InsertDocumentHistory): Promise<DocumentHistory>;
+  
   // CheatSheet methods
   getCheatSheet(id: string): Promise<CheatSheet | undefined>;
   getCheatSheetsByUser(userId: string): Promise<CheatSheet[]>;
@@ -44,6 +50,7 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private documents: Map<string, Document>;
+  private documentHistory: Map<string, DocumentHistory>;
   private cheatSheets: Map<string, CheatSheet>;
   private templates: Map<string, Template>;
   private chatMessages: Map<string, ChatMessage>;
@@ -51,6 +58,7 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.documents = new Map();
+    this.documentHistory = new Map();
     this.cheatSheets = new Map();
     this.templates = new Map();
     this.chatMessages = new Map();
@@ -87,6 +95,11 @@ export class MemStorage implements IStorage {
     const newDocument: Document = { 
       ...document,
       content: document.content || "",
+      pages: document.pages || [],
+      pageSize: document.pageSize || "letter",
+      fontSize: document.fontSize || "12",
+      fontFamily: document.fontFamily || "Times New Roman",
+      textColor: document.textColor || "#000000",
       id, 
       createdAt: now, 
       updatedAt: now 
@@ -194,6 +207,26 @@ export class MemStorage implements IStorage {
     };
     this.chatMessages.set(id, newMessage);
     return newMessage;
+  }
+
+  async getDocumentHistory(documentId: string): Promise<DocumentHistory[]> {
+    return Array.from(this.documentHistory.values())
+      .filter(history => history.documentId === documentId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async createDocumentHistory(history: InsertDocumentHistory): Promise<DocumentHistory> {
+    const id = randomUUID();
+    const now = new Date();
+    const newHistory: DocumentHistory = { 
+      ...history,
+      pages: history.pages || [],
+      changeDescription: history.changeDescription || null,
+      id, 
+      createdAt: now 
+    };
+    this.documentHistory.set(id, newHistory);
+    return newHistory;
   }
 }
 
