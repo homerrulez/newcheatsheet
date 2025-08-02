@@ -75,14 +75,22 @@ function DocumentRenderer({
     const timer = setTimeout(updatePageCount, 200);
     
     // Also listen for editor content changes
-    const unsubscribe = editor.on('update', () => {
-      setTimeout(updatePageCount, 100);
-    });
-    
-    return () => {
-      clearTimeout(timer);
-      unsubscribe?.();
-    };
+    if (editor.on) {
+      const unsubscribe = editor.on('update', () => {
+        setTimeout(updatePageCount, 100);
+      });
+      
+      return () => {
+        clearTimeout(timer);
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      };
+    } else {
+      return () => {
+        clearTimeout(timer);
+      };
+    }
   }, [editor, contentHeight, documentContent]);
   
   return (
@@ -360,21 +368,21 @@ export default function DocumentWorkspace() {
         documentContent: editor?.getHTML() || '',
         documentId: id,
       });
-      return response as { content: string };
+      return response as any;
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       const assistantMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant' as const,
-        content: response.content,
+        content: response.content || response.message || 'AI response received',
         timestamp: new Date(),
       };
       
       setChatMessages(prev => [...prev, assistantMessage]);
       
       // Insert AI response into document at current cursor position
-      if (editor && response.content) {
-        editor.chain().focus().insertContent(response.content).run();
+      if (editor && assistantMessage.content) {
+        editor.chain().focus().insertContent(`<p>${assistantMessage.content}</p>`).run();
       }
       
       setIsProcessingChat(false);
