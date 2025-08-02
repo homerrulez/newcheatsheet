@@ -30,6 +30,8 @@ import {
 import { apiRequest } from '@/lib/queryClient';
 import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+import { LayoutEngine, createLayoutEngine } from '@/lib/layout-engine';
+import { DocumentCommandInterface, createDocumentInterface } from '@/lib/document-commands';
 
 // Page sizes (in inches, converted to pixels at 96 DPI)
 const PAGE_SIZES = {
@@ -51,6 +53,17 @@ export default function DocumentWorkspace() {
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
   const [pageOrientation, setPageOrientation] = useState('portrait');
+  
+  // Layout engine integration
+  const [layoutEngine, setLayoutEngine] = useState<LayoutEngine>(() => 
+    createLayoutEngine(pageSize, fontSize)
+  );
+  const [documentInterface, setDocumentInterface] = useState<DocumentCommandInterface>(() => 
+    createDocumentInterface('', pageSize, fontSize)
+  );
+  const [pageMetrics, setPageMetrics] = useState(() => 
+    layoutEngine.getCurrentMetrics()
+  );
   
   // Chat state - simplified, always ready
   const [chatInput, setChatInput] = useState('');
@@ -734,7 +747,18 @@ export default function DocumentWorkspace() {
 
             {/* Page Layout Controls */}
             <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
-              <Select value={pageSize} onValueChange={(value: keyof typeof PAGE_SIZES) => setPageSize(value)}>
+              <Select value={pageSize} onValueChange={(value: keyof typeof PAGE_SIZES) => {
+                setPageSize(value);
+                // Auto-scale font size based on page size change
+                const scaledFontSize = layoutEngine.getScaledFontSize();
+                if (scaledFontSize !== fontSize) {
+                  setFontSize(scaledFontSize);
+                }
+                // Update layout engine with new page size
+                const newLayoutEngine = createLayoutEngine(value, fontSize);
+                setLayoutEngine(newLayoutEngine);
+                setPageMetrics(newLayoutEngine.getCurrentMetrics());
+              }}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="Page Size" />
                 </SelectTrigger>
@@ -763,6 +787,12 @@ export default function DocumentWorkspace() {
                 <Layout className="w-4 h-4 mr-1" />
                 Margins
               </Button>
+              
+              {/* Page Metrics Display */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 px-2 border-l border-gray-300">
+                <div>{pageMetrics.charactersPerLine} chars/line</div>
+                <div>{pageMetrics.linesPerPage} lines/page</div>
+              </div>
             </div>
 
             {/* Insert options */}
