@@ -1,80 +1,173 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, FileText, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, Highlighter, Strikethrough, Subscript, Superscript, Indent, Outdent, Copy, Scissors, Clipboard, Undo2, Redo2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Save, FileText, Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, Highlighter, Strikethrough, Subscript, Superscript, Indent, Outdent, Copy, Scissors, Clipboard, Undo2, Redo2 } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace-sidebar';
 import ChatPanel from '@/components/chat-panel';
 import { apiRequest } from '@/lib/queryClient';
 import { Document } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 
+// Page size configurations (in inches)
+const PAGE_SIZES = {
+  'letter': { width: 8.5, height: 11, name: 'Letter' },
+  'legal': { width: 8.5, height: 14, name: 'Legal' },
+  'a4': { width: 8.27, height: 11.69, name: 'A4' },
+  'tabloid': { width: 11, height: 17, name: 'Tabloid' },
+  'half-letter': { width: 5.5, height: 8.5, name: 'Half Letter' },
+  'index': { width: 4, height: 6, name: '4" × 6"' }
+};
+
 export default function DocumentWorkspace() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
-  const [content, setContent] = useState('');
   const [zoomLevel, setZoomLevel] = useState(100);
   const [fontSize, setFontSize] = useState(12);
   const [fontFamily, setFontFamily] = useState('Times New Roman');
   const [textColor, setTextColor] = useState('#000000');
-  const [highlightColor, setHighlightColor] = useState('#FFFF00');
-  const [pageSize, setPageSize] = useState({ width: 8.5, height: 11 }); // inches
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const editorRef = useRef<HTMLIFrameElement>(null);
+  const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
+  const [pages, setPages] = useState<{ content: string; id: string }[]>([{ content: '', id: '1' }]);
+  const [activePageIndex, setActivePageIndex] = useState(0);
   const pagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Calculate characters per page based on page size and font
-  const calculateCharactersPerPage = useCallback(() => {
-    // Base calculation: characters per line × lines per page
-    const pageArea = (pageSize.width - 2) * (pageSize.height - 2); // Minus margins
-    const baseArea = 6.5 * 9; // 8.5x11 minus 1" margins on each side
-    const scaleFactor = pageArea / baseArea;
+  // Initialize Tiptap editor
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Underline,
+    ],
+    content: pages[activePageIndex]?.content || '',
+    onUpdate: ({ editor }) => {
+      const content = editor.getHTML();
+      updatePageContent(activePageIndex, content);
+      checkForPageOverflow();
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor};`
+      },
+    },
+  });
+
+  // Update page content
+  const updatePageContent = useCallback((pageIndex: number, content: string) => {
+    setPages(prev => prev.map((page, index) => 
+      index === pageIndex ? { ...page, content } : page
+    ));
+  }, []);
+
+  // Check if content overflows current page and move to next page
+  const checkForPageOverflow = useCallback(() => {
+    if (!editor || typeof document === 'undefined') return;
+
+    const editorElement = document.querySelector('.ProseMirror');
+    if (!editorElement) return;
+
+    const currentPageSize = PAGE_SIZES[pageSize];
+    const pageHeightPx = (currentPageSize.height - 2) * (zoomLevel / 100) * 96; // Convert inches to pixels (96 DPI)
     
-    // Adjust base character count by scale factor and font size
-    const baseCharsPerPage = 2500;
-    const fontSizeMultiplier = 12 / fontSize; // Smaller font = more chars
+    if (editorElement.scrollHeight > pageHeightPx) {
+      // Content overflows - need to split content
+      splitContentToNextPage();
+    }
+  }, [editor, pageSize, zoomLevel]);
+
+  // Split overflowing content to next page
+  const splitContentToNextPage = useCallback(() => {
+    if (!editor) return;
+
+    const currentContent = editor.getHTML();
+    const textContent = editor.getText();
     
-    return Math.floor(baseCharsPerPage * scaleFactor * fontSizeMultiplier);
-  }, [pageSize, fontSize]);
-
-  // Calculate how many pages we need based on content length
-  const calculatePageCount = useCallback(() => {
-    if (!content) return 1;
-    const charsPerPage = calculateCharactersPerPage();
-    return Math.max(1, Math.ceil(content.length / charsPerPage));
-  }, [content, calculateCharactersPerPage]);
-
-  const pageCount = calculatePageCount();
-
-  // Get content that should appear on a specific page
-  const getPageContent = useCallback((pageIndex: number) => {
-    const charsPerPage = calculateCharactersPerPage();
-    const startIndex = pageIndex * charsPerPage;
-    const endIndex = startIndex + charsPerPage;
-    return content.slice(startIndex, endIndex);
-  }, [content, calculateCharactersPerPage]);
-
-  const formatText = (command: string, value?: string) => {
-    if (editorRef.current?.contentWindow) {
-      try {
-        editorRef.current.contentWindow.postMessage({
-          type: 'formatCommand',
-          command,
-          value
-        }, '*');
-      } catch (error) {
-        console.warn('Error executing format command:', error);
+    // Simple content splitting based on approximate character limit
+    const currentPageSize = PAGE_SIZES[pageSize];
+    const charsPerPage = Math.floor((currentPageSize.height - 2) * (currentPageSize.width - 2) * 150 / (fontSize || 12));
+    
+    if (textContent.length > charsPerPage) {
+      const cutPoint = charsPerPage;
+      const remainingContent = textContent.slice(cutPoint);
+      const currentPageContent = textContent.slice(0, cutPoint);
+      
+      // Update current page with truncated content
+      editor.commands.setContent(`<p>${currentPageContent}</p>`);
+      
+      // Create or update next page
+      if (activePageIndex + 1 >= pages.length) {
+        setPages(prev => [...prev, { content: `<p>${remainingContent}</p>`, id: String(prev.length + 1) }]);
+      } else {
+        updatePageContent(activePageIndex + 1, `<p>${remainingContent}</p>`);
       }
+    }
+  }, [editor, pageSize, fontSize, activePageIndex, pages.length, updatePageContent]);
+
+  // Format text using Tiptap commands
+  const formatText = (command: string, value?: string) => {
+    if (!editor) return;
+
+    switch (command) {
+      case 'bold':
+        editor.chain().focus().toggleBold().run();
+        break;
+      case 'italic':
+        editor.chain().focus().toggleItalic().run();
+        break;
+      case 'underline':
+        editor.chain().focus().toggleUnderline().run();
+        break;
+      case 'justifyLeft':
+        editor.chain().focus().setTextAlign('left').run();
+        break;
+      case 'justifyCenter':
+        editor.chain().focus().setTextAlign('center').run();
+        break;
+      case 'justifyRight':
+        editor.chain().focus().setTextAlign('right').run();
+        break;
+      case 'justifyFull':
+        editor.chain().focus().setTextAlign('justify').run();
+        break;
+      case 'insertUnorderedList':
+        editor.chain().focus().toggleBulletList().run();
+        break;
+      case 'insertOrderedList':
+        editor.chain().focus().toggleOrderedList().run();
+        break;
+      case 'undo':
+        editor.chain().focus().undo().run();
+        break;
+      case 'redo':
+        editor.chain().focus().redo().run();
+        break;
+      case 'foreColor':
+        // Color functionality to be implemented later
+        break;
+      case 'fontName':
+        // Font family functionality to be implemented later
+        break;
     }
   };
 
-  const handleContentChange = () => {
-    // Content change is now handled via postMessage from iframe
-  };
+  // Switch to different page
+  const switchToPage = useCallback((pageIndex: number) => {
+    if (pageIndex >= 0 && pageIndex < pages.length && editor) {
+      setActivePageIndex(pageIndex);
+      editor.commands.setContent(pages[pageIndex].content);
+    }
+  }, [pages, editor]);
 
   // Fetch current document
   const { data: document } = useQuery({
@@ -82,458 +175,311 @@ export default function DocumentWorkspace() {
     enabled: !!id,
   });
 
+  // Save document mutation
+  const saveDocumentMutation = useMutation({
+    mutationFn: async (documentData: Partial<Document>) => {
+      if (id && id !== 'new') {
+        return apiRequest(`/api/documents/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(documentData),
+        });
+      } else {
+        return apiRequest('/api/documents', {
+          method: 'POST',
+          body: JSON.stringify(documentData),
+        });
+      }
+    },
+    onSuccess: (savedDocument) => {
+      if (id === 'new') {
+        navigate(`/document/${savedDocument.id}`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      toast({ title: 'Document saved successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to save document', variant: 'destructive' });
+    },
+  });
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (currentDocument && pages.length > 0) {
+      const allContent = pages.map(page => page.content).join('\n<!-- PAGE_BREAK -->\n');
+      const saveTimeout = setTimeout(() => {
+        saveDocumentMutation.mutate({
+          ...currentDocument,
+          content: allContent,
+        });
+      }, 2000);
+
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [pages, currentDocument, saveDocumentMutation]);
+
+  // Load document content into pages
   useEffect(() => {
     if (document) {
       setCurrentDocument(document as Document);
-      setContent((document as Document).content || '');
+      const content = (document as Document).content || '';
+      
+      if (content.includes('<!-- PAGE_BREAK -->')) {
+        const pageContents = content.split('\n<!-- PAGE_BREAK -->\n');
+        setPages(pageContents.map((content, index) => ({ content, id: String(index + 1) })));
+      } else {
+        setPages([{ content, id: '1' }]);
+      }
     }
   }, [document]);
 
-  // Sync style changes with iframe
+  // Update editor when switching pages
   useEffect(() => {
-    if (editorRef.current?.contentWindow) {
-      editorRef.current.contentWindow.postMessage({
-        type: 'updateStyles',
-        fontFamily,
-        fontSize: fontSize * zoomLevel / 100,
-        textColor
-      }, '*');
+    if (editor && pages[activePageIndex]) {
+      editor.commands.setContent(pages[activePageIndex].content);
     }
-  }, [fontFamily, fontSize, textColor, zoomLevel]);
+  }, [editor, activePageIndex, pages]);
 
-  // Set up message listener
+  // Update editor styles when font/color changes
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'contentChange') {
-        setContent(event.data.content);
+    if (editor && typeof document !== 'undefined') {
+      const editorElement = document.querySelector('.ProseMirror') as HTMLElement;
+      if (editorElement) {
+        editorElement.style.fontFamily = fontFamily;
+        editorElement.style.fontSize = `${fontSize * zoomLevel / 100}pt`;
+        editorElement.style.color = textColor;
       }
-    };
-    
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  // Create new document
-  const createDocumentMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/documents', {
-      title: 'New Document',
-      content: ''
-    }),
-    onSuccess: async (response) => {
-      const newDocument = await response.json();
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
-      setCurrentDocument(newDocument);
-      setContent('');
-      navigate(`/document/${newDocument.id}`);
-    },
-  });
-
-  // Save document
-  const saveDocumentMutation = useMutation({
-    mutationFn: () => {
-      if (!currentDocument) throw new Error('No document selected');
-      return apiRequest('PUT', `/api/documents/${currentDocument.id}`, {
-        content,
-        updatedAt: new Date()
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
-      toast({
-        title: "Document saved",
-        description: "Your document has been saved successfully.",
-      });
-    },
-  });
-
-  const handleAIResponse = (response: any) => {
-    if (response.content && editorRef.current?.contentWindow) {
-      const newContent = content + '\n\n' + response.content;
-      setContent(newContent);
-      editorRef.current.contentWindow.postMessage({
-        type: 'insertContent',
-        content: '\n\n' + response.content
-      }, '*');
     }
-  };
+  }, [editor, fontFamily, fontSize, textColor, zoomLevel]);
+
+  const currentPageSize = PAGE_SIZES[pageSize];
 
   return (
-    <div className="h-screen bg-slate-100 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <FileText className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-slate-900">Document Workspace</h1>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => saveDocumentMutation.mutate()}
-              disabled={saveDocumentMutation.isPending || !currentDocument}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save Document
-            </Button>
+    <div className="flex h-screen bg-gray-50">
+      <WorkspaceSidebar />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Document Header */}
+        <div className="bg-white border-b border-slate-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                <span className="text-lg font-semibold text-slate-800">
+                  {currentDocument?.title || 'New Document'}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const allContent = pages.map(page => page.content).join('\n<!-- PAGE_BREAK -->\n');
+                  saveDocumentMutation.mutate({
+                    ...currentDocument,
+                    content: allContent,
+                  });
+                }}
+                disabled={saveDocumentMutation.isPending}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saveDocumentMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+            
+            <div className="text-sm text-slate-600">
+              Page {activePageIndex + 1} of {pages.length} • {currentPageSize.width}" × {currentPageSize.height}"
+            </div>
           </div>
         </div>
-      </header>
 
-      {/* Comprehensive Toolbar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-2">
-        <div className="flex flex-wrap items-center gap-1">
-          {/* Clipboard operations */}
-          <Button variant="ghost" size="sm" onClick={() => formatText('undo')} className="p-2">
-            <Undo2 className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('redo')} className="p-2">
-            <Redo2 className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('cut')} className="p-2">
-            <Scissors className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('copy')} className="p-2">
-            <Copy className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('paste')} className="p-2">
-            <Clipboard className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Font controls */}
-          <select
-            value={fontFamily}
-            onChange={(e) => setFontFamily(e.target.value)}
-            className="border border-slate-300 rounded px-2 py-1 text-sm w-36"
-          >
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Arial">Arial</option>
-            <option value="Calibri">Calibri</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Helvetica">Helvetica</option>
-            <option value="Verdana">Verdana</option>
-            <option value="Tahoma">Tahoma</option>
-          </select>
-          
-          <select
-            value={fontSize}
-            onChange={(e) => setFontSize(Number(e.target.value))}
-            className="border border-slate-300 rounded px-2 py-1 text-sm w-16"
-          >
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-            <option value="11">11</option>
-            <option value="12">12</option>
-            <option value="14">14</option>
-            <option value="16">16</option>
-            <option value="18">18</option>
-            <option value="20">20</option>
-            <option value="24">24</option>
-            <option value="28">28</option>
-            <option value="32">32</option>
-            <option value="36">36</option>
-            <option value="48">48</option>
-            <option value="72">72</option>
-          </select>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Text formatting */}
-          <Button variant="ghost" size="sm" onClick={() => formatText('bold')} className="p-2">
-            <Bold className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('italic')} className="p-2">
-            <Italic className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('underline')} className="p-2">
-            <Underline className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('strikeThrough')} className="p-2">
-            <Strikethrough className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('subscript')} className="p-2">
-            <Subscript className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('superscript')} className="p-2">
-            <Superscript className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Color controls */}
-          <div className="flex items-center">
+        {/* Toolbar */}
+        <div className="bg-white border-b border-slate-200 p-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Undo/Redo */}
+            <Button variant="ghost" size="sm" onClick={() => formatText('undo')}>
+              <Undo2 className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText('redo')}>
+              <Redo2 className="w-4 h-4" />
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            {/* Basic Formatting */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => formatText('bold')}
+              className={editor?.isActive('bold') ? 'bg-slate-200' : ''}
+            >
+              <Bold className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => formatText('italic')}
+              className={editor?.isActive('italic') ? 'bg-slate-200' : ''}
+            >
+              <Italic className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => formatText('underline')}
+              className={editor?.isActive('underline') ? 'bg-slate-200' : ''}
+            >
+              <UnderlineIcon className="w-4 h-4" />
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            {/* Alignment */}
+            <Button variant="ghost" size="sm" onClick={() => formatText('justifyLeft')}>
+              <AlignLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText('justifyCenter')}>
+              <AlignCenter className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText('justifyRight')}>
+              <AlignRight className="w-4 h-4" />
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            {/* Lists */}
+            <Button variant="ghost" size="sm" onClick={() => formatText('insertUnorderedList')}>
+              <List className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => formatText('insertOrderedList')}>
+              <ListOrdered className="w-4 h-4" />
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            {/* Font Controls */}
+            <Select value={fontFamily} onValueChange={setFontFamily}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                <SelectItem value="Arial">Arial</SelectItem>
+                <SelectItem value="Calibri">Calibri</SelectItem>
+                <SelectItem value="Georgia">Georgia</SelectItem>
+                <SelectItem value="Verdana">Verdana</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+              <SelectTrigger className="w-16">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="8">8</SelectItem>
+                <SelectItem value="9">9</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="11">11</SelectItem>
+                <SelectItem value="12">12</SelectItem>
+                <SelectItem value="14">14</SelectItem>
+                <SelectItem value="16">16</SelectItem>
+                <SelectItem value="18">18</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="24">24</SelectItem>
+                <SelectItem value="28">28</SelectItem>
+                <SelectItem value="32">32</SelectItem>
+              </SelectContent>
+            </Select>
+            
             <input
               type="color"
               value={textColor}
-              onChange={(e) => {
-                setTextColor(e.target.value);
-                formatText('foreColor', e.target.value);
-              }}
-              className="w-8 h-6 border border-slate-300 rounded cursor-pointer"
+              onChange={(e) => setTextColor(e.target.value)}
+              className="w-8 h-8 border border-slate-300 rounded cursor-pointer"
               title="Text Color"
             />
-            <Type className="w-3 h-3 ml-1" />
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            {/* Page Size */}
+            <Select value={pageSize} onValueChange={(value: keyof typeof PAGE_SIZES) => setPageSize(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PAGE_SIZES).map(([key, size]) => (
+                  <SelectItem key={key} value={key}>{size.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Zoom */}
+            <Button variant="ghost" size="sm" onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))}>
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <span className="text-sm text-slate-600 min-w-[3rem] text-center">{zoomLevel}%</span>
+            <Button variant="ghost" size="sm" onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))}>
+              <ZoomIn className="w-4 h-4" />
+            </Button>
           </div>
-          
-          <div className="flex items-center">
-            <input
-              type="color"
-              value={highlightColor}
-              onChange={(e) => {
-                setHighlightColor(e.target.value);
-                formatText('backColor', e.target.value);
-              }}
-              className="w-8 h-6 border border-slate-300 rounded cursor-pointer"
-              title="Highlight Color"
-            />
-            <Highlighter className="w-3 h-3 ml-1" />
-          </div>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Alignment */}
-          <Button variant="ghost" size="sm" onClick={() => formatText('justifyLeft')} className="p-2">
-            <AlignLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('justifyCenter')} className="p-2">
-            <AlignCenter className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('justifyRight')} className="p-2">
-            <AlignRight className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Lists and indentation */}
-          <Button variant="ghost" size="sm" onClick={() => formatText('insertUnorderedList')} className="p-2">
-            <List className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('insertOrderedList')} className="p-2">
-            <ListOrdered className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('outdent')} className="p-2">
-            <Outdent className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => formatText('indent')} className="p-2">
-            <Indent className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Page size controls */}
-          <select
-            value={`${pageSize.width}x${pageSize.height}`}
-            onChange={(e) => {
-              const [width, height] = e.target.value.split('x').map(Number);
-              setPageSize({ width, height });
-            }}
-            className="border border-slate-300 rounded px-2 py-1 text-sm"
-          >
-            <option value="8.5x11">Letter (8.5" × 11")</option>
-            <option value="8.5x14">Legal (8.5" × 14")</option>
-            <option value="11x17">Tabloid (11" × 17")</option>
-            <option value="5.5x8.5">Half Letter (5.5" × 8.5")</option>
-            <option value="4x6">4" × 6"</option>
-            <option value="8.27x11.69">A4 (8.27" × 11.69")</option>
-          </select>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* View controls */}
-          <Button variant="ghost" size="sm" onClick={() => setZoomLevel(prev => Math.min(200, prev + 10))} className="p-2">
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <span className="text-sm text-slate-600 px-2 min-w-[50px] text-center">{zoomLevel}%</span>
-          <Button variant="ghost" size="sm" onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))} className="p-2">
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          <Button variant="ghost" size="sm" onClick={() => window.print()} className="p-2">
-            <Printer className="w-4 h-4" />
-          </Button>
         </div>
-      </div>
 
-      {/* Three-pane layout */}
-      <div className="flex h-[calc(100vh-125px)]">
-        {/* Left Panel: Document History */}
-        <WorkspaceSidebar
-          workspaceType="document"
-          currentWorkspaceId={currentDocument?.id}
-          onNewWorkspace={() => {
-            createDocumentMutation.mutate();
-          }}
-        />
-
-        {/* Middle Panel: Document Editor */}
-        <div className="flex-1 flex flex-col bg-slate-100">
-          <div className="bg-white border-b border-slate-200 p-3">
-            <h2 className="text-lg font-semibold text-slate-900">
-              {currentDocument?.title || 'New Document'}  
-            </h2>
-            <div className="text-sm text-slate-600 mt-1">
-              Page 1 of {pageCount} • {pageSize.width}" × {pageSize.height}"
+        <div className="flex-1 flex overflow-hidden">
+          {/* Document Pages */}
+          <div className="flex-1 overflow-auto bg-gray-100 p-8" ref={pagesContainerRef}>
+            <div className="flex flex-col items-center gap-6">
+              {pages.map((page, index) => (
+                <div
+                  key={page.id}
+                  className={`bg-white shadow-lg relative ${index === activePageIndex ? 'ring-2 ring-blue-500' : ''}`}
+                  style={{
+                    width: `${currentPageSize.width * zoomLevel / 100}in`,
+                    height: `${currentPageSize.height * zoomLevel / 100}in`,
+                    maxHeight: `${currentPageSize.height * zoomLevel / 100}in`,
+                    overflow: 'hidden'
+                  }}
+                  onClick={() => switchToPage(index)}
+                >
+                  {/* Page Content */}
+                  <div
+                    className="w-full h-full p-4 overflow-hidden"
+                    style={{
+                      fontSize: `${fontSize * zoomLevel / 100}pt`,
+                      fontFamily,
+                      color: textColor,
+                      lineHeight: 1.5
+                    }}
+                  >
+                    {index === activePageIndex ? (
+                      <EditorContent editor={editor} className="h-full overflow-hidden" />
+                    ) : (
+                      <div 
+                        dangerouslySetInnerHTML={{ __html: page.content || '<p>Start writing...</p>' }}
+                        className="h-full overflow-hidden"
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Page Number */}
+                  <div className="absolute bottom-4 right-4 text-xs text-gray-500">
+                    {index + 1}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          
-          {/* Embedded Document Editor - Isolated from React */}
-          <div 
-            className="flex-1 overflow-auto" 
-            style={{ backgroundColor: '#f8f9fa', padding: '20px' }} 
-            ref={pagesContainerRef}
-          >
-            {currentDocument ? (
-              <div className="w-full h-full flex justify-center">
-                <iframe
-                  ref={editorRef}
-                  className="border border-slate-300 shadow-xl"
-                  style={{
-                    width: `${pageSize.width * zoomLevel / 100}in`,
-                    height: `${pageSize.height * zoomLevel / 100}in`,
-                    backgroundColor: 'white',
-                    border: '1px solid #d1d5db',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                  }}
-                  srcDoc={`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                      <style>
-                        html, body {
-                          margin: 0;
-                          padding: 0;
-                          height: 100%;
-                          width: 100%;
-                          background: white;
-                          font-family: ${fontFamily};
-                          overflow: hidden;
-                        }
-                        
-                        .document-page {
-                          width: 100%;
-                          height: 100%;
-                          padding: ${1 * zoomLevel / 100}in;
-                          box-sizing: border-box;
-                          font-size: ${fontSize * zoomLevel / 100}pt;
-                          line-height: 1.5;
-                          color: ${textColor};
-                          outline: none;
-                          border: none;
-                          resize: none;
-                          overflow: hidden;
-                          white-space: pre-wrap;
-                          word-wrap: break-word;
-                          overflow-wrap: break-word;
-                        }
-                        
-                        .document-page:empty:before {
-                          content: "Start writing your document...";
-                          color: #9ca3af;
-                          font-style: italic;
-                        }
-                        
-                        .page-number {
-                          position: fixed;
-                          bottom: 10px;
-                          right: 15px;
-                          font-size: ${Math.max(8, fontSize * 0.7) * zoomLevel / 100}pt;
-                          color: #9ca3af;
-                          pointer-events: none;
-                          background: white;
-                          padding: 2px 4px;
-                          border-radius: 2px;
-                        }
-                        
-                        @media print {
-                          .document-page {
-                            width: ${pageSize.width}in;
-                            height: ${pageSize.height}in;
-                            padding: 1in;
-                          }
-                          @page {
-                            size: ${pageSize.width}in ${pageSize.height}in;
-                            margin: 0;
-                          }
-                        }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="document-page" contenteditable="true" id="documentContent">${content || ''}</div>
-                      <div class="page-number">1</div>
-                      
-                      <script>
-                        // Handle content changes
-                        function handleContentChange() {
-                          const content = document.getElementById('documentContent').innerText || '';
-                          window.parent.postMessage({ type: 'contentChange', content }, '*');
-                        }
-                        
-                        function handlePaste(e) {
-                          e.preventDefault();
-                          const paste = e.clipboardData.getData('text/plain');
-                          document.execCommand('insertText', false, paste);
-                        }
-                        
-                        // Listen for messages from parent
-                        window.addEventListener('message', function(event) {
-                          if (event.data.type === 'formatCommand') {
-                            document.execCommand(event.data.command, false, event.data.value);
-                          } else if (event.data.type === 'insertContent') {
-                            const documentContent = document.getElementById('documentContent');
-                            if (documentContent) {
-                              const currentText = documentContent.innerText || '';
-                              documentContent.innerText = currentText + event.data.content;
-                              handleContentChange();
-                            }
-                          } else if (event.data.type === 'updateStyles') {
-                            // Update document styles when toolbar changes
-                            const documentContent = document.getElementById('documentContent');
-                            if (documentContent) {
-                              document.body.style.fontFamily = event.data.fontFamily;
-                              documentContent.style.fontSize = event.data.fontSize + 'pt';
-                              documentContent.style.color = event.data.textColor;
-                            }
-                          }
-                        });
-                        
-                        // Set up event listeners
-                        const documentContent = document.getElementById('documentContent');
-                        documentContent.addEventListener('input', handleContentChange);
-                        documentContent.addEventListener('paste', handlePaste);
-                        
-                        // Auto-focus
-                        setTimeout(() => {
-                          documentContent.focus();
-                        }, 100);
-                      </script>
-                    </html>
-                  `}
 
-                />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No Document Selected</h3>
-                  <p className="text-slate-600 mb-4">Create a new document or select one from the sidebar</p>
-                </div>
-              </div>
-            )}
+          {/* Chat Panel */}
+          <div className="w-96 border-l border-slate-200 bg-white">
+            <ChatPanel 
+              workspaceType="document" 
+              workspaceId={currentDocument?.id || 'new'} 
+              onContentInsert={(content) => {
+                if (editor) {
+                  editor.chain().focus().insertContent(content).run();
+                }
+              }}
+            />
           </div>
         </div>
-
-        {/* Right Panel: AI Assistant */}
-        <ChatPanel
-          workspaceId={currentDocument?.id || 'new'}
-          workspaceType="document"
-          onAIResponse={handleAIResponse}
-        />
       </div>
     </div>
   );
