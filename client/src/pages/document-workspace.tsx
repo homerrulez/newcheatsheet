@@ -25,7 +25,7 @@ import {
   Edit3, Share, Trash2, Copy, Download, Eye, MoreVertical,
   Brain, Sparkles, Command, ChevronDown, ChevronRight,
   Strikethrough, Scissors, ClipboardPaste, Minus,
-  Indent, Outdent, Layout, Image, Table, Link
+  Indent, Outdent, Layout, Image, Table, Link, Settings, X
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/schema';
@@ -1071,99 +1071,126 @@ export default function DocumentWorkspace() {
         {/* Right panel - Always-On ChatGPT Interface */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
           <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-l border-white/20 flex flex-col">
-            {/* Chat header */}
-            <div className="p-4 border-b border-white/20">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                <Brain className="w-5 h-5 mr-2 text-purple-600" />
-                ChatGPT Assistant
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Ask me to edit, format, or improve your document
-              </p>
-            </div>
-            
-            {/* Chat messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {chatMessages.length === 0 && (
-                  <div className="text-center py-8">
-                    <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                      Ready to Help!
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Try commands like:
+            {/* ChatGPT Assistant - Always at top */}
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-lg border border-white/20 p-4 m-4 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">ChatGPT Assistant</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Always available • {pageCount} pages
                     </p>
-                    <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
-                      <p>"Make the title bold"</p>
-                      <p>"Add a conclusion paragraph"</p>
-                      <p>"Delete page 2"</p>
-                      <p>"Replace 'old text' with 'new text'"</p>
-                    </div>
                   </div>
-                )}
-                
-                {chatMessages.map((message: ChatMessage) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        message.role === 'user'
-                          ? 'bg-blue-600 text-white ml-4'
-                          : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white mr-4 border border-gray-200 dark:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 mb-1">
-                        {message.role === 'user' ? (
-                          <div className="w-4 h-4 bg-white/20 rounded-full"></div>
-                        ) : (
-                          <Sparkles className="w-4 h-4 text-purple-500" />
-                        )}
-                        <span className="text-xs opacity-75">
-                          {message.role === 'user' ? 'You' : 'ChatGPT'}
-                        </span>
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      {message.documentCommand && (
-                        <div className="mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs">
-                          <Command className="w-3 h-3 inline mr-1" />
-                          Document command executed
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-            
-            {/* Chat input - Always available */}
-            <div className="p-4 border-t border-white/20">
-              <div className="flex space-x-2">
-                <Textarea
-                  placeholder="Ask me to help with your document..."
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  className="flex-1 min-h-[60px] resize-none"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                />
+                </div>
                 <Button
-                  onClick={handleSendMessage}
-                  disabled={!chatInput.trim() || sendMessageMutation.isPending}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
-                  <Send className="w-4 h-4" />
+                  <Settings className="w-4 h-4" />
                 </Button>
               </div>
-              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                <strong>Commands:</strong> "delete page 2", "make 'text' bold", "add paragraph"
+              
+              {/* Chat messages area - Limited height */}
+              <div className="mb-4">
+                <ScrollArea className="h-32 border rounded-lg p-2 bg-gray-50 dark:bg-gray-800">
+                  <div className="space-y-2">
+                    {chatMessages.length === 0 && (
+                      <div className="text-center py-4">
+                        <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Ready to help! Try "create a title about Ali and make it adventurous"
+                        </p>
+                      </div>
+                    )}
+                    
+                    {chatMessages.map((message: ChatMessage) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[90%] p-2 rounded text-xs ${
+                            message.role === 'user'
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white border'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
+              
+              {/* Chat input - Always visible */}
+              <div className="space-y-2">
+                <div className="flex space-x-2">
+                  <Textarea
+                    placeholder="Ask me to help with your document..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    className="flex-1 min-h-[60px] max-h-[60px] resize-none text-sm"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!chatInput.trim() || sendMessageMutation.isPending}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 self-end"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Try: "create a title", "make text bold", "add paragraph"
+                </p>
+              </div>
+            </div>
+            
+            {/* Chat sessions list below */}
+            <div className="flex-1 px-4 pb-4">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">Chat History</h4>
+              <ScrollArea className="h-40">
+                <div className="space-y-2">
+                  {chatSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className={`p-2 rounded border text-xs cursor-pointer transition-colors ${
+                        session.id === defaultSessionId
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                          : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600'
+                      }`}
+                      onClick={() => setDefaultSessionId(session.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate font-medium text-gray-900 dark:text-white">
+                          {session.title}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteSession(session.id);
+                          }}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
         </ResizablePanel>
