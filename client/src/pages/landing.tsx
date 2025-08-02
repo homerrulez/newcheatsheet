@@ -76,7 +76,7 @@ export default function Landing() {
         {/* Subscription Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
           {/* Free Plan */}
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-white/10">
+          <div className="bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-white/30">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Free</h3>
               <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$0</div>
@@ -108,7 +108,7 @@ export default function Landing() {
           </div>
 
           {/* Pro Plan */}
-          <div className="bg-gradient-to-br from-blue-500/15 via-purple-500/15 to-cyan-500/15 backdrop-blur-md border border-blue-300/20 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 transform scale-110 ring-2 ring-blue-300/30">
+          <div className="bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-cyan-500/30 backdrop-blur-md border border-blue-300/60 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 transform scale-110 ring-2 ring-blue-300/60">
             <div className="absolute top-4 right-4 bg-blue-400 text-white text-xs px-3 py-1 rounded-full font-medium">
               Popular
             </div>
@@ -147,7 +147,7 @@ export default function Landing() {
           </div>
 
           {/* Enterprise Plan */}
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-white/10">
+          <div className="bg-white/20 backdrop-blur-md border border-white/40 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-white/30">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Enterprise</h3>
               <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$49</div>
