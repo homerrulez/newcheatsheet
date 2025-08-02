@@ -75,139 +75,156 @@ export default function Landing() {
 
         {/* Subscription Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
-          {/* Free Plan */}
-          <div className="bg-gradient-to-br from-green-500/25 via-emerald-500/25 to-teal-500/25 backdrop-blur-md border border-green-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-green-500/35 hover:via-emerald-500/35 hover:to-teal-500/35">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Free</h3>
-              <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$0</div>
-              <p className="text-sm text-white/70">per month</p>
+          {/* Template Workspace - Free Plan */}
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-green-500/25 via-emerald-500/25 to-teal-500/25 backdrop-blur-md border border-green-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-green-500/35 hover:via-emerald-500/35 hover:to-teal-500/35 aspect-square flex flex-col justify-between">
+              <div className="flex flex-col items-center mb-3">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-300/20 via-emerald-300/20 to-teal-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                  <Layout className="text-white text-2xl" />
+                </div>
+                <h3 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>Template</h3>
+                <p className="text-sm text-white/80 text-center">Smart Templates - Free</p>
+              </div>
+              
+              <div className="text-center mb-4">
+                <div className="text-3xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$0</div>
+                <p className="text-xs text-white/70">per month</p>
+              </div>
+              
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Basic templates
+                </div>
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  5 documents limit
+                </div>
+                <div className="flex items-center text-xs text-white/60">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
+                  No AI assistance
+                </div>
+              </div>
+              
+              <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-0 py-2 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
+                Get Started
+              </Button>
             </div>
             
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Basic document editing
+            <button
+              onClick={() => openVideoModal('template', 'Template Workspace')}
+              className="w-full aspect-video bg-gradient-to-br from-green-300 via-emerald-300 to-teal-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Play className="text-white text-xl ml-1" />
               </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                5 documents limit
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Basic templates
-              </div>
-              <div className="flex items-center text-sm text-white/60">
-                <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                No AI assistance
-              </div>
-            </div>
-            
-            <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-0 py-3" style={{ fontFamily: '"Inter", sans-serif' }}>
-              Get Started
-            </Button>
+            </button>
           </div>
 
-          {/* Pro Plan */}
-          <div className="bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-cyan-500/30 backdrop-blur-md border border-blue-300/60 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 transform scale-110 ring-2 ring-blue-300/60">
-            <div className="absolute top-4 right-4 bg-blue-400 text-white text-xs px-3 py-1 rounded-full font-medium">
-              Popular
-            </div>
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Pro</h3>
-              <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$12</div>
-              <p className="text-sm text-white/70">per month</p>
+          {/* Document Workspace - Pro Plan */}
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-cyan-500/30 backdrop-blur-md border border-blue-300/60 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 transform scale-110 ring-2 ring-blue-300/60 aspect-square flex flex-col justify-between">
+              <div className="absolute top-4 right-4 bg-blue-400 text-white text-xs px-3 py-1 rounded-full font-medium">
+                Popular
+              </div>
+              <div className="flex flex-col items-center mb-3">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-300/20 via-purple-300/20 to-cyan-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                  <FileText className="text-white text-2xl" />
+                </div>
+                <h3 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>Document</h3>
+                <p className="text-sm text-white/80 text-center">Microsoft Word-Level</p>
+              </div>
+              
+              <div className="text-center mb-4">
+                <div className="text-3xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$12</div>
+                <p className="text-xs text-white/70">per month</p>
+              </div>
+              
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Unlimited documents
+                </div>
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  AI-powered assistance
+                </div>
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Live pagination
+                </div>
+              </div>
+              
+              <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white border-0 py-2 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
+                Start Free Trial
+              </Button>
             </div>
             
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Unlimited documents
+            <button
+              onClick={() => openVideoModal('document', 'Document Workspace')}
+              className="w-full aspect-video bg-gradient-to-br from-blue-300 via-purple-300 to-cyan-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Play className="text-white text-xl ml-1" />
               </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                AI-powered assistance
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Advanced templates
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                LaTeX support
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Real-time collaboration
-              </div>
-            </div>
-            
-            <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white border-0 py-3" style={{ fontFamily: '"Inter", sans-serif' }}>
-              Start Free Trial
-            </Button>
+            </button>
           </div>
 
-          {/* Enterprise Plan */}
-          <div className="bg-gradient-to-br from-purple-500/25 via-indigo-500/25 to-violet-500/25 backdrop-blur-md border border-purple-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-500/35 hover:via-indigo-500/35 hover:to-violet-500/35">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Inter", sans-serif' }}>Enterprise</h3>
-              <div className="text-4xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$49</div>
-              <p className="text-sm text-white/70">per month</p>
+          {/* CheatSheet Workspace - Enterprise Plan */}
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-purple-500/25 via-indigo-500/25 to-violet-500/25 backdrop-blur-md border border-purple-300/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-500/35 hover:via-indigo-500/35 hover:to-violet-500/35 aspect-square flex flex-col justify-between">
+              <div className="flex flex-col items-center mb-3">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-300/20 via-indigo-300/20 to-violet-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                  <Grid3X3 className="text-white text-2xl" />
+                </div>
+                <h3 className="text-2xl font-semibold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>CheatSheet</h3>
+                <p className="text-sm text-white/80 text-center">Interactive Study Cards</p>
+              </div>
+              
+              <div className="text-center mb-4">
+                <div className="text-3xl font-bold text-white mb-1" style={{ fontFamily: '"Inter", sans-serif' }}>$49</div>
+                <p className="text-xs text-white/70">per month</p>
+              </div>
+              
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Everything in Pro
+                </div>
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Team collaboration
+                </div>
+                <div className="flex items-center text-xs text-white/90">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Advanced AI models
+                </div>
+              </div>
+              
+              <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-0 py-2 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
+                Contact Sales
+              </Button>
             </div>
             
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Everything in Pro
+            <button
+              onClick={() => openVideoModal('cheatsheet', 'CheatSheet Workspace')}
+              className="w-full aspect-video bg-gradient-to-br from-purple-300 via-indigo-300 to-violet-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Play className="text-white text-xl ml-1" />
               </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Team collaboration
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Advanced AI models
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Priority support
-              </div>
-              <div className="flex items-center text-sm text-white/90">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-                Custom integrations
-              </div>
-            </div>
-            
-            <Button className="w-full bg-white/20 hover:bg-white/30 text-white border-0 py-3" style={{ fontFamily: '"Inter", sans-serif' }}>
-              Contact Sales
-            </Button>
+            </button>
           </div>
         </div>
 
-        {/* Feature Access Links */}
+        {/* Feature Access Note */}
         <div className="text-center mb-16">
-          <p className="text-white/80 mb-6 text-lg" style={{ fontFamily: '"Inter", sans-serif' }}>
-            Try our workspaces with any plan
+          <p className="text-white/80 mb-2 text-lg" style={{ fontFamily: '"Inter", sans-serif' }}>
+            Choose your workspace and pricing plan
           </p>
-          <div className="flex justify-center gap-6">
-            <Link href="/template">
-              <Button variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-6 py-3" style={{ fontFamily: '"Inter", sans-serif' }}>
-                <Layout className="w-4 h-4 mr-2" />
-                Templates
-              </Button>
-            </Link>
-            <Link href="/document">
-              <Button variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-6 py-3" style={{ fontFamily: '"Inter", sans-serif' }}>
-                <FileText className="w-4 h-4 mr-2" />
-                Documents
-              </Button>
-            </Link>
-            <Link href="/cheatsheet">
-              <Button variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-6 py-3" style={{ fontFamily: '"Inter", sans-serif' }}>
-                <Grid3X3 className="w-4 h-4 mr-2" />
-                Cheat Sheets
-              </Button>
-            </Link>
-          </div>
+          <p className="text-white/60 text-sm" style={{ fontFamily: '"Inter", sans-serif' }}>
+            Each workspace type comes with different subscription options
+          </p>
         </div>
 
         {/* Feature Boxes - Bottom Section */}
