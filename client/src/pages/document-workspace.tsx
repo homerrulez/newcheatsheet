@@ -40,12 +40,6 @@ interface DocumentRendererProps {
   onContentChange: (content: string) => void;
 }
 
-// Document layout engine - separates content model from visual representation
-interface DocumentPage {
-  nodes: any[];
-  height: number;
-}
-
 function DocumentRenderer({ 
   editor, 
   pageSize, 
@@ -57,214 +51,114 @@ function DocumentRenderer({
   onContentChange 
 }: DocumentRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pages, setPages] = useState<DocumentPage[]>([{ nodes: [], height: 0 }]);
-  const [isEditing, setIsEditing] = useState(true);
+  const [pageCount, setPageCount] = useState(1);
   
   // Calculate actual page dimensions
   const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
   const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
   const contentHeight = pageHeight - 128; // 64px padding top/bottom
   
-  // Layout engine: measure content and calculate page breaks
-  const calculateLayout = useCallback(() => {
-    if (!editor) return;
+  // Live page count calculation based on content height
+  const updatePageCount = useCallback(() => {
+    if (!editor || !containerRef.current) return;
     
-    try {
-      const jsonDoc = editor.getJSON();
-      if (!jsonDoc?.content) {
-        setPages([{ nodes: [], height: 0 }]);
-        return;
-      }
-      
-      // Create temporary measurement container
-      const measureDiv = document.createElement('div');
-      measureDiv.style.cssText = `
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-        width: ${pageWidth - 128}px;
-        font-family: ${fontFamily};
-        font-size: ${fontSize}pt;
-        line-height: 1.6;
-        visibility: hidden;
-        padding: 0;
-        margin: 0;
-      `;
-      document.body.appendChild(measureDiv);
-      
-      const newPages: DocumentPage[] = [];
-      let currentPage: DocumentPage = { nodes: [], height: 0 };
-      
-      // Process each node in the document
-      for (const node of jsonDoc.content) {
-        const nodeHTML = nodeToHTML(node);
-        measureDiv.innerHTML = nodeHTML;
-        const nodeHeight = measureDiv.offsetHeight;
-        
-        // Check if node fits on current page
-        if (currentPage.height + nodeHeight > contentHeight && currentPage.nodes.length > 0) {
-          // Save current page and start new one
-          newPages.push(currentPage);
-          currentPage = { nodes: [node], height: nodeHeight };
-        } else {
-          // Add node to current page
-          currentPage.nodes.push(node);
-          currentPage.height += nodeHeight;
-        }
-      }
-      
-      // Add final page
-      if (currentPage.nodes.length > 0) {
-        newPages.push(currentPage);
-      }
-      
-      // Ensure at least one page
-      if (newPages.length === 0) {
-        newPages.push({ nodes: [], height: 0 });
-      }
-      
-      setPages(newPages);
-      document.body.removeChild(measureDiv);
-    } catch (error) {
-      console.error('Layout calculation error:', error);
-      setPages([{ nodes: [], height: 0 }]);
-    }
-  }, [editor, pageWidth, pageHeight, contentHeight, fontFamily, fontSize]);
-  
-  // Convert Tiptap node to HTML for measurement and rendering
-  const nodeToHTML = (node: any): string => {
-    if (!node) return '';
+    // Find the actual editor content element
+    const editorElement = containerRef.current.querySelector('.ProseMirror');
+    if (!editorElement) return;
     
-    switch (node.type) {
-      case 'paragraph':
-        const content = node.content?.map((inline: any) => {
-          if (inline.type === 'text') {
-            let text = inline.text || '';
-            if (inline.marks) {
-              for (const mark of inline.marks) {
-                if (mark.type === 'bold') text = `<strong>${text}</strong>`;
-                if (mark.type === 'italic') text = `<em>${text}</em>`;
-                if (mark.type === 'underline') text = `<u>${text}</u>`;
-              }
-            }
-            return text;
-          }
-          return '';
-        }).join('') || '';
-        return `<p style="margin: 0 0 1em 0; line-height: 1.6;">${content || '<br>'}</p>`;
-      
-      case 'heading':
-        const level = node.attrs?.level || 1;
-        const headingContent = node.content?.map((inline: any) => inline.text || '').join('') || '';
-        return `<h${level} style="margin: 0 0 0.5em 0; line-height: 1.2;">${headingContent}</h${level}>`;
-      
-      case 'bulletList':
-        const listItems = node.content?.map((item: any) => 
-          `<li>${nodeToHTML(item)}</li>`
-        ).join('') || '';
-        return `<ul style="margin: 0 0 1em 0; padding-left: 1.5em;">${listItems}</ul>`;
-      
-      case 'orderedList':
-        const orderedItems = node.content?.map((item: any) => 
-          `<li>${nodeToHTML(item)}</li>`
-        ).join('') || '';
-        return `<ol style="margin: 0 0 1em 0; padding-left: 1.5em;">${orderedItems}</ol>`;
-      
-      case 'listItem':
-        const itemContent = node.content?.map((child: any) => nodeToHTML(child)).join('') || '';
-        return itemContent;
-      
-      default:
-        return '<p style="margin: 0 0 1em 0;"><br></p>';
-    }
-  };
+    // Calculate pages based on content height
+    const contentScrollHeight = editorElement.scrollHeight;
+    const pagesNeeded = Math.max(1, Math.ceil(contentScrollHeight / contentHeight));
+    setPageCount(pagesNeeded);
+  }, [editor, contentHeight]);
   
-  // Recalculate layout when content changes
+  // Real-time page count updates
   useEffect(() => {
-    const timer = setTimeout(calculateLayout, 300);
+    const timer = setTimeout(updatePageCount, 200);
     return () => clearTimeout(timer);
-  }, [calculateLayout, documentContent]);
+  }, [updatePageCount, documentContent]);
   
-  // Listen for editor updates
+  // Listen for editor updates for live pagination
   useEffect(() => {
     if (!editor) return;
     
     const handleUpdate = () => {
-      setTimeout(calculateLayout, 100);
+      setTimeout(updatePageCount, 100);
     };
     
     editor.on('update', handleUpdate);
     return () => editor.off('update', handleUpdate);
-  }, [editor, calculateLayout]);
+  }, [editor, updatePageCount]);
   
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      <div ref={containerRef} className="space-y-8">
-        {/* Dual mode: editing vs pagination view */}
-        {isEditing ? (
-          // Editing mode: Single continuous editor
-          <div className="mx-auto bg-white shadow-lg relative" style={{ width: `${pageWidth}px`, minHeight: `${pageHeight}px` }}>
-            <div className="p-16" style={{ fontFamily, fontSize: `${fontSize}pt`, color: textColor, lineHeight: '1.6' }}>
-              {editor && (
-                <EditorContent 
-                  editor={editor}
-                  className="focus:outline-none prose prose-sm max-w-none min-h-screen"
-                />
-              )}
-            </div>
-            <Button 
-              onClick={() => setIsEditing(false)}
-              className="absolute top-4 right-4"
-              size="sm"
-            >
-              Preview Pages
-            </Button>
-          </div>
-        ) : (
-          // Pagination view: Proper page layout
-          <>
-            <Button 
-              onClick={() => setIsEditing(true)}
-              className="mb-4"
-              size="sm"
-            >
-              Back to Editing
-            </Button>
-            {pages.map((page, pageIndex) => (
+      {/* Page count status like Microsoft Word */}
+      <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
+        Page {pageCount > 0 ? '1' : '1'} of {pageCount}
+      </div>
+      
+      <div ref={containerRef} className="relative">
+        {/* Live paginated editor container - like Microsoft Word */}
+        <div className="mx-auto space-y-8" style={{ width: `${pageWidth}px` }}>
+          
+          {/* Page background containers with single continuous editor overlay */}
+          <div className="relative">
+            {/* Visual page backgrounds */}
+            {Array.from({ length: pageCount }, (_, pageIndex) => (
               <div
-                key={pageIndex}
-                className="mx-auto bg-white shadow-lg relative"
+                key={`page-${pageIndex}`}
+                className="bg-white shadow-lg mb-8 relative"
                 style={{
                   width: `${pageWidth}px`,
                   height: `${pageHeight}px`,
-                  overflow: 'hidden',
                 }}
               >
-                <div 
-                  className="p-16 h-full"
-                  style={{
-                    fontFamily,
-                    fontSize: `${fontSize}pt`,
-                    color: textColor,
-                    lineHeight: '1.6',
-                  }}
-                >
-                  <div 
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ 
-                      __html: page.nodes.map(nodeToHTML).join('') 
-                    }}
-                  />
-                </div>
-                
                 {/* Page number */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
                   {pageIndex + 1}
                 </div>
               </div>
             ))}
-          </>
-        )}
+            
+            {/* Single continuous editor positioned over all pages */}
+            <div
+              className="absolute top-0 left-0 w-full"
+              style={{
+                height: `${pageCount * (pageHeight + 32)}px`, // Include page gaps
+                pointerEvents: 'auto',
+              }}
+            >
+              <div 
+                className="w-full h-full"
+                style={{
+                  fontFamily,
+                  fontSize: `${fontSize}pt`,
+                  color: textColor,
+                  lineHeight: '1.6',
+                }}
+              >
+                {editor && (
+                  <EditorContent 
+                    editor={editor}
+                    className="focus:outline-none prose prose-sm max-w-none"
+                    style={{
+                      padding: '64px',
+                      minHeight: '100%',
+                      // Create page break visual cues
+                      backgroundImage: `repeating-linear-gradient(
+                        transparent 0,
+                        transparent ${pageHeight - 1}px,
+                        #e5e7eb ${pageHeight}px,
+                        #e5e7eb ${pageHeight + 32}px
+                      )`,
+                      backgroundSize: '100% auto',
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
