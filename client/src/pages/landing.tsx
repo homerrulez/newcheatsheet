@@ -61,7 +61,7 @@ export default function Landing() {
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="bg-gradient-to-br from-green-100 to-green-50 border-2 border-green-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+              <div className="bg-gradient-to-br from-cyan-200 via-green-200 to-blue-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <FileSpreadsheet className="text-white text-3xl" />
@@ -107,7 +107,7 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="bg-gradient-to-br from-purple-100 to-pink-50 border-2 border-purple-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+              <div className="bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <Grid3X3 className="text-white text-3xl" />
@@ -153,7 +153,7 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document">
-              <div className="bg-gradient-to-br from-blue-100 to-cyan-50 border-2 border-blue-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+              <div className="bg-gradient-to-br from-cyan-200 via-purple-200 to-blue-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <FileText className="text-white text-3xl" />
