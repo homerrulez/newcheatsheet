@@ -548,30 +548,11 @@ export default function DocumentWorkspace() {
           </Button>
         </div>
 
-        {/* Ribbon tabs */}
-        <div className="flex items-center space-x-6 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-          <Button variant="ghost" size="sm" className="text-blue-600 border-b-2 border-blue-600">
-            Home
-          </Button>
-          <Button variant="ghost" size="sm">
-            Insert
-          </Button>
-          <Button variant="ghost" size="sm">
-            Layout
-          </Button>
-          <Button variant="ghost" size="sm">
-            References
-          </Button>
-          <Button variant="ghost" size="sm">
-            Review
-          </Button>
-          <Button variant="ghost" size="sm">
-            View
-          </Button>
-        </div>
 
-        {/* Main toolbar content */}
-        <div className="p-3">
+
+        {/* Main toolbar content - 2 lines */}
+        <div className="p-3 space-y-3">
+          {/* First toolbar line */}
           <div className="flex items-center space-x-4 overflow-x-auto">
             {/* File operations */}
             <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
@@ -722,7 +703,7 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Lists and indentation */}
-            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+            <div className="flex items-center space-x-1">
               <Button
                 size="sm"
                 variant={editor?.isActive('bulletList') ? 'default' : 'outline'}
@@ -744,6 +725,10 @@ export default function DocumentWorkspace() {
                 <Outdent className="w-4 h-4" />
               </Button>
             </div>
+          </div>
+
+          {/* Second toolbar line */}
+          <div className="flex items-center space-x-4 overflow-x-auto">
 
             {/* Page Layout Controls */}
             <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
@@ -1096,7 +1081,7 @@ export default function DocumentWorkspace() {
               
               {/* Chat messages area - Proper height */}
               <div className="mb-4">
-                <ScrollArea className="h-[32rem] border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                <ScrollArea className="h-[45rem] border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
                   <div className="space-y-2">
                     {chatMessages.length === 0 && (
                       <div className="text-center py-8">
