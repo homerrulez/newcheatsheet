@@ -19,18 +19,18 @@ export default function Landing() {
     setVideoModal({ isOpen: false, type: '', title: '' });
   };
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 25%, #7dd3fc 50%, #38bdf8 75%, #0ea5e9 100%)' }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 75%, #64748b 100%)' }}>
       {/* Frosted overlay with floating math symbols */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-sky-100/15 to-blue-100/20 backdrop-blur-[1px] z-0">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-slate-50/10 to-slate-100/15 backdrop-blur-[1px] z-0">
         {/* Floating math symbols - subtle and spaced out */}
-        <div className="absolute top-[40%] left-[5%] text-2xl text-sky-200/25 font-light select-none animate-float-right">∫</div>
-        <div className="absolute top-[60%] right-[8%] text-xl text-blue-200/20 font-light select-none animate-float-left">π</div>
-        <div className="absolute top-[75%] left-[20%] text-2xl text-cyan-200/25 font-light select-none animate-float-right">√</div>
-        <div className="absolute top-[30%] left-[85%] text-xl text-sky-300/20 font-light select-none animate-float-left">λ</div>
-        <div className="absolute top-[85%] right-[30%] text-2xl text-blue-300/25 font-light select-none animate-float-up">∞</div>
-        <div className="absolute top-[25%] right-[10%] text-xl text-cyan-300/20 font-light select-none animate-float-left">∇</div>
-        <div className="absolute top-[90%] left-[70%] text-2xl text-sky-400/25 font-light select-none animate-float-up">θ</div>
-        <div className="absolute top-[35%] left-[3%] text-xl text-blue-400/20 font-light select-none animate-float-right">α</div>
+        <div className="absolute top-[40%] left-[5%] text-2xl text-slate-300/20 font-light select-none animate-float-right">∫</div>
+        <div className="absolute top-[60%] right-[8%] text-xl text-slate-400/15 font-light select-none animate-float-left">π</div>
+        <div className="absolute top-[75%] left-[20%] text-2xl text-slate-300/20 font-light select-none animate-float-right">√</div>
+        <div className="absolute top-[30%] left-[85%] text-xl text-slate-400/15 font-light select-none animate-float-left">λ</div>
+        <div className="absolute top-[85%] right-[30%] text-2xl text-slate-300/20 font-light select-none animate-float-up">∞</div>
+        <div className="absolute top-[25%] right-[10%] text-xl text-slate-400/15 font-light select-none animate-float-left">∇</div>
+        <div className="absolute top-[90%] left-[70%] text-2xl text-slate-300/20 font-light select-none animate-float-up">θ</div>
+        <div className="absolute top-[35%] left-[3%] text-xl text-slate-400/15 font-light select-none animate-float-right">α</div>
       </div>
       {/* Header */}
       <header className="relative z-10 px-8 py-6">
