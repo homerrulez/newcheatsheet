@@ -19,9 +19,23 @@ export default function Landing() {
     setVideoModal({ isOpen: false, type: '', title: '' });
   };
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 50%, #e8f5e8 100%)' }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 50%, #e8f5e8 100%)' }}>
+      {/* Frosted overlay with subtle math symbols */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 backdrop-blur-[1px]">
+        {/* Math symbols scattered as decoration */}
+        <div className="absolute top-20 left-[10%] text-6xl text-white/5 font-light select-none">∫</div>
+        <div className="absolute top-32 right-[15%] text-4xl text-white/6 font-light select-none">π</div>
+        <div className="absolute top-[40%] left-[5%] text-5xl text-white/4 font-light select-none">∑</div>
+        <div className="absolute bottom-[30%] right-[8%] text-7xl text-white/5 font-light select-none">√</div>
+        <div className="absolute top-[60%] right-[25%] text-3xl text-white/6 font-light select-none">α</div>
+        <div className="absolute bottom-[40%] left-[20%] text-4xl text-white/5 font-light select-none">∆</div>
+        <div className="absolute top-[25%] left-[70%] text-5xl text-white/4 font-light select-none">λ</div>
+        <div className="absolute bottom-[60%] right-[40%] text-3xl text-white/6 font-light select-none">≈</div>
+        <div className="absolute top-[70%] left-[60%] text-4xl text-white/5 font-light select-none">∞</div>
+        <div className="absolute bottom-[20%] left-[40%] text-5xl text-white/4 font-light select-none">θ</div>
+      </div>
       {/* Header */}
-      <header className="px-8 py-6">
+      <header className="relative z-10 px-8 py-6">
         <nav className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
@@ -46,7 +60,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-6xl mx-auto px-8 py-16">
+      <main className="relative z-10 max-w-6xl mx-auto px-8 py-16">
         <div className="text-center mb-20">
           <h2 className="text-7xl font-bold text-gray-900 mb-6 leading-tight">
             Welcome
