@@ -6,7 +6,8 @@ import {
   insertDocumentSchema, 
   insertCheatSheetSchema, 
   insertTemplateSchema,
-  insertChatMessageSchema 
+  insertChatMessageSchema,
+  insertChatSessionSchema
 } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -70,6 +71,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(history);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch document history" });
+    }
+  });
+
+  // Chat Sessions API
+  app.get("/api/documents/:id/chat-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getChatSessions(req.params.id);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch chat sessions" });
+    }
+  });
+
+  app.post("/api/documents/:id/chat-sessions", async (req, res) => {
+    try {
+      const validatedData = insertChatSessionSchema.parse(req.body);
+      const session = await storage.createChatSession({
+        ...validatedData,
+        documentId: req.params.id
+      });
+      res.json(session);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid chat session data" });
+    }
+  });
+
+  app.patch("/api/chat-sessions/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const session = await storage.updateChatSession(req.params.id, updates);
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update chat session" });
+    }
+  });
+
+  app.delete("/api/chat-sessions/:id", async (req, res) => {
+    try {
+      await storage.deleteChatSession(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete chat session" });
+    }
+  });
+
+  // Chat Messages API for sessions
+  app.get("/api/chat-sessions/:id/messages", async (req, res) => {
+    try {
+      const messages = await storage.getChatMessagesBySession(req.params.id);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post("/api/chat-sessions/:id/messages", async (req, res) => {
+    try {
+      const { content, documentContent, documentId } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ message: "OpenAI API key not configured" });
+      }
+
+      // Enhanced system prompt for document control commands
+      const systemPrompt = `You are an advanced AI assistant for a Microsoft Word-like document editor. You can help users with writing, editing, and formatting their documents.
+
+DOCUMENT COMMANDS: You can execute these commands by including them in your response:
+- DELETE_PAGE <number>: Delete/clear a specific page
+- FORMAT_TEXT "<text>" BOLD|ITALIC|UNDERLINE: Apply formatting to specific text
+- ADD_TEXT "<text>" TO PAGE <number>|START|END: Add text to specific location
+- REPLACE_TEXT "<old>" WITH "<new>": Replace text in the document
+- INSERT_PAGE BEFORE|AFTER <number>: Insert a new page
+
+RESPONSE FORMAT:
+1. If the user asks for document manipulation, analyze their request and respond with the appropriate command
+2. If the user asks for content creation, provide the content that can be inserted
+3. Always be helpful and explain what you're doing
+
+Current document content:
+${documentContent}
+
+User request: ${content}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const responseContent = completion.choices[0]?.message?.content || "I couldn't generate a response. Please try again.";
+      
+      // Parse document commands from response
+      let documentCommand = null;
+      let insertText = null;
+      let insertAtEnd = false;
+
+      // Simple command parsing (could be enhanced with more sophisticated NLP)
+      if (responseContent.includes('DELETE_PAGE')) {
+        const pageMatch = responseContent.match(/DELETE_PAGE (\d+)/);
+        if (pageMatch) {
+          documentCommand = {
+            type: 'delete_page',
+            params: { pageNumber: parseInt(pageMatch[1]) }
+          };
+        }
+      } else if (responseContent.includes('FORMAT_TEXT')) {
+        const formatMatch = responseContent.match(/FORMAT_TEXT "([^"]+)" (BOLD|ITALIC|UNDERLINE)/);
+        if (formatMatch) {
+          documentCommand = {
+            type: 'format_text',
+            params: {
+              text: formatMatch[1],
+              formatting: { [formatMatch[2].toLowerCase()]: true }
+            }
+          };
+        }
+      } else if (responseContent.includes('ADD_TEXT')) {
+        const addMatch = responseContent.match(/ADD_TEXT "([^"]+)" TO (PAGE \d+|START|END)/);
+        if (addMatch) {
+          documentCommand = {
+            type: 'add_text',
+            params: {
+              text: addMatch[1],
+              position: addMatch[2].toLowerCase(),
+              pageNumber: addMatch[2].includes('PAGE') ? parseInt(addMatch[2].split(' ')[1]) : undefined
+            }
+          };
+        }
+      } else if (responseContent.includes('REPLACE_TEXT')) {
+        const replaceMatch = responseContent.match(/REPLACE_TEXT "([^"]+)" WITH "([^"]+)"/);
+        if (replaceMatch) {
+          documentCommand = {
+            type: 'replace_text',
+            params: {
+              targetText: replaceMatch[1],
+              newText: replaceMatch[2]
+            }
+          };
+        }
+      }
+
+      // If no command detected but response looks like content, treat as insertable text
+      if (!documentCommand && responseContent.length > 20 && !responseContent.includes('I ')) {
+        insertText = responseContent;
+        insertAtEnd = true;
+      }
+
+      // Save user message
+      await storage.createChatMessage({
+        sessionId: req.params.id,
+        workspaceId: documentId,
+        workspaceType: 'document',
+        role: 'user',
+        content,
+        documentCommand: null
+      });
+
+      // Save assistant message
+      await storage.createChatMessage({
+        sessionId: req.params.id,
+        workspaceId: documentId,
+        workspaceType: 'document',
+        role: 'assistant',
+        content: responseContent,
+        documentCommand
+      });
+
+      res.json({ 
+        content: responseContent, 
+        documentCommand,
+        insertText,
+        insertAtEnd
+      });
+    } catch (error) {
+      console.error('Chat error:', error);
+      res.status(500).json({ message: "Failed to process chat request" });
     }
   });
 

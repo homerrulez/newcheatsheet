@@ -5,6 +5,8 @@ import {
   type InsertDocument,
   type DocumentHistory,
   type InsertDocumentHistory,
+  type ChatSession,
+  type InsertChatSession,
   type CheatSheet,
   type InsertCheatSheet,
   type Template,
@@ -30,6 +32,12 @@ export interface IStorage {
   getDocumentHistory(documentId: string): Promise<DocumentHistory[]>;
   createDocumentHistory(history: InsertDocumentHistory): Promise<DocumentHistory>;
   
+  // Chat Session methods
+  getChatSessions(documentId: string): Promise<ChatSession[]>;
+  createChatSession(session: InsertChatSession): Promise<ChatSession>;
+  updateChatSession(id: string, updates: Partial<ChatSession>): Promise<ChatSession>;
+  deleteChatSession(id: string): Promise<void>;
+  
   // CheatSheet methods
   getCheatSheet(id: string): Promise<CheatSheet | undefined>;
   getCheatSheetsByUser(userId: string): Promise<CheatSheet[]>;
@@ -44,6 +52,7 @@ export interface IStorage {
   
   // Chat methods
   getChatMessages(workspaceId: string, workspaceType: string): Promise<ChatMessage[]>;
+  getChatMessagesBySession(sessionId: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
 }
 
@@ -51,6 +60,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private documents: Map<string, Document>;
   private documentHistory: Map<string, DocumentHistory>;
+  private chatSessions: Map<string, ChatSession>;
   private cheatSheets: Map<string, CheatSheet>;
   private templates: Map<string, Template>;
   private chatMessages: Map<string, ChatMessage>;
@@ -59,6 +69,7 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.documents = new Map();
     this.documentHistory = new Map();
+    this.chatSessions = new Map();
     this.cheatSheets = new Map();
     this.templates = new Map();
     this.chatMessages = new Map();
@@ -211,42 +222,86 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async getDocumentHistory(documentId: string): Promise<DocumentHistory[]> {
+    return Array.from(this.documentHistory.values()).filter(
+      history => history.documentId === documentId
+    );
+  }
+
+  async createDocumentHistory(insertHistory: InsertDocumentHistory): Promise<DocumentHistory> {
+    const id = randomUUID();
+    const history: DocumentHistory = {
+      ...insertHistory,
+      id,
+      createdAt: new Date()
+    };
+    this.documentHistory.set(id, history);
+    return history;
+  }
+
+  async getChatSessions(documentId: string): Promise<ChatSession[]> {
+    return Array.from(this.chatSessions.values()).filter(
+      session => session.documentId === documentId
+    );
+  }
+
+  async createChatSession(insertSession: InsertChatSession): Promise<ChatSession> {
+    const id = randomUUID();
+    const now = new Date();
+    const session: ChatSession = {
+      ...insertSession,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.chatSessions.set(id, session);
+    return session;
+  }
+
+  async updateChatSession(id: string, updates: Partial<ChatSession>): Promise<ChatSession> {
+    const existing = this.chatSessions.get(id);
+    if (!existing) throw new Error('Chat session not found');
+    
+    const updated: ChatSession = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.chatSessions.set(id, updated);
+    return updated;
+  }
+
+  async deleteChatSession(id: string): Promise<void> {
+    this.chatSessions.delete(id);
+    // Also delete associated messages
+    const messagesToDelete = Array.from(this.chatMessages.values())
+      .filter(msg => msg.sessionId === id);
+    messagesToDelete.forEach(msg => this.chatMessages.delete(msg.id));
+  }
+
   async getChatMessages(workspaceId: string, workspaceType: string): Promise<ChatMessage[]> {
     return Array.from(this.chatMessages.values())
       .filter(msg => msg.workspaceId === workspaceId && msg.workspaceType === workspaceType)
       .sort((a, b) => a.createdAt!.getTime() - b.createdAt!.getTime());
   }
 
-  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const id = randomUUID();
-    const now = new Date();
-    const newMessage: ChatMessage = { 
-      ...message, 
-      id, 
-      createdAt: now 
-    };
-    this.chatMessages.set(id, newMessage);
-    return newMessage;
+  async getChatMessagesBySession(sessionId: string): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values())
+      .filter(msg => msg.sessionId === sessionId)
+      .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
   }
 
-  async getDocumentHistory(documentId: string): Promise<DocumentHistory[]> {
-    return Array.from(this.documentHistory.values())
-      .filter(history => history.documentId === documentId)
-      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-  }
-
-  async createDocumentHistory(history: InsertDocumentHistory): Promise<DocumentHistory> {
+  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
     const id = randomUUID();
-    const now = new Date();
-    const newHistory: DocumentHistory = { 
-      ...history,
-      pages: history.pages || [],
-      changeDescription: history.changeDescription || null,
-      id, 
-      createdAt: now 
+    const message: ChatMessage = {
+      ...insertMessage,
+      sessionId: insertMessage.sessionId || null,
+      documentCommand: insertMessage.documentCommand || null,
+      id,
+      createdAt: new Date()
     };
-    this.documentHistory.set(id, newHistory);
-    return newHistory;
+    this.chatMessages.set(id, message);
+    return message;
   }
 }
 

@@ -33,6 +33,15 @@ export const documentHistory = pgTable("document_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const chatSessions = pgTable("chat_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentId: varchar("document_id").references(() => documents.id).notNull(),
+  title: text("title").notNull(),
+  documentSnapshot: text("document_snapshot").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const cheatSheets = pgTable("cheat_sheets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
@@ -54,10 +63,12 @@ export const templates = pgTable("templates", {
 
 export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").references(() => chatSessions.id),
   workspaceId: varchar("workspace_id").notNull(),
   workspaceType: text("workspace_type").notNull(), // 'document', 'cheatsheet', 'template'
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
+  documentCommand: jsonb("document_command"), // For storing parsed document commands
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -85,6 +96,12 @@ export const insertDocumentHistorySchema = createInsertSchema(documentHistory).p
   changeDescription: true,
 });
 
+export const insertChatSessionSchema = createInsertSchema(chatSessions).pick({
+  documentId: true,
+  title: true,
+  documentSnapshot: true,
+});
+
 export const insertCheatSheetSchema = createInsertSchema(cheatSheets).pick({
   title: true,
   boxes: true,
@@ -97,10 +114,12 @@ export const insertTemplateSchema = createInsertSchema(templates).pick({
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
+  sessionId: true,
   workspaceId: true,
   workspaceType: true,
   role: true,
   content: true,
+  documentCommand: true,
 });
 
 // Types
@@ -110,6 +129,8 @@ export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type DocumentHistory = typeof documentHistory.$inferSelect;
 export type InsertDocumentHistory = z.infer<typeof insertDocumentHistorySchema>;
+export type ChatSession = typeof chatSessions.$inferSelect;
+export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type CheatSheet = typeof cheatSheets.$inferSelect;
 export type InsertCheatSheet = z.infer<typeof insertCheatSheetSchema>;
 export type Template = typeof templates.$inferSelect;
@@ -139,4 +160,16 @@ export type TemplateSection = {
   content: string;
   status: 'empty' | 'filling' | 'complete';
   position: { row: number; col: number };
+};
+
+export type DocumentCommand = {
+  type: 'delete_page' | 'format_text' | 'add_text' | 'insert_page' | 'replace_text';
+  params: {
+    pageNumber?: number;
+    text?: string;
+    formatting?: { bold?: boolean; italic?: boolean; underline?: boolean };
+    position?: 'start' | 'end' | 'before' | 'after';
+    targetText?: string;
+    newText?: string;
+  };
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useLocation } from 'wouter';
+import { useParams } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -8,9 +8,6 @@ import Underline from '@tiptap/extension-underline';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
-import { BulletList } from '@tiptap/extension-bullet-list';
-import { OrderedList } from '@tiptap/extension-ordered-list';
-import { ListItem } from '@tiptap/extension-list-item';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,989 +15,771 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { 
   Save, FileText, Bold, Italic, Underline as UnderlineIcon, 
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, ZoomIn, ZoomOut, Printer, Type, Palette, 
-  Undo2, Redo2, History, MessageSquare, Plus, Clock
+  Undo2, Redo2, History, MessageSquare, Plus, Clock, Send,
+  Edit3, Share, Trash2, Copy, Download, Eye, MoreVertical,
+  Brain, Sparkles, Command, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { Document, DocumentHistory, DocumentPage } from '@shared/schema';
+import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 
-// Real pagination component that enforces page boundaries
-interface DocumentRendererProps {
-  editor: any;
-  pageSize: keyof typeof PAGE_SIZES;
-  zoomLevel: number;
-  fontSize: number;
-  fontFamily: string;
-  textColor: string;
-  documentContent: string;
-  onContentChange: (content: string) => void;
-}
-
-// Real document model using ProseMirror node tracking
-interface PageNode {
-  node: any;
-  nodeIndex: number;
-  startPos: number;
-  endPos: number;
-  height: number;
-}
-
-interface DocumentPageLayout {
-  pageIndex: number;
-  nodes: PageNode[];
-  totalHeight: number;
-  startPos: number;
-  endPos: number;
-}
-
-// Page component for modular rendering
-function Page({ 
-  children, 
-  pageNumber, 
-  pageSize, 
-  zoomLevel 
-}: { 
-  children: React.ReactNode; 
-  pageNumber: number; 
-  pageSize: keyof typeof PAGE_SIZES;
-  zoomLevel: number;
-}) {
-  const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
-  const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
-  
-  return (
-    <div 
-      className="page bg-white shadow-lg mx-auto mb-8 relative overflow-hidden print:mb-0 print:shadow-none"
-      style={{
-        width: `${pageWidth}px`,
-        height: `${pageHeight}px`,
-      }}
-    >
-      <div className="p-16 h-full overflow-hidden">
-        {children}
-      </div>
-      
-      {/* Page number */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 print:hidden">
-        {pageNumber}
-      </div>
-    </div>
-  );
-}
-
-// Content block interface for pagination
-interface ContentBlock {
-  id: string;
-  type: 'paragraph' | 'heading1' | 'heading2' | 'heading3' | 'list' | 'blockquote';
-  content: string;
-  height: number;
-}
-
-// Page layout containing blocks
-interface PageLayout {
-  pageNumber: number;
-  blocks: ContentBlock[];
-  totalHeight: number;
-  hasOverflow: boolean;
-}
-
-function DocumentRenderer({ 
-  editor, 
-  pageSize, 
-  zoomLevel, 
-  fontSize, 
-  fontFamily, 
-  textColor, 
-  documentContent,
-  onContentChange 
-}: DocumentRendererProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const measureRef = useRef<HTMLDivElement>(null);
-  const [pageLayouts, setPageLayouts] = useState<PageLayout[]>([]);
-  const [activePageIndex, setActivePageIndex] = useState(0);
-  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
-  
-  // Calculate actual page dimensions
-  const pageWidth = PAGE_SIZES[pageSize as keyof typeof PAGE_SIZES].width * 96 * zoomLevel / 100;
-  const pageHeight = PAGE_SIZES[pageSize as keyof typeof PAGE_SIZES].height * 96 * zoomLevel / 100;
-  const contentHeight = pageHeight - 128; // Account for padding
-  
-  // Measure content height for pagination
-  const measureBlockHeight = useCallback((content: string, type: string): number => {
-    if (!measureRef.current) return 50; // Fallback
-    
-    const measureElement = measureRef.current;
-    
-    // Set appropriate HTML based on block type
-    let html = '';
-    switch (type) {
-      case 'heading1':
-        html = `<h1 style="font-size: ${fontSize * 1.5}pt; font-weight: bold; margin: 0.5em 0;">${content}</h1>`;
-        break;
-      case 'heading2':
-        html = `<h2 style="font-size: ${fontSize * 1.25}pt; font-weight: bold; margin: 0.4em 0;">${content}</h2>`;
-        break;
-      case 'heading3':
-        html = `<h3 style="font-size: ${fontSize * 1.1}pt; font-weight: bold; margin: 0.3em 0;">${content}</h3>`;
-        break;
-      case 'blockquote':
-        html = `<blockquote style="font-size: ${fontSize}pt; margin: 1em 0; padding-left: 1em; border-left: 3px solid #ccc;">${content}</blockquote>`;
-        break;
-      case 'list':
-        html = `<ul style="font-size: ${fontSize}pt; margin: 0.5em 0; padding-left: 1.5em;"><li>${content}</li></ul>`;
-        break;
-      default: // paragraph
-        html = `<p style="font-size: ${fontSize}pt; margin: 0.5em 0; line-height: 1.6;">${content}</p>`;
-    }
-    
-    measureElement.innerHTML = html;
-    const height = measureElement.offsetHeight;
-    measureElement.innerHTML = '';
-    
-    return height;
-  }, [fontSize]);
-  
-  // Parse editor content into blocks
-  const parseContentIntoBlocks = useCallback((): ContentBlock[] => {
-    if (!editor) return [];
-    
-    const html = editor.getHTML();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const elements = Array.from(doc.body.children);
-    
-    return elements.map((element, index) => {
-      let type: ContentBlock['type'] = 'paragraph';
-      let content = element.textContent || '';
-      
-      switch (element.tagName.toLowerCase()) {
-        case 'h1':
-          type = 'heading1';
-          break;
-        case 'h2':
-          type = 'heading2';
-          break;
-        case 'h3':
-          type = 'heading3';
-          break;
-        case 'blockquote':
-          type = 'blockquote';
-          break;
-        case 'ul':
-        case 'ol':
-          type = 'list';
-          content = Array.from(element.querySelectorAll('li')).map(li => li.textContent).join('\n');
-          break;
-        default:
-          type = 'paragraph';
-      }
-      
-      const height = measureBlockHeight(content, type);
-      
-      return {
-        id: `block-${index}`,
-        type,
-        content,
-        height
-      };
-    });
-  }, [editor, measureBlockHeight]);
-  
-  // Layout engine: distribute blocks across pages
-  const calculatePageLayouts = useCallback((): PageLayout[] => {
-    const blocks = parseContentIntoBlocks();
-    if (blocks.length === 0) {
-      return [{
-        pageNumber: 1,
-        blocks: [],
-        totalHeight: 0,
-        hasOverflow: false
-      }];
-    }
-    
-    const layouts: PageLayout[] = [];
-    let currentPage: PageLayout = {
-      pageNumber: 1,
-      blocks: [],
-      totalHeight: 0,
-      hasOverflow: false
-    };
-    
-    for (const block of blocks) {
-      // Check if block fits on current page
-      if (currentPage.totalHeight + block.height > contentHeight && currentPage.blocks.length > 0) {
-        // Current page is full, start new page
-        layouts.push(currentPage);
-        currentPage = {
-          pageNumber: layouts.length + 1,
-          blocks: [block],
-          totalHeight: block.height,
-          hasOverflow: block.height > contentHeight
-        };
-      } else {
-        // Add block to current page
-        currentPage.blocks.push(block);
-        currentPage.totalHeight += block.height;
-        if (currentPage.totalHeight > contentHeight) {
-          currentPage.hasOverflow = true;
-        }
-      }
-    }
-    
-    // Add final page
-    layouts.push(currentPage);
-    
-    return layouts;
-  }, [parseContentIntoBlocks, contentHeight]);
-  
-  // Update layouts when content changes
-  useEffect(() => {
-    if (!editor) return;
-    
-    const handleUpdate = () => {
-      onContentChange(editor.getHTML());
-      setTimeout(() => {
-        const newLayouts = calculatePageLayouts();
-        setPageLayouts(newLayouts);
-      }, 100);
-    };
-    
-    editor.on('update', handleUpdate);
-    
-    // Initial calculation
-    const initialLayouts = calculatePageLayouts();
-    setPageLayouts(initialLayouts);
-    
-    return () => {
-      editor.off('update', handleUpdate);
-    };
-  }, [editor, calculatePageLayouts, onContentChange]);
-  
-  // Recalculate when font size changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const newLayouts = calculatePageLayouts();
-      setPageLayouts(newLayouts);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [calculatePageLayouts, fontSize, fontFamily]);
-
-  // Handle block editing
-  const handleBlockEdit = useCallback((blockId: string, newContent: string) => {
-    if (!editor) return;
-    
-    // Update the editor content
-    // This is a simplified approach - in production you'd want more sophisticated block management
-    const blocks = parseContentIntoBlocks();
-    const blockIndex = blocks.findIndex(b => b.id === blockId);
-    
-    if (blockIndex >= 0) {
-      // For now, just focus the main editor and let Tiptap handle the editing
-      editor.commands.focus();
-      setActiveBlockId(blockId);
-    }
-  }, [editor, parseContentIntoBlocks]);
-  
-  // Handle page clicks
-  const handlePageClick = useCallback((pageIndex: number) => {
-    setActivePageIndex(pageIndex);
-    if (editor) {
-      editor.commands.focus();
-    }
-  }, [editor]);
-
-  return (
-    <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      {/* Page count status */}
-      <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Page {activePageIndex + 1} of {pageLayouts.length || 1}
-      </div>
-      
-      {/* Hidden measurement container */}
-      <div
-        ref={measureRef}
-        className="absolute -top-9999 -left-9999 invisible"
-        style={{
-          width: `${pageWidth - 128}px`, // Account for padding
-          fontFamily,
-          color: textColor,
-          lineHeight: '1.6',
-        }}
-      />
-      
-      <div ref={containerRef} className="relative">
-        {pageLayouts.length > 0 ? (
-          // Render paginated content
-          pageLayouts.map((pageLayout, pageIndex) => (
-            <Page
-              key={`page-${pageLayout.pageNumber}`}
-              pageNumber={pageLayout.pageNumber}
-              pageSize={pageSize}
-              zoomLevel={zoomLevel}
-            >
-              <div
-                className={`h-full ${pageIndex === activePageIndex ? 'cursor-text' : 'cursor-pointer'}`}
-                style={{
-                  fontFamily,
-                  fontSize: `${fontSize}pt`,
-                  color: textColor,
-                  lineHeight: '1.6',
-                }}
-                onClick={() => handlePageClick(pageIndex)}
-              >
-                {pageIndex === activePageIndex ? (
-                  // Active page: Show live editor
-                  <div className="h-full overflow-hidden">
-                    <EditorContent 
-                      editor={editor}
-                      className="focus:outline-none prose prose-sm max-w-none h-full overflow-hidden"
-                    />
-                  </div>
-                ) : (
-                  // Inactive page: Show rendered blocks
-                  <div className="h-full overflow-hidden">
-                    {pageLayout.blocks.map((block) => {
-                      const BlockComponent = getBlockComponent(block.type);
-                      return (
-                        <BlockComponent
-                          key={block.id}
-                          content={block.content}
-                          fontSize={fontSize}
-                          isActive={block.id === activeBlockId}
-                          onClick={() => handleBlockEdit(block.id, block.content)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-                
-                {/* Overflow indicator */}
-                {pageLayout.hasOverflow && (
-                  <div className="absolute bottom-20 right-4 text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
-                    Content overflow
-                  </div>
-                )}
-              </div>
-            </Page>
-          ))
-        ) : (
-          // Fallback: Single page with editor
-          <Page pageNumber={1} pageSize={pageSize} zoomLevel={zoomLevel}>
-            <div
-              className="h-full cursor-text"
-              style={{
-                fontFamily,
-                fontSize: `${fontSize}pt`,
-                color: textColor,
-                lineHeight: '1.6',
-              }}
-              onClick={() => handlePageClick(0)}
-            >
-              <EditorContent 
-                editor={editor}
-                className="focus:outline-none prose prose-sm max-w-none h-full overflow-hidden"
-              />
-            </div>
-          </Page>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Block components for rendering different content types
-function getBlockComponent(type: ContentBlock['type']) {
-  switch (type) {
-    case 'heading1':
-      return ({ content, fontSize, isActive, onClick }: any) => (
-        <h1 
-          className={`font-bold mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
-          style={{ fontSize: `${fontSize * 1.5}pt` }}
-          onClick={onClick}
-        >
-          {content}
-        </h1>
-      );
-    case 'heading2':
-      return ({ content, fontSize, isActive, onClick }: any) => (
-        <h2 
-          className={`font-bold mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
-          style={{ fontSize: `${fontSize * 1.25}pt` }}
-          onClick={onClick}
-        >
-          {content}
-        </h2>
-      );
-    case 'heading3':
-      return ({ content, fontSize, isActive, onClick }: any) => (
-        <h3 
-          className={`font-bold mb-1 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
-          style={{ fontSize: `${fontSize * 1.1}pt` }}
-          onClick={onClick}
-        >
-          {content}
-        </h3>
-      );
-    case 'blockquote':
-      return ({ content, fontSize, isActive, onClick }: any) => (
-        <blockquote 
-          className={`border-l-4 border-gray-300 pl-4 mb-2 italic ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
-          style={{ fontSize: `${fontSize}pt` }}
-          onClick={onClick}
-        >
-          {content}
-        </blockquote>
-      );
-    case 'list':
-      return ({ content, fontSize, isActive, onClick }: any) => (
-        <ul 
-          className={`list-disc pl-6 mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
-          style={{ fontSize: `${fontSize}pt` }}
-          onClick={onClick}
-        >
-          {content.split('\n').map((item: string, index: number) => (
-            <li key={index}>{item}</li>
-          ))}
-        </ul>
-      );
-    default: // paragraph
-      return ({ content, fontSize, isActive, onClick }: any) => (
-        <p 
-          className={`mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
-          style={{ fontSize: `${fontSize}pt` }}
-          onClick={onClick}
-        >
-          {content}
-        </p>
-      );
-  }
-}
-
-// Page size configurations (in inches)
+// Page sizes (in inches, converted to pixels at 96 DPI)
 const PAGE_SIZES = {
-  'letter': { width: 8.5, height: 11, name: 'Letter' },
-  'legal': { width: 8.5, height: 14, name: 'Legal' },
-  'a4': { width: 8.27, height: 11.69, name: 'A4' },
-  'tabloid': { width: 11, height: 17, name: 'Tabloid' },
-  'half-letter': { width: 5.5, height: 8.5, name: 'Half Letter' },
-  'index': { width: 4, height: 6, name: '4" × 6"' }
-};
-
-// Font families
-const FONT_FAMILIES = [
-  'Times New Roman', 'Arial', 'Helvetica', 'Georgia', 'Verdana', 
-  'Courier New', 'Comic Sans MS', 'Impact', 'Trebuchet MS', 'Calibri'
-];
-
-// Font sizes
-const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
+  'letter': { width: 816, height: 1056, name: 'Letter (8.5" × 11")' },
+  'legal': { width: 816, height: 1344, name: 'Legal (8.5" × 14")' },
+  'a4': { width: 794, height: 1123, name: 'A4 (8.27" × 11.69")' },
+  'tabloid': { width: 1056, height: 1632, name: 'Tabloid (11" × 17")' },
+} as const;
 
 export default function DocumentWorkspace() {
-  const { id } = useParams();
-  const [, navigate] = useLocation();
-  const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Document state
   const [zoomLevel, setZoomLevel] = useState(100);
   const [fontSize, setFontSize] = useState(12);
   const [fontFamily, setFontFamily] = useState('Times New Roman');
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
-  const [documentContent, setDocumentContent] = useState('<p>Start writing your document...</p>');
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [isProcessingChat, setIsProcessingChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{id: string; role: 'user' | 'assistant'; content: string; timestamp: Date}>>([]);
   
-  const pagesContainerRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+  // Chat state
+  const [chatInput, setChatInput] = useState('');
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [sessionTitle, setSessionTitle] = useState('');
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Fetch document data
-  const { data: document } = useQuery({
-    queryKey: ['/api/documents', id],
-    enabled: !!id,
-  });
-
-  // Fetch document history
-  const { data: documentHistory } = useQuery({
-    queryKey: ['/api/documents', id, 'history'],
-    enabled: !!id,
-  });
-
-  // Initialize Tiptap editor with extensive formatting capabilities
+  // Editor setup with extensive functionality
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
+        heading: {
+          levels: [1, 2, 3],
+        },
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
       Underline,
-      Color.configure({ types: [TextStyle.name, ListItem.name] }),
+      Color,
       TextStyle,
       FontFamily.configure({
-        types: [TextStyle.name, ListItem.name],
+        types: ['textStyle'],
       }),
-      BulletList.configure({
-        HTMLAttributes: {
-          class: 'bullet-list',
-        },
-      }),
-      OrderedList.configure({
-        HTMLAttributes: {
-          class: 'ordered-list',
-        },
-      }),
-      ListItem,
     ],
-    content: documentContent,
-    onUpdate: ({ editor }) => {
-      const content = editor.getHTML();
-      setDocumentContent(content);
-      debouncedSave();
-    },
+    content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm focus:outline-none w-full max-w-none',
-        style: `font-family: ${fontFamily}; font-size: ${fontSize * zoomLevel / 100}pt; color: ${textColor}; line-height: 1.6; min-height: 100%;`,
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full',
+        style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
       },
     },
-    autofocus: true,
-    editable: true,
+    onUpdate: ({ editor }) => {
+      // Auto-save document changes
+      debouncedSave();
+    },
   });
 
+  // Fetch document
+  const { data: document, isLoading: documentLoading } = useQuery<Document>({
+    queryKey: ['document', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/documents/${id}`);
+      if (!response.ok) throw new Error('Failed to fetch document');
+      return response.json();
+    },
+    enabled: !!id,
+  });
 
+  // Fetch chat sessions for this document
+  const { data: chatSessions = [], refetch: refetchSessions } = useQuery<ChatSession[]>({
+    queryKey: ['chatSessions', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/documents/${id}/chat-sessions`);
+      if (!response.ok) throw new Error('Failed to fetch chat sessions');
+      return response.json();
+    },
+    enabled: !!id,
+  });
 
-  // Debounced auto-save function
-  const debouncedSave = useCallback(
-    debounce(() => {
-      if (currentDocument) {
-        saveDocument();
-      }
-    }, 1000),
-    [currentDocument, documentContent, pageSize, fontSize, fontFamily, textColor]
-  );
+  // Fetch messages for selected session
+  const { data: chatMessages = [], refetch: refetchMessages } = useQuery<ChatMessage[]>({
+    queryKey: ['chatMessages', selectedSessionId],
+    queryFn: async () => {
+      const response = await fetch(`/api/chat-sessions/${selectedSessionId}/messages`);
+      if (!response.ok) throw new Error('Failed to fetch chat messages');
+      return response.json();
+    },
+    enabled: !!selectedSessionId,
+  });
 
-  // Save document mutation
-  const saveDocumentMutation = useMutation({
-    mutationFn: async () => {
-      if (!currentDocument) return;
-      
-      const payload = {
-        title: currentDocument.title,
-        content: documentContent,
-        pages: [],
-        pageSize,
-        fontSize: fontSize.toString(),
-        fontFamily,
-        textColor,
-      };
-      
-      return await apiRequest(`/api/documents/${currentDocument.id}`, 'PATCH', payload);
+  // Update document mutation
+  const updateDocumentMutation = useMutation({
+    mutationFn: async (updates: Partial<Document>) => {
+      const response = await fetch(`/api/documents/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error('Failed to update document');
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
-      setIsAutoSaving(false);
+      queryClient.invalidateQueries({ queryKey: ['document', id] });
     },
-    onError: (error) => {
-      console.error('Save failed:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save document. Please try again.",
-        variant: "destructive",
-      });
-      setIsAutoSaving(false);
-    }
   });
 
-  const saveDocument = () => {
-    setIsAutoSaving(true);
-    saveDocumentMutation.mutate();
-  };
-
-  // Chat with AI mutation
-  const chatMutation = useMutation({
-    mutationFn: async (message: string) => {
-      const response = await apiRequest('/api/chat/document', 'POST', {
-        message,
-        documentContent: editor?.getHTML() || '',
-        documentId: id,
+  // Create chat session mutation
+  const createSessionMutation = useMutation({
+    mutationFn: async (data: { title: string; documentSnapshot: string }) => {
+      const response = await fetch(`/api/documents/${id}/chat-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
-      return response as any;
+      if (!response.ok) throw new Error('Failed to create chat session');
+      return response.json();
+    },
+    onSuccess: (session: ChatSession) => {
+      setSelectedSessionId(session.id);
+      setIsCreatingSession(false);
+      setSessionTitle('');
+      refetchSessions();
+      toast({ title: "Chat session created successfully" });
+    },
+  });
+
+  // Send chat message mutation with document command parsing
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const documentContent = editor?.getHTML() || '';
+      const response = await fetch(`/api/chat-sessions/${selectedSessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          content: message, 
+          documentContent,
+          documentId: id 
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to send message');
+      return response.json();
     },
     onSuccess: (response: any) => {
-      const assistantMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant' as const,
-        content: response.content || response.message || 'AI response received',
-        timestamp: new Date(),
-      };
+      refetchMessages();
+      setChatInput('');
       
-      setChatMessages(prev => [...prev, assistantMessage]);
-      
-      // Insert AI response into document at current cursor position
-      if (editor && assistantMessage.content) {
-        editor.chain().focus().insertContent(`<p>${assistantMessage.content}</p>`).run();
+      // Execute document commands if any
+      if (response.documentCommand) {
+        executeDocumentCommand(response.documentCommand);
       }
       
-      setIsProcessingChat(false);
-      setChatInput('');
+      // Insert text response into document if it's content
+      if (response.insertText && editor) {
+        if (response.insertAtEnd) {
+          editor.commands.focus('end');
+          editor.commands.insertContent(response.insertText);
+        } else {
+          editor.commands.focus();
+          editor.commands.insertContent(response.insertText);
+        }
+      }
     },
-    onError: (error) => {
-      console.error('Chat failed:', error);
-      toast({
-        title: "Chat Failed",
-        description: "Failed to process your request. Please try again.",
-        variant: "destructive",
-      });
-      setIsProcessingChat(false);
-    }
   });
 
-  const handleChatSubmit = () => {
-    if (!chatInput.trim()) return;
-    
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user' as const,
-      content: chatInput,
-      timestamp: new Date(),
-    };
-    
-    setChatMessages(prev => [...prev, userMessage]);
-    setIsProcessingChat(true);
-    chatMutation.mutate(chatInput);
-  };
+  // Execute document commands from ChatGPT
+  const executeDocumentCommand = useCallback((command: DocumentCommand) => {
+    if (!editor) return;
 
-  // Formatting functions
-  const formatBold = () => editor?.chain().focus().toggleBold().run();
-  const formatItalic = () => editor?.chain().focus().toggleItalic().run();
-  const formatUnderline = () => editor?.chain().focus().toggleUnderline().run();
-  const formatAlignLeft = () => editor?.chain().focus().setTextAlign('left').run();
-  const formatAlignCenter = () => editor?.chain().focus().setTextAlign('center').run();
-  const formatAlignRight = () => editor?.chain().focus().setTextAlign('right').run();
-  const formatAlignJustify = () => editor?.chain().focus().setTextAlign('justify').run();
-  const formatBulletList = () => editor?.chain().focus().toggleBulletList().run();
-  const formatOrderedList = () => editor?.chain().focus().toggleOrderedList().run();
-  const formatUndo = () => editor?.chain().focus().undo().run();
-  const formatRedo = () => editor?.chain().focus().redo().run();
-
-
-
-  // Load document data when it arrives
-  useEffect(() => {
-    if (document) {
-      const doc = document as Document;
-      setCurrentDocument(doc);
-      setDocumentContent(doc.content || '<p>Start writing your document...</p>');
-      setPageSize((doc.pageSize as keyof typeof PAGE_SIZES) || 'letter');
-      setFontSize(parseInt(doc.fontSize) || 12);
-      setFontFamily(doc.fontFamily || 'Times New Roman');
-      setTextColor(doc.textColor || '#000000');
+    switch (command.type) {
+      case 'delete_page':
+        // For simplicity, we'll clear content or remove sections
+        if (command.params.pageNumber === 1) {
+          editor.commands.clearContent();
+          toast({ title: `Page ${command.params.pageNumber} cleared` });
+        }
+        break;
+        
+      case 'format_text':
+        const { text, formatting } = command.params;
+        if (text && formatting) {
+          // Find and format specific text
+          const content = editor.getHTML();
+          let newContent = content;
+          
+          if (formatting.bold) {
+            newContent = newContent.replace(new RegExp(text, 'gi'), `<strong>${text}</strong>`);
+          }
+          if (formatting.italic) {
+            newContent = newContent.replace(new RegExp(`(?<!<strong>)${text}(?!</strong>)`, 'gi'), `<em>${text}</em>`);
+          }
+          if (formatting.underline) {
+            newContent = newContent.replace(new RegExp(text, 'gi'), `<u>${text}</u>`);
+          }
+          
+          editor.commands.setContent(newContent);
+          toast({ title: `Formatted text: "${text}"` });
+        }
+        break;
+        
+      case 'add_text':
+        const { text: addText, position, pageNumber } = command.params;
+        if (addText) {
+          if (position === 'end') {
+            editor.commands.focus('end');
+            editor.commands.insertContent(`<p>${addText}</p>`);
+          } else if (position === 'start') {
+            editor.commands.focus('start');
+            editor.commands.insertContent(`<p>${addText}</p>`);
+          } else {
+            editor.commands.focus();
+            editor.commands.insertContent(`<p>${addText}</p>`);
+          }
+          toast({ title: pageNumber ? `Added text to page ${pageNumber}` : "Text added to document" });
+        }
+        break;
+        
+      case 'replace_text':
+        const { targetText, newText } = command.params;
+        if (targetText && newText) {
+          const content = editor.getHTML();
+          const updatedContent = content.replace(new RegExp(targetText, 'gi'), newText);
+          editor.commands.setContent(updatedContent);
+          toast({ title: `Replaced "${targetText}" with "${newText}"` });
+        }
+        break;
     }
-  }, [document]);
+    
+    // Save changes after executing command
+    debouncedSave();
+  }, [editor, toast]);
 
-  // Update editor when document content changes
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(() => {
+      if (editor) {
+        updateDocumentMutation.mutate({
+          content: editor.getHTML(),
+          pageSize,
+          fontSize: fontSize.toString(),
+          fontFamily,
+          textColor,
+        });
+      }
+    }, 1000),
+    [editor, pageSize, fontSize, fontFamily, textColor]
+  );
+
+  // Initialize editor with document content
   useEffect(() => {
-    if (editor && documentContent !== editor.getHTML()) {
-      editor.commands.setContent(documentContent);
+    if (document && editor && document.content && !editor.getHTML().includes(document.content)) {
+      editor.commands.setContent(document.content || '<p></p>');
+      setPageSize((document.pageSize as keyof typeof PAGE_SIZES) || 'letter');
+      setFontSize(parseInt(document.fontSize || '12'));
+      setFontFamily(document.fontFamily || 'Times New Roman');
+      setTextColor(document.textColor || '#000000');
     }
-  }, [documentContent, editor]);
+  }, [document, editor]);
 
   // Update editor props when formatting changes
   useEffect(() => {
     if (editor) {
-      editor.view.dom.style.fontFamily = fontFamily;
-      editor.view.dom.style.fontSize = `${fontSize * zoomLevel / 100}pt`;
-      editor.view.dom.style.color = textColor;
+      editor.setOptions({
+        editorProps: {
+          attributes: {
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full',
+            style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
+          },
+        },
+      });
     }
-  }, [editor, fontFamily, fontSize, textColor, zoomLevel]);
+  }, [editor, fontFamily, fontSize, textColor]);
+
+  // Calculate page metrics
+  const pageWidth = PAGE_SIZES[pageSize].width * (zoomLevel / 100);
+  const pageHeight = PAGE_SIZES[pageSize].height * (zoomLevel / 100);
+  const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
+
+  // Calculate number of pages based on content height
+  const [pageCount, setPageCount] = useState(1);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const contentHeight = contentRef.current.scrollHeight;
+      const availableHeight = pageHeight - (padding * 2);
+      const calculatedPages = Math.max(1, Math.ceil(contentHeight / availableHeight));
+      setPageCount(calculatedPages);
+    }
+  }, [editor?.getHTML(), pageHeight, padding, zoomLevel]);
+
+  // Handle session creation
+  const handleCreateSession = () => {
+    if (sessionTitle.trim() && editor) {
+      createSessionMutation.mutate({
+        title: sessionTitle.trim(),
+        documentSnapshot: editor.getHTML(),
+      });
+    }
+  };
+
+  // Handle send message
+  const handleSendMessage = () => {
+    if (chatInput.trim() && selectedSessionId) {
+      sendMessageMutation.mutate(chatInput.trim());
+    }
+  };
+
+  // Toggle session expansion
+  const toggleSessionExpansion = (sessionId: string) => {
+    const newExpanded = new Set(expandedSessions);
+    if (newExpanded.has(sessionId)) {
+      newExpanded.delete(sessionId);
+    } else {
+      newExpanded.add(sessionId);
+    }
+    setExpandedSessions(newExpanded);
+  };
+
+  if (documentLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading document...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Toolbar */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {currentDocument?.title || 'Untitled Document'}
-          </h1>
-          <div className="flex items-center gap-2">
-            {isAutoSaving && <span className="text-sm text-gray-500">Saving...</span>}
-            <Button onClick={saveDocument} size="sm">
+    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+      {/* Top toolbar */}
+      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-white/20 p-4 shadow-lg">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <FileText className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
+            </div>
+            
+            {/* Formatting toolbar */}
+            <div className="flex items-center space-x-2 ml-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+                className={editor?.isActive('bold') ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              >
+                <Bold className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+                className={editor?.isActive('italic') ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              >
+                <Italic className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor?.chain().focus().toggleUnderline().run()}
+                className={editor?.isActive('underline') ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              >
+                <UnderlineIcon className="w-4 h-4" />
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                className={editor?.isActive({ textAlign: 'left' }) ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              >
+                <AlignLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                className={editor?.isActive({ textAlign: 'center' }) ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              >
+                <AlignCenter className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                className={editor?.isActive({ textAlign: 'right' }) ? 'bg-blue-100 dark:bg-blue-900' : ''}
+              >
+                <AlignRight className="w-4 h-4" />
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72].map(size => (
+                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={fontFamily} onValueChange={setFontFamily}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                  <SelectItem value="Arial">Arial</SelectItem>
+                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                  <SelectItem value="Georgia">Georgia</SelectItem>
+                  <SelectItem value="Verdana">Verdana</SelectItem>
+                  <SelectItem value="Courier New">Courier New</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
+            >
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <span className="text-sm font-medium w-12 text-center">{zoomLevel}%</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6" />
+            
+            <Button variant="outline" size="sm">
               <Save className="w-4 h-4 mr-2" />
               Save
             </Button>
           </div>
         </div>
-
-        {/* Formatting Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Undo/Redo */}
-          <Button variant="outline" size="sm" onClick={formatUndo}>
-            <Undo2 className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatRedo}>
-            <Redo2 className="w-4 h-4" />
-          </Button>
-          
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Font Family */}
-          <Select value={fontFamily} onValueChange={setFontFamily}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FONT_FAMILIES.map((font) => (
-                <SelectItem key={font} value={font}>{font}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Font Size */}
-          <Select value={fontSize.toString()} onValueChange={(size) => setFontSize(parseInt(size))}>
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FONT_SIZES.map((size) => (
-                <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Text Formatting */}
-          <Button variant="outline" size="sm" onClick={formatBold} 
-                  className={editor?.isActive('bold') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <Bold className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatItalic}
-                  className={editor?.isActive('italic') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <Italic className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatUnderline}
-                  className={editor?.isActive('underline') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <UnderlineIcon className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Alignment */}
-          <Button variant="outline" size="sm" onClick={formatAlignLeft}
-                  className={editor?.isActive({textAlign: 'left'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <AlignLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatAlignCenter}
-                  className={editor?.isActive({textAlign: 'center'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <AlignCenter className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatAlignRight}
-                  className={editor?.isActive({textAlign: 'right'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <AlignRight className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatAlignJustify}
-                  className={editor?.isActive({textAlign: 'justify'}) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <AlignJustify className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Lists */}
-          <Button variant="outline" size="sm" onClick={formatBulletList}
-                  className={editor?.isActive('bulletList') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <List className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={formatOrderedList}
-                  className={editor?.isActive('orderedList') ? 'bg-blue-100 dark:bg-blue-900' : ''}>
-            <ListOrdered className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Text Color */}
-          <div className="flex items-center gap-2">
-            <Palette className="w-4 h-4" />
-            <input
-              type="color"
-              value={textColor}
-              onChange={(e) => {
-                setTextColor(e.target.value);
-                editor?.chain().focus().setColor(e.target.value).run();
-              }}
-              className="w-8 h-8 rounded border"
-            />
-          </div>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Zoom */}
-          <Button variant="outline" size="sm" onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))}>
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <span className="text-sm font-medium w-12 text-center">{zoomLevel}%</span>
-          <Button variant="outline" size="sm" onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))}>
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Page Size */}
-          <Select value={pageSize} onValueChange={(size) => setPageSize(size as keyof typeof PAGE_SIZES)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PAGE_SIZES).map(([key, size]) => (
-                <SelectItem key={key} value={key}>{size.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
-      {/* Main Content Area */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        {/* Document History Panel */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-          <Card className="h-full rounded-none border-0 border-r">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <History className="w-5 h-5" />
-                Document History
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[calc(100vh-180px)]">
-                <div className="p-4 space-y-2">
-                  {(documentHistory as DocumentHistory[])?.map((historyItem: DocumentHistory) => (
-                    <div key={historyItem.id} 
-                         className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium">{historyItem.title}</span>
+      {/* Main content area */}
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Left panel - Chat Sessions History */}
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-r border-white/20">
+            <div className="p-4 border-b border-white/20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <History className="w-5 h-5 mr-2" />
+                  Chat History
+                </h2>
+                <Button
+                  size="sm"
+                  onClick={() => setIsCreatingSession(true)}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {isCreatingSession && (
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <Input
+                    placeholder="Session title..."
+                    value={sessionTitle}
+                    onChange={(e) => setSessionTitle(e.target.value)}
+                    className="mb-2"
+                    onKeyPress={(e) => e.key === 'Enter' && handleCreateSession()}
+                  />
+                  <div className="flex space-x-2">
+                    <Button size="sm" onClick={handleCreateSession} disabled={!sessionTitle.trim()}>
+                      Create
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      setIsCreatingSession(false);
+                      setSessionTitle('');
+                    }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <ScrollArea className="h-full p-4">
+              <div className="space-y-2">
+                {chatSessions.map((session: ChatSession) => (
+                  <div key={session.id} className="group">
+                    <div
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
+                        selectedSessionId === session.id
+                          ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
+                          : 'bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                      }`}
+                      onClick={() => {
+                        setSelectedSessionId(session.id);
+                        toggleSessionExpansion(session.id);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {expandedSessions.has(session.id) ? (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-gray-500" />
+                          )}
+                          <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <span className="font-medium text-gray-900 dark:text-white truncate">
+                            {session.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="sm" variant="ghost" className="p-1">
+                            <Share className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="p-1">
+                            <Edit3 className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="p-1 text-red-500">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {historyItem.createdAt ? new Date(historyItem.createdAt).toLocaleString() : 'Unknown date'}
-                      </p>
-                      {historyItem.changeDescription && (
-                        <p className="text-xs text-gray-500 mt-1">{historyItem.changeDescription}</p>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(session.createdAt || Date.now()).toLocaleDateString()}
+                      </div>
+                    </div>
+                    
+                    {expandedSessions.has(session.id) && selectedSessionId === session.id && (
+                      <div className="mt-2 ml-6 space-y-1">
+                        {chatMessages.slice(0, 3).map((message: ChatMessage, index: number) => (
+                          <div key={message.id} className="text-xs p-2 bg-gray-50 dark:bg-slate-800 rounded">
+                            <div className="flex items-center space-x-1 mb-1">
+                              {message.role === 'user' ? (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              ) : (
+                                <Brain className="w-3 h-3 text-purple-500" />
+                              )}
+                              <span className="font-medium text-gray-600 dark:text-gray-300">
+                                {message.role === 'user' ? 'You' : 'AI'}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300 truncate">
+                              {message.content}
+                            </p>
+                          </div>
+                        ))}
+                        {chatMessages.length > 3 && (
+                          <div className="text-xs text-gray-500 text-center py-1">
+                            +{chatMessages.length - 3} more messages
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle />
+
+        {/* Center panel - Document Editor */}
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <div className="h-full relative">
+            {/* Page status bar */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+              <Badge variant="secondary" className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                Page 1 of {pageCount} • {PAGE_SIZES[pageSize].name}
+              </Badge>
+            </div>
+            
+            {/* Document container */}
+            <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
+              <div className="min-h-full p-8 flex flex-col items-center">
+                {/* Render pages */}
+                {Array.from({ length: pageCount }, (_, pageIndex) => (
+                  <div
+                    key={pageIndex}
+                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative"
+                    style={{
+                      width: `${pageWidth}px`,
+                      height: `${pageHeight}px`,
+                      minHeight: `${pageHeight}px`,
+                    }}
+                  >
+                    {/* Page number indicator */}
+                    <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
+                      Page {pageIndex + 1}
+                    </div>
+                    
+                    {/* Page content */}
+                    <div
+                      ref={pageIndex === 0 ? contentRef : undefined}
+                      className="w-full h-full relative overflow-hidden"
+                      style={{ padding: `${padding}px` }}
+                    >
+                      {pageIndex === 0 ? (
+                        // First page gets the editor
+                        <EditorContent
+                          editor={editor}
+                          className="w-full h-full focus:outline-none prose prose-sm max-w-none"
+                          style={{
+                            fontFamily,
+                            fontSize: `${fontSize}pt`,
+                            color: textColor,
+                            lineHeight: '1.6',
+                          }}
+                        />
+                      ) : (
+                        // Subsequent pages show overflow content (simplified)
+                        <div className="text-gray-400 dark:text-gray-600 italic text-center pt-20">
+                          Additional content would appear here...
+                        </div>
                       )}
                     </div>
-                  )) || (
-                    <div className="text-center text-gray-500 py-8">
-                      <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No history yet</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                    
+                    {/* Page break indicator */}
+                    {pageIndex < pageCount - 1 && (
+                      <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
+                        ••• Page Break •••
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
         </ResizablePanel>
 
         <ResizableHandle />
 
-        {/* Document Editor Panel */}
-        <ResizablePanel defaultSize={55} minSize={40}>
-          <DocumentRenderer 
-            editor={editor}
-            pageSize={pageSize}
-            zoomLevel={zoomLevel}
-            fontSize={fontSize}
-            fontFamily={fontFamily}
-            textColor={textColor}
-            documentContent={documentContent}
-            onContentChange={setDocumentContent}
-          />
-        </ResizablePanel>
-
-        <ResizableHandle />
-
-        {/* AI Chat Panel */}
-        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-          <Card className="h-full rounded-none border-0 border-l">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="w-5 h-5" />
-                AI Assistant
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 h-[calc(100%-80px)] flex flex-col">
-              {/* Chat Messages */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {chatMessages.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Ask AI to help with your document</p>
-                      <p className="text-xs mt-1">AI responses will be added to your document</p>
-                    </div>
-                  ) : (
-                    chatMessages.map((message) => (
-                      <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] p-3 rounded-lg ${
-                          message.role === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                        }`}>
-                          <p className="text-sm">{message.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {message.timestamp.toLocaleTimeString()}
-                          </p>
+        {/* Right panel - ChatGPT Integration */}
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-l border-white/20 flex flex-col">
+            {/* Chat header */}
+            <div className="p-4 border-b border-white/20">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <Brain className="w-5 h-5 mr-2 text-purple-600" />
+                ChatGPT Assistant
+              </h2>
+              {selectedSessionId && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Document control commands available
+                </p>
+              )}
+            </div>
+            
+            {selectedSessionId ? (
+              <>
+                {/* Chat messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {chatMessages.map((message: ChatMessage) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] p-3 rounded-lg ${
+                            message.role === 'user'
+                              ? 'bg-blue-600 text-white ml-4'
+                              : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white mr-4 border border-gray-200 dark:border-slate-600'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2 mb-1">
+                            {message.role === 'user' ? (
+                              <div className="w-4 h-4 bg-white/20 rounded-full"></div>
+                            ) : (
+                              <Sparkles className="w-4 h-4 text-purple-500" />
+                            )}
+                            <span className="text-xs opacity-75">
+                              {message.role === 'user' ? 'You' : 'ChatGPT'}
+                            </span>
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          {message.documentCommand && (
+                            <div className="mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs">
+                              <Command className="w-3 h-3 inline mr-1" />
+                              Document command executed
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))
-                  )}
-                  {isProcessingChat && (
-                    <div className="flex justify-start">
-                      <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
+                </ScrollArea>
+                
+                {/* Chat input */}
+                <div className="p-4 border-t border-white/20">
+                  <div className="flex space-x-2">
+                    <Textarea
+                      placeholder="Ask ChatGPT to edit your document... Try: 'Make the title bold' or 'Add a conclusion paragraph'"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      className="flex-1 min-h-[60px] resize-none"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!chatInput.trim() || sendMessageMutation.isPending}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    <strong>Commands:</strong> "delete page 2", "make 'text' bold", "add paragraph to page 3"
+                  </div>
                 </div>
-              </ScrollArea>
-
-              {/* Chat Input */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex gap-2">
-                  <Input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask AI to help with your document..."
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleChatSubmit();
-                      }
-                    }}
-                    disabled={isProcessingChat}
-                  />
-                  <Button 
-                    onClick={handleChatSubmit} 
-                    disabled={!chatInput.trim() || isProcessingChat}
-                    size="sm"
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="text-center">
+                  <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Start a Chat Session
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Create a new chat session to get AI assistance with your document
+                  </p>
+                  <Button
+                    onClick={() => setIsCreatingSession(true)}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                   >
-                    Send
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Chat Session
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  AI responses will be inserted into your document at the current cursor position.
-                </p>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -1008,10 +787,10 @@ export default function DocumentWorkspace() {
 }
 
 // Utility function for debouncing
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
+function debounce<T extends (...args: any[]) => any>(func: T, delay: number): T {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  }) as T;
 }
