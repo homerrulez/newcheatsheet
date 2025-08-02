@@ -48,6 +48,51 @@
   --radius: 0.5rem;
 }
 
+/* Floating animations for background symbols */
+@keyframes float-right {
+  0% {
+    transform: translateX(0px) translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateX(20px) translateY(-10px) rotate(5deg);
+  }
+  50% {
+    transform: translateX(30px) translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateX(20px) translateY(10px) rotate(-5deg);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px) rotate(0deg);
+  }
+}
+
+@keyframes float-left {
+  0% {
+    transform: translateX(0px) translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-20px) translateY(10px) rotate(-5deg);
+  }
+  50% {
+    transform: translateX(-30px) translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateX(-20px) translateY(-10px) rotate(5deg);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px) rotate(0deg);
+  }
+}
+
+.animate-float-right {
+  animation: float-right 15s ease-in-out infinite;
+}
+
+.animate-float-left {
+  animation: float-left 18s ease-in-out infinite;
+}
+
 @layer base {
   * {
     @apply border-border;

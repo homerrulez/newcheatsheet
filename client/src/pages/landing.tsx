@@ -20,19 +20,31 @@ export default function Landing() {
   };
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 50%, #e8f5e8 100%)' }}>
-      {/* Frosted overlay with subtle math symbols */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 backdrop-blur-[1px]">
-        {/* Math symbols scattered as decoration */}
-        <div className="absolute top-20 left-[10%] text-6xl text-white/5 font-light select-none">∫</div>
-        <div className="absolute top-32 right-[15%] text-4xl text-white/6 font-light select-none">π</div>
-        <div className="absolute top-[40%] left-[5%] text-5xl text-white/4 font-light select-none">∑</div>
-        <div className="absolute bottom-[30%] right-[8%] text-7xl text-white/5 font-light select-none">√</div>
-        <div className="absolute top-[60%] right-[25%] text-3xl text-white/6 font-light select-none">α</div>
-        <div className="absolute bottom-[40%] left-[20%] text-4xl text-white/5 font-light select-none">∆</div>
-        <div className="absolute top-[25%] left-[70%] text-5xl text-white/4 font-light select-none">λ</div>
-        <div className="absolute bottom-[60%] right-[40%] text-3xl text-white/6 font-light select-none">≈</div>
-        <div className="absolute top-[70%] left-[60%] text-4xl text-white/5 font-light select-none">∞</div>
-        <div className="absolute bottom-[20%] left-[40%] text-5xl text-white/4 font-light select-none">θ</div>
+      {/* Frosted overlay with floating math symbols */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 backdrop-blur-[1px] z-0">
+        {/* Floating math symbols with animations */}
+        <div className="absolute top-20 left-[10%] text-6xl text-white/4 font-light select-none animate-float-right">∫</div>
+        <div className="absolute top-32 right-[15%] text-4xl text-white/5 font-light select-none animate-float-left">π</div>
+        <div className="absolute top-[40%] left-[5%] text-5xl text-white/3 font-light select-none animate-float-right">∑</div>
+        <div className="absolute bottom-[30%] right-[8%] text-7xl text-white/4 font-light select-none animate-float-left">√</div>
+        <div className="absolute top-[60%] right-[25%] text-3xl text-white/5 font-light select-none animate-float-left">α</div>
+        <div className="absolute bottom-[40%] left-[20%] text-4xl text-white/4 font-light select-none animate-float-right">∆</div>
+        <div className="absolute top-[25%] left-[70%] text-5xl text-white/3 font-light select-none animate-float-left">λ</div>
+        <div className="absolute bottom-[60%] right-[40%] text-3xl text-white/5 font-light select-none animate-float-right">≈</div>
+        <div className="absolute top-[70%] left-[60%] text-4xl text-white/4 font-light select-none animate-float-left">∞</div>
+        <div className="absolute bottom-[20%] left-[40%] text-5xl text-white/3 font-light select-none animate-float-right">θ</div>
+        
+        {/* Additional science symbols */}
+        <div className="absolute top-[15%] left-[85%] text-4xl text-white/4 font-light select-none animate-float-left">Ω</div>
+        <div className="absolute top-[50%] left-[15%] text-5xl text-white/3 font-light select-none animate-float-right">∂</div>
+        <div className="absolute bottom-[35%] right-[30%] text-3xl text-white/5 font-light select-none animate-float-left">β</div>
+        <div className="absolute top-[35%] right-[5%] text-6xl text-white/3 font-light select-none animate-float-left">∇</div>
+        <div className="absolute bottom-[50%] left-[35%] text-4xl text-white/4 font-light select-none animate-float-right">φ</div>
+        <div className="absolute top-[80%] right-[20%] text-3xl text-white/5 font-light select-none animate-float-left">γ</div>
+        <div className="absolute bottom-[15%] right-[60%] text-5xl text-white/3 font-light select-none animate-float-right">ψ</div>
+        <div className="absolute top-[45%] left-[45%] text-4xl text-white/4 font-light select-none animate-float-left">∈</div>
+        <div className="absolute bottom-[75%] left-[75%] text-3xl text-white/5 font-light select-none animate-float-right">≡</div>
+        <div className="absolute top-[55%] right-[70%] text-6xl text-white/3 font-light select-none animate-float-left">∇²</div>
       </div>
       {/* Header */}
       <header className="relative z-10 px-8 py-6">
