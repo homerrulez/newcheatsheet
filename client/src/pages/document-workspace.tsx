@@ -57,6 +57,57 @@ interface DocumentPageLayout {
   endPos: number;
 }
 
+// Page component for modular rendering
+function Page({ 
+  children, 
+  pageNumber, 
+  pageSize, 
+  zoomLevel 
+}: { 
+  children: React.ReactNode; 
+  pageNumber: number; 
+  pageSize: keyof typeof PAGE_SIZES;
+  zoomLevel: number;
+}) {
+  const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
+  const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
+  
+  return (
+    <div 
+      className="page bg-white shadow-lg mx-auto mb-8 relative overflow-hidden print:mb-0 print:shadow-none"
+      style={{
+        width: `${pageWidth}px`,
+        height: `${pageHeight}px`,
+      }}
+    >
+      <div className="p-16 h-full overflow-hidden">
+        {children}
+      </div>
+      
+      {/* Page number */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 print:hidden">
+        {pageNumber}
+      </div>
+    </div>
+  );
+}
+
+// Content block interface for pagination
+interface ContentBlock {
+  id: string;
+  type: 'paragraph' | 'heading1' | 'heading2' | 'heading3' | 'list' | 'blockquote';
+  content: string;
+  height: number;
+}
+
+// Page layout containing blocks
+interface PageLayout {
+  pageNumber: number;
+  blocks: ContentBlock[];
+  totalHeight: number;
+  hasOverflow: boolean;
+}
+
 function DocumentRenderer({ 
   editor, 
   pageSize, 
@@ -68,202 +119,364 @@ function DocumentRenderer({
   onContentChange 
 }: DocumentRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [pageCount, setPageCount] = useState(1);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [pageLayouts, setPageLayouts] = useState<PageLayout[]>([]);
+  const [activePageIndex, setActivePageIndex] = useState(0);
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   
   // Calculate actual page dimensions
-  const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
-  const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
-  const contentHeight = pageHeight - 128; // 64px padding top/bottom
+  const pageWidth = PAGE_SIZES[pageSize as keyof typeof PAGE_SIZES].width * 96 * zoomLevel / 100;
+  const pageHeight = PAGE_SIZES[pageSize as keyof typeof PAGE_SIZES].height * 96 * zoomLevel / 100;
+  const contentHeight = pageHeight - 128; // Account for padding
   
-  // Calculate page count based on editor content height (Google Docs style)
-  const updatePageCount = useCallback(() => {
-    if (!editorRef.current || !editor) return;
+  // Measure content height for pagination
+  const measureBlockHeight = useCallback((content: string, type: string): number => {
+    if (!measureRef.current) return 50; // Fallback
     
-    // Find the actual ProseMirror editor element
-    const proseMirrorEl = editorRef.current.querySelector('.ProseMirror');
-    if (!proseMirrorEl) return;
+    const measureElement = measureRef.current;
     
-    // Get the natural height of all content
-    const contentScrollHeight = proseMirrorEl.scrollHeight;
-    
-    // Calculate how many pages we need based on content height
-    const newPageCount = Math.max(1, Math.ceil(contentScrollHeight / contentHeight));
-    
-    if (newPageCount !== pageCount) {
-      setPageCount(newPageCount);
+    // Set appropriate HTML based on block type
+    let html = '';
+    switch (type) {
+      case 'heading1':
+        html = `<h1 style="font-size: ${fontSize * 1.5}pt; font-weight: bold; margin: 0.5em 0;">${content}</h1>`;
+        break;
+      case 'heading2':
+        html = `<h2 style="font-size: ${fontSize * 1.25}pt; font-weight: bold; margin: 0.4em 0;">${content}</h2>`;
+        break;
+      case 'heading3':
+        html = `<h3 style="font-size: ${fontSize * 1.1}pt; font-weight: bold; margin: 0.3em 0;">${content}</h3>`;
+        break;
+      case 'blockquote':
+        html = `<blockquote style="font-size: ${fontSize}pt; margin: 1em 0; padding-left: 1em; border-left: 3px solid #ccc;">${content}</blockquote>`;
+        break;
+      case 'list':
+        html = `<ul style="font-size: ${fontSize}pt; margin: 0.5em 0; padding-left: 1.5em;"><li>${content}</li></ul>`;
+        break;
+      default: // paragraph
+        html = `<p style="font-size: ${fontSize}pt; margin: 0.5em 0; line-height: 1.6;">${content}</p>`;
     }
-  }, [editor, contentHeight, pageCount]);
+    
+    measureElement.innerHTML = html;
+    const height = measureElement.offsetHeight;
+    measureElement.innerHTML = '';
+    
+    return height;
+  }, [fontSize]);
   
-  // Listen for editor content changes
+  // Parse editor content into blocks
+  const parseContentIntoBlocks = useCallback((): ContentBlock[] => {
+    if (!editor) return [];
+    
+    const html = editor.getHTML();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const elements = Array.from(doc.body.children);
+    
+    return elements.map((element, index) => {
+      let type: ContentBlock['type'] = 'paragraph';
+      let content = element.textContent || '';
+      
+      switch (element.tagName.toLowerCase()) {
+        case 'h1':
+          type = 'heading1';
+          break;
+        case 'h2':
+          type = 'heading2';
+          break;
+        case 'h3':
+          type = 'heading3';
+          break;
+        case 'blockquote':
+          type = 'blockquote';
+          break;
+        case 'ul':
+        case 'ol':
+          type = 'list';
+          content = Array.from(element.querySelectorAll('li')).map(li => li.textContent).join('\n');
+          break;
+        default:
+          type = 'paragraph';
+      }
+      
+      const height = measureBlockHeight(content, type);
+      
+      return {
+        id: `block-${index}`,
+        type,
+        content,
+        height
+      };
+    });
+  }, [editor, measureBlockHeight]);
+  
+  // Layout engine: distribute blocks across pages
+  const calculatePageLayouts = useCallback((): PageLayout[] => {
+    const blocks = parseContentIntoBlocks();
+    if (blocks.length === 0) {
+      return [{
+        pageNumber: 1,
+        blocks: [],
+        totalHeight: 0,
+        hasOverflow: false
+      }];
+    }
+    
+    const layouts: PageLayout[] = [];
+    let currentPage: PageLayout = {
+      pageNumber: 1,
+      blocks: [],
+      totalHeight: 0,
+      hasOverflow: false
+    };
+    
+    for (const block of blocks) {
+      // Check if block fits on current page
+      if (currentPage.totalHeight + block.height > contentHeight && currentPage.blocks.length > 0) {
+        // Current page is full, start new page
+        layouts.push(currentPage);
+        currentPage = {
+          pageNumber: layouts.length + 1,
+          blocks: [block],
+          totalHeight: block.height,
+          hasOverflow: block.height > contentHeight
+        };
+      } else {
+        // Add block to current page
+        currentPage.blocks.push(block);
+        currentPage.totalHeight += block.height;
+        if (currentPage.totalHeight > contentHeight) {
+          currentPage.hasOverflow = true;
+        }
+      }
+    }
+    
+    // Add final page
+    layouts.push(currentPage);
+    
+    return layouts;
+  }, [parseContentIntoBlocks, contentHeight]);
+  
+  // Update layouts when content changes
   useEffect(() => {
     if (!editor) return;
     
     const handleUpdate = () => {
-      // Update page count and content
       onContentChange(editor.getHTML());
-      setTimeout(updatePageCount, 100);
+      setTimeout(() => {
+        const newLayouts = calculatePageLayouts();
+        setPageLayouts(newLayouts);
+      }, 100);
     };
     
     editor.on('update', handleUpdate);
     
-    // Initial update
-    updatePageCount();
+    // Initial calculation
+    const initialLayouts = calculatePageLayouts();
+    setPageLayouts(initialLayouts);
     
     return () => {
       editor.off('update', handleUpdate);
     };
-  }, [editor, updatePageCount, onContentChange]);
+  }, [editor, calculatePageLayouts, onContentChange]);
   
-  // Real-time page count updates
+  // Recalculate when font size changes
   useEffect(() => {
-    const timer = setTimeout(updatePageCount, 200);
+    const timer = setTimeout(() => {
+      const newLayouts = calculatePageLayouts();
+      setPageLayouts(newLayouts);
+    }, 200);
     return () => clearTimeout(timer);
-  }, [updatePageCount, documentContent]);
+  }, [calculatePageLayouts, fontSize, fontFamily]);
+
+  // Handle block editing
+  const handleBlockEdit = useCallback((blockId: string, newContent: string) => {
+    if (!editor) return;
+    
+    // Update the editor content
+    // This is a simplified approach - in production you'd want more sophisticated block management
+    const blocks = parseContentIntoBlocks();
+    const blockIndex = blocks.findIndex(b => b.id === blockId);
+    
+    if (blockIndex >= 0) {
+      // For now, just focus the main editor and let Tiptap handle the editing
+      editor.commands.focus();
+      setActiveBlockId(blockId);
+    }
+  }, [editor, parseContentIntoBlocks]);
+  
+  // Handle page clicks
+  const handlePageClick = useCallback((pageIndex: number) => {
+    setActivePageIndex(pageIndex);
+    if (editor) {
+      editor.commands.focus();
+    }
+  }, [editor]);
 
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
-      {/* Page count status like Microsoft Word */}
+      {/* Page count status */}
       <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Page 1 of {pageCount}
+        Page {activePageIndex + 1} of {pageLayouts.length || 1}
       </div>
       
+      {/* Hidden measurement container */}
+      <div
+        ref={measureRef}
+        className="absolute -top-9999 -left-9999 invisible"
+        style={{
+          width: `${pageWidth - 128}px`, // Account for padding
+          fontFamily,
+          color: textColor,
+          lineHeight: '1.6',
+        }}
+      />
+      
       <div ref={containerRef} className="relative">
-        {/* Google Docs style: Single continuous editor with visual page boundaries */}
-        <div className="mx-auto relative" style={{ width: `${pageWidth}px` }}>
-          
-          {/* Visual page backgrounds (pointer-events-none so clicks go through to editor) */}
-          {Array.from({ length: pageCount }, (_, pageIndex) => (
-            <div
-              key={`page-${pageIndex}`}
-              className="bg-white shadow-lg mb-8 pointer-events-none"
-              style={{
-                width: `${pageWidth}px`,
-                height: `${pageHeight}px`,
-                position: 'relative',
-              }}
+        {pageLayouts.length > 0 ? (
+          // Render paginated content
+          pageLayouts.map((pageLayout, pageIndex) => (
+            <Page
+              key={`page-${pageLayout.pageNumber}`}
+              pageNumber={pageLayout.pageNumber}
+              pageSize={pageSize}
+              zoomLevel={zoomLevel}
             >
-              {/* Page number */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-                {pageIndex + 1}
+              <div
+                className={`h-full ${pageIndex === activePageIndex ? 'cursor-text' : 'cursor-pointer'}`}
+                style={{
+                  fontFamily,
+                  fontSize: `${fontSize}pt`,
+                  color: textColor,
+                  lineHeight: '1.6',
+                }}
+                onClick={() => handlePageClick(pageIndex)}
+              >
+                {pageIndex === activePageIndex ? (
+                  // Active page: Show live editor
+                  <div className="h-full overflow-hidden">
+                    <EditorContent 
+                      editor={editor}
+                      className="focus:outline-none prose prose-sm max-w-none h-full overflow-hidden"
+                    />
+                  </div>
+                ) : (
+                  // Inactive page: Show rendered blocks
+                  <div className="h-full overflow-hidden">
+                    {pageLayout.blocks.map((block) => {
+                      const BlockComponent = getBlockComponent(block.type);
+                      return (
+                        <BlockComponent
+                          key={block.id}
+                          content={block.content}
+                          fontSize={fontSize}
+                          isActive={block.id === activeBlockId}
+                          onClick={() => handleBlockEdit(block.id, block.content)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* Overflow indicator */}
+                {pageLayout.hasOverflow && (
+                  <div className="absolute bottom-20 right-4 text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
+                    Content overflow
+                  </div>
+                )}
               </div>
-              
-              {/* Page break line (except for last page) */}
-              {pageIndex < pageCount - 1 && (
-                <div 
-                  className="absolute bottom-0 left-0 right-0 border-b-2 border-dashed border-gray-200"
-                  style={{ height: '1px' }}
-                />
-              )}
-            </div>
-          ))}
-          
-          {/* Single continuous editor overlaid on all pages */}
-          <div
-            ref={editorRef}
-            className="absolute top-0 left-0 pointer-events-auto"
-            style={{
-              width: `${pageWidth}px`,
-              minHeight: `${pageCount * pageHeight + (pageCount - 1) * 32}px`, // Include gaps
-            }}
-          >
-            <div 
+            </Page>
+          ))
+        ) : (
+          // Fallback: Single page with editor
+          <Page pageNumber={1} pageSize={pageSize} zoomLevel={zoomLevel}>
+            <div
+              className="h-full cursor-text"
               style={{
                 fontFamily,
                 fontSize: `${fontSize}pt`,
                 color: textColor,
                 lineHeight: '1.6',
-                padding: '64px',
-                minHeight: '100%',
-                // Visual page break indicators using CSS background
-                backgroundImage: `repeating-linear-gradient(
-                  transparent 0,
-                  transparent ${pageHeight - 1}px,
-                  rgba(156, 163, 175, 0.2) ${pageHeight}px,
-                  rgba(156, 163, 175, 0.2) ${pageHeight + 32}px
-                )`,
-                backgroundSize: '100% auto',
-                backgroundPosition: '0 0',
               }}
+              onClick={() => handlePageClick(0)}
             >
-              {editor && (
-                <EditorContent 
-                  editor={editor}
-                  className="focus:outline-none prose prose-sm max-w-none"
-                  style={{
-                    minHeight: '100%',
-                    outline: 'none',
-                  }}
-                />
-              )}
+              <EditorContent 
+                editor={editor}
+                className="focus:outline-none prose prose-sm max-w-none h-full overflow-hidden"
+              />
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Individual page container with strict boundaries
-interface PageContainerProps {
-  pageIndex: number;
-  content: string;
-  pageWidth: number;
-  pageHeight: number;
-  fontSize: number;
-  fontFamily: string;
-  textColor: string;
-  editor: any;
-  onContentChange: (content: string) => void;
-}
-
-function PageContainer({ 
-  pageIndex, 
-  content, 
-  pageWidth, 
-  pageHeight, 
-  fontSize, 
-  fontFamily, 
-  textColor, 
-  editor,
-  onContentChange 
-}: PageContainerProps) {
-  return (
-    <div 
-      className="mx-auto bg-white shadow-lg relative overflow-hidden"
-      style={{
-        width: `${pageWidth}px`,
-        height: `${pageHeight}px`,
-      }}
-    >
-      <div 
-        className="absolute inset-0 p-16 overflow-hidden"
-        style={{
-          fontFamily,
-          fontSize: `${fontSize}pt`,
-          color: textColor,
-          lineHeight: '1.6',
-        }}
-      >
-        {editor && pageIndex === 0 ? (
-          <EditorContent 
-            editor={editor}
-            className="h-full w-full focus:outline-none prose prose-sm max-w-none"
-          />
-        ) : (
-          <div 
-            className="h-full w-full prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
+          </Page>
         )}
       </div>
-      
-      {/* Page number */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">
-        {pageIndex + 1}
-      </div>
     </div>
   );
+}
+
+// Block components for rendering different content types
+function getBlockComponent(type: ContentBlock['type']) {
+  switch (type) {
+    case 'heading1':
+      return ({ content, fontSize, isActive, onClick }: any) => (
+        <h1 
+          className={`font-bold mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
+          style={{ fontSize: `${fontSize * 1.5}pt` }}
+          onClick={onClick}
+        >
+          {content}
+        </h1>
+      );
+    case 'heading2':
+      return ({ content, fontSize, isActive, onClick }: any) => (
+        <h2 
+          className={`font-bold mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
+          style={{ fontSize: `${fontSize * 1.25}pt` }}
+          onClick={onClick}
+        >
+          {content}
+        </h2>
+      );
+    case 'heading3':
+      return ({ content, fontSize, isActive, onClick }: any) => (
+        <h3 
+          className={`font-bold mb-1 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
+          style={{ fontSize: `${fontSize * 1.1}pt` }}
+          onClick={onClick}
+        >
+          {content}
+        </h3>
+      );
+    case 'blockquote':
+      return ({ content, fontSize, isActive, onClick }: any) => (
+        <blockquote 
+          className={`border-l-4 border-gray-300 pl-4 mb-2 italic ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
+          style={{ fontSize: `${fontSize}pt` }}
+          onClick={onClick}
+        >
+          {content}
+        </blockquote>
+      );
+    case 'list':
+      return ({ content, fontSize, isActive, onClick }: any) => (
+        <ul 
+          className={`list-disc pl-6 mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
+          style={{ fontSize: `${fontSize}pt` }}
+          onClick={onClick}
+        >
+          {content.split('\n').map((item: string, index: number) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      );
+    default: // paragraph
+      return ({ content, fontSize, isActive, onClick }: any) => (
+        <p 
+          className={`mb-2 ${isActive ? 'bg-blue-50' : ''} cursor-pointer`}
+          style={{ fontSize: `${fontSize}pt` }}
+          onClick={onClick}
+        >
+          {content}
+        </p>
+      );
+  }
 }
 
 // Page size configurations (in inches)
