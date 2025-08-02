@@ -559,7 +559,9 @@ export default function DocumentWorkspace() {
 
   if (documentLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+      <div className="h-screen flex items-center justify-center" style={{
+        background: 'linear-gradient(135deg, #E8D5FF 0%, #F8E8FF 25%, #DCFCE7 50%, #A7F3D0 75%, #67E8F9 100%)'
+      }}>
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading document...</p>
@@ -569,7 +571,9 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen studyflow-gradient dark:studyflow-gradient-dark">
+    <div className="h-screen" style={{
+      background: 'linear-gradient(135deg, #E8D5FF 0%, #F8E8FF 25%, #DCFCE7 50%, #A7F3D0 75%, #67E8F9 100%)'
+    }}>
       {/* Enhanced Microsoft Word-Style Toolbar */}
       <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20">
         {/* Document title bar */}
@@ -748,7 +752,12 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline" 
                 title="Subscript"
-                onClick={() => editor?.chain().focus().toggleSubscript().run()}
+                onClick={() => {
+                  // Subscript formatting
+                  const { selection } = editor.state;
+                  const text = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                  editor?.chain().focus().insertContent(`<sub>${text || 'text'}</sub>`).run();
+                }}
               >
                 <span className="text-xs">X₂</span>
               </Button>
@@ -756,7 +765,12 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline" 
                 title="Superscript"
-                onClick={() => editor?.chain().focus().toggleSuperscript().run()}
+                onClick={() => {
+                  // Superscript formatting
+                  const { selection } = editor.state;
+                  const text = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                  editor?.chain().focus().insertContent(`<sup>${text || 'text'}</sup>`).run();
+                }}
               >
                 <span className="text-xs">X²</span>
               </Button>
@@ -764,7 +778,12 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline" 
                 title="Highlight"
-                onClick={() => editor?.chain().focus().toggleHighlight({ color: '#ffff00' }).run()}
+                onClick={() => {
+                  // Highlight text with yellow background
+                  const { selection } = editor.state;
+                  const text = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                  editor?.chain().focus().insertContent(`<span style="background-color: #ffff00;">${text || 'text'}</span>`).run();
+                }}
               >
                 <div className="w-4 h-4 bg-yellow-300 border rounded" />
               </Button>
