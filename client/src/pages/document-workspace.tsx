@@ -40,6 +40,13 @@ interface DocumentRendererProps {
   onContentChange: (content: string) => void;
 }
 
+// Content splitting engine for proper pagination
+interface PageContent {
+  nodes: any[];
+  htmlContent: string;
+  height: number;
+}
+
 function DocumentRenderer({ 
   editor, 
   pageSize, 
@@ -51,114 +58,204 @@ function DocumentRenderer({
   onContentChange 
 }: DocumentRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pageCount, setPageCount] = useState(1);
+  const [pages, setPages] = useState<PageContent[]>([{ nodes: [], htmlContent: '', height: 0 }]);
   
   // Calculate actual page dimensions
   const pageWidth = PAGE_SIZES[pageSize].width * 96 * zoomLevel / 100;
   const pageHeight = PAGE_SIZES[pageSize].height * 96 * zoomLevel / 100;
   const contentHeight = pageHeight - 128; // 64px padding top/bottom
   
-  // Live page count calculation based on content height
-  const updatePageCount = useCallback(() => {
-    if (!editor || !containerRef.current) return;
-    
-    // Find the actual editor content element
-    const editorElement = containerRef.current.querySelector('.ProseMirror');
-    if (!editorElement) return;
-    
-    // Calculate pages based on content height
-    const contentScrollHeight = editorElement.scrollHeight;
-    const pagesNeeded = Math.max(1, Math.ceil(contentScrollHeight / contentHeight));
-    setPageCount(pagesNeeded);
-  }, [editor, contentHeight]);
+  // Measure element height for pagination
+  const measureElement = useCallback((htmlContent: string): number => {
+    const measureDiv = document.createElement('div');
+    measureDiv.style.cssText = `
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: ${pageWidth - 128}px;
+      font-family: ${fontFamily};
+      font-size: ${fontSize}pt;
+      line-height: 1.6;
+      visibility: hidden;
+      padding: 0;
+      margin: 0;
+    `;
+    measureDiv.innerHTML = htmlContent;
+    document.body.appendChild(measureDiv);
+    const height = measureDiv.offsetHeight;
+    document.body.removeChild(measureDiv);
+    return height;
+  }, [pageWidth, fontFamily, fontSize]);
   
-  // Real-time page count updates
+  // Convert Tiptap node to HTML
+  const nodeToHTML = useCallback((node: any): string => {
+    if (!node) return '';
+    
+    switch (node.type) {
+      case 'paragraph':
+        const content = node.content?.map((inline: any) => {
+          if (inline.type === 'text') {
+            let text = inline.text || '';
+            if (inline.marks) {
+              for (const mark of inline.marks) {
+                if (mark.type === 'bold') text = `<strong>${text}</strong>`;
+                if (mark.type === 'italic') text = `<em>${text}</em>`;
+                if (mark.type === 'underline') text = `<u>${text}</u>`;
+              }
+            }
+            return text;
+          }
+          return '';
+        }).join('') || '';
+        return `<p style="margin: 0 0 1em 0; line-height: 1.6;">${content || '<br>'}</p>`;
+      
+      case 'heading':
+        const level = node.attrs?.level || 1;
+        const headingContent = node.content?.map((inline: any) => inline.text || '').join('') || '';
+        return `<h${level} style="margin: 0 0 0.5em 0; line-height: 1.2;">${headingContent}</h${level}>`;
+      
+      case 'bulletList':
+        const listItems = node.content?.map((item: any) => 
+          `<li>${nodeToHTML(item)}</li>`
+        ).join('') || '';
+        return `<ul style="margin: 0 0 1em 0; padding-left: 1.5em;">${listItems}</ul>`;
+      
+      case 'orderedList':
+        const orderedItems = node.content?.map((item: any) => 
+          `<li>${nodeToHTML(item)}</li>`
+        ).join('') || '';
+        return `<ol style="margin: 0 0 1em 0; padding-left: 1.5em;">${orderedItems}</ol>`;
+      
+      case 'listItem':
+        const itemContent = node.content?.map((child: any) => nodeToHTML(child)).join('') || '';
+        return itemContent;
+      
+      default:
+        return '<p style="margin: 0 0 1em 0;"><br></p>';
+    }
+  }, []);
+  
+  // Split content into pages based on height measurements
+  const paginateContent = useCallback(() => {
+    if (!editor) return;
+    
+    try {
+      const jsonDoc = editor.getJSON();
+      if (!jsonDoc?.content) {
+        setPages([{ nodes: [], htmlContent: '', height: 0 }]);
+        return;
+      }
+      
+      const newPages: PageContent[] = [];
+      let currentPage: PageContent = { nodes: [], htmlContent: '', height: 0 };
+      
+      // Process each node and split across pages
+      for (const node of jsonDoc.content) {
+        const nodeHTML = nodeToHTML(node);
+        const nodeHeight = measureElement(nodeHTML);
+        
+        // Check if node fits on current page
+        if (currentPage.height + nodeHeight > contentHeight && currentPage.nodes.length > 0) {
+          // Start new page
+          newPages.push(currentPage);
+          currentPage = { 
+            nodes: [node], 
+            htmlContent: nodeHTML, 
+            height: nodeHeight 
+          };
+        } else {
+          // Add to current page
+          currentPage.nodes.push(node);
+          currentPage.htmlContent += nodeHTML;
+          currentPage.height += nodeHeight;
+        }
+      }
+      
+      // Add final page
+      if (currentPage.nodes.length > 0) {
+        newPages.push(currentPage);
+      }
+      
+      // Ensure at least one page
+      if (newPages.length === 0) {
+        newPages.push({ nodes: [], htmlContent: '', height: 0 });
+      }
+      
+      setPages(newPages);
+    } catch (error) {
+      console.error('Content pagination error:', error);
+      setPages([{ nodes: [], htmlContent: '', height: 0 }]);
+    }
+  }, [editor, nodeToHTML, measureElement, contentHeight]);
+  
+  // Real-time content splitting
   useEffect(() => {
-    const timer = setTimeout(updatePageCount, 200);
+    const timer = setTimeout(paginateContent, 300);
     return () => clearTimeout(timer);
-  }, [updatePageCount, documentContent]);
+  }, [paginateContent, documentContent]);
   
-  // Listen for editor updates for live pagination
+  // Listen for editor updates
   useEffect(() => {
     if (!editor) return;
     
     const handleUpdate = () => {
-      setTimeout(updatePageCount, 100);
+      setTimeout(paginateContent, 100);
     };
     
     editor.on('update', handleUpdate);
     return () => editor.off('update', handleUpdate);
-  }, [editor, updatePageCount]);
+  }, [editor, paginateContent]);
   
   return (
     <div className="h-full bg-gray-100 dark:bg-gray-800 p-8 overflow-auto">
       {/* Page count status like Microsoft Word */}
       <div className="text-center mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Page {pageCount > 0 ? '1' : '1'} of {pageCount}
+        Page 1 of {pages.length}
       </div>
       
-      <div ref={containerRef} className="relative">
-        {/* Live paginated editor container - like Microsoft Word */}
-        <div className="mx-auto space-y-8" style={{ width: `${pageWidth}px` }}>
-          
-          {/* Page background containers with single continuous editor overlay */}
-          <div className="relative">
-            {/* Visual page backgrounds */}
-            {Array.from({ length: pageCount }, (_, pageIndex) => (
-              <div
-                key={`page-${pageIndex}`}
-                className="bg-white shadow-lg mb-8 relative"
-                style={{
-                  width: `${pageWidth}px`,
-                  height: `${pageHeight}px`,
-                }}
-              >
-                {/* Page number */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
-                  {pageIndex + 1}
-                </div>
-              </div>
-            ))}
-            
-            {/* Single continuous editor positioned over all pages */}
-            <div
-              className="absolute top-0 left-0 w-full"
+      <div ref={containerRef} className="space-y-8">
+        {/* Render each page with its unique content */}
+        {pages.map((page, pageIndex) => (
+          <div
+            key={pageIndex}
+            className="mx-auto bg-white shadow-lg relative"
+            style={{
+              width: `${pageWidth}px`,
+              height: `${pageHeight}px`,
+              overflow: 'hidden', // Critical: clips content to page boundaries
+            }}
+          >
+            {/* Page-specific content */}
+            <div 
+              className="p-16 h-full overflow-hidden"
               style={{
-                height: `${pageCount * (pageHeight + 32)}px`, // Include page gaps
-                pointerEvents: 'auto',
+                fontFamily,
+                fontSize: `${fontSize}pt`,
+                color: textColor,
+                lineHeight: '1.6',
               }}
             >
-              <div 
-                className="w-full h-full"
-                style={{
-                  fontFamily,
-                  fontSize: `${fontSize}pt`,
-                  color: textColor,
-                  lineHeight: '1.6',
-                }}
-              >
-                {editor && (
-                  <EditorContent 
-                    editor={editor}
-                    className="focus:outline-none prose prose-sm max-w-none"
-                    style={{
-                      padding: '64px',
-                      minHeight: '100%',
-                      // Create page break visual cues
-                      backgroundImage: `repeating-linear-gradient(
-                        transparent 0,
-                        transparent ${pageHeight - 1}px,
-                        #e5e7eb ${pageHeight}px,
-                        #e5e7eb ${pageHeight + 32}px
-                      )`,
-                      backgroundSize: '100% auto',
-                    }}
-                  />
-                )}
-              </div>
+              {pageIndex === 0 && editor ? (
+                // First page gets the live editor
+                <EditorContent 
+                  editor={editor}
+                  className="focus:outline-none prose prose-sm max-w-none"
+                />
+              ) : (
+                // Other pages show static content splits
+                <div 
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: page.htmlContent }}
+                />
+              )}
+            </div>
+            
+            {/* Page number */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 pointer-events-none">
+              {pageIndex + 1}
             </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
