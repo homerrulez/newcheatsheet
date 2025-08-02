@@ -48,25 +48,37 @@
   --radius: 0.5rem;
 }
 
-/* StudyFlow gradient background - exact match */
+/* StudyFlow gradient background - exact 1:1 replica from Math Company */
 .studyflow-gradient {
-  background: linear-gradient(135deg, 
-    #E8D5FF 0%,     /* Light purple */
-    #F8E8FF 25%,    /* Very light purple/pink */
-    #DCFCE7 50%,    /* Light mint */
-    #A7F3D0 75%,    /* Light cyan */
-    #67E8F9 100%    /* Bright cyan */
+  background: linear-gradient(to right, 
+    #E8D5FF 0%,     /* Light lavender */
+    #F3E8FF 15%,    /* Very light purple */
+    #F8BBD9 30%,    /* Light pink */
+    #E0F2FE 45%,    /* Light blue */
+    #B2F5EA 60%,    /* Light mint */
+    #7DD3FC 75%,    /* Light cyan */
+    #67E8F9 90%,    /* Bright cyan */
+    #22D3EE 100%    /* Turquoise */
   );
 }
 
-.studyflow-gradient-dark {
-  background: linear-gradient(135deg, 
-    #4C1D95 0%,     /* Dark purple */
-    #7C2D92 25%,    /* Purple */
-    #065F46 50%,    /* Dark green */
-    #0E7490 75%,    /* Dark cyan */
-    #0891B2 100%    /* Dark cyan-blue */
-  );
+/* Global background for all pages */
+body {
+  background: linear-gradient(to right, 
+    #E8D5FF 0%,     /* Light lavender */
+    #F3E8FF 15%,    /* Very light purple */
+    #F8BBD9 30%,    /* Light pink */
+    #E0F2FE 45%,    /* Light blue */
+    #B2F5EA 60%,    /* Light mint */
+    #7DD3FC 75%,    /* Light cyan */
+    #67E8F9 90%,    /* Bright cyan */
+    #22D3EE 100%    /* Turquoise */
+  ) !important;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center center;
+  min-height: 100vh;
 }
 
 /* Floating animations for background symbols */

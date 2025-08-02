@@ -19,7 +19,7 @@ export default function Landing() {
     setVideoModal({ isOpen: false, type: '', title: '' });
   };
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(90deg, #8B5CF6 0%, #A855F7 25%, #06B6D4 50%, #0891B2 75%, #0E7490 100%)' }}>
+    <div className="min-h-screen relative overflow-hidden">
       {/* Frosted overlay with floating math symbols */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-blue-400/5 to-purple-600/10 backdrop-blur-[1px] z-0">
         {/* Floating math symbols - more visible */}
