@@ -10,6 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### August 2, 2025 - Fixed ChatGPT Layout & Panel Separation
+- **Issues Resolved**: 
+  - ChatGPT interface now always visible at top of right panel - no scrolling needed
+  - Removed duplicate chat history from right panel - now only appears in proper left panel location
+  - Fixed three-panel layout separation - chat history belongs exclusively in left panel
+- **Layout Improvements**:
+  - **ChatGPT Position**: Always visible at top of right panel with compact design
+  - **Panel Separation**: Clear distinction between left (chat history) and right (ChatGPT assistant) panels
+  - **No Scrolling**: ChatGPT input box immediately accessible without any scrolling
+  - **Proper Organization**: Chat sessions appear only in left panel where they belong
+
 ### August 2, 2025 - Natural Language ChatGPT Integration & Layout Engine
 - **Issues Resolved**: 
   - Fixed ChatGPT adding command text instead of actual content when users request natural content creation

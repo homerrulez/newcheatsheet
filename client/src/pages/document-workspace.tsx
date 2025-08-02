@@ -1155,43 +1155,6 @@ export default function DocumentWorkspace() {
                 </p>
               </div>
             </div>
-            
-            {/* Chat sessions list below */}
-            <div className="flex-1 px-4 pb-4">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">Chat History</h4>
-              <ScrollArea className="h-40">
-                <div className="space-y-2">
-                  {chatSessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className={`p-2 rounded border text-xs cursor-pointer transition-colors ${
-                        session.id === defaultSessionId
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                          : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600'
-                      }`}
-                      onClick={() => setDefaultSessionId(session.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="truncate font-medium text-gray-900 dark:text-white">
-                          {session.title}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteSession(session.id);
-                          }}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
