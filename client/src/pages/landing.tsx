@@ -72,42 +72,42 @@ export default function Landing() {
         </div>
 
         {/* Workspace Cards and Video Previews */}
-        <div className="grid md:grid-cols-3 gap-24 mb-12 max-w-8xl mx-auto px-8">
+        <div className="grid md:grid-cols-3 gap-8 mb-12">
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-cyan-300/90 hover:via-purple-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between min-h-[400px] w-full">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-cyan-300/90 hover:via-purple-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between">
                 {/* AI Lighting Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                 <div className="absolute top-2 right-2 w-2 h-2 bg-cyan-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"></div>
                 <div className="absolute bottom-4 left-4 w-1 h-1 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-pulse delay-100"></div>
                 <div className="absolute top-1/2 left-2 w-1.5 h-1.5 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce delay-200"></div>
-                <div className="flex flex-col items-center mb-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-                    <Layout className="text-gray-800 text-3xl" />
+                <div className="flex flex-col items-center mb-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                    <Layout className="text-gray-800 text-2xl" />
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Template</h3>
-                  <p className="text-lg text-gray-700 text-center">Smart Templates Powered by AI</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1 text-center">Template</h3>
+                  <p className="text-sm text-gray-700 text-center">Smart Templates Powered by AI</p>
                 </div>
 
                 {/* Feature List */}
-                <div className="bg-gradient-to-br from-white/60 via-cyan-50/45 to-purple-50/35 backdrop-blur-xl border border-white/50 rounded-xl p-4 space-y-3 shadow-lg shadow-cyan-200/30 ring-1 ring-white/20">
-                  <p className="text-sm text-gray-700 text-center mb-3 font-medium">Pre-designed templates with structured layouts for academic sheets.</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                <div className="bg-gradient-to-br from-white/60 via-cyan-50/45 to-purple-50/35 backdrop-blur-xl border border-white/50 rounded-xl p-3 space-y-2 shadow-lg shadow-cyan-200/30 ring-1 ring-white/20">
+                  <p className="text-xs text-gray-700 text-center mb-2 font-medium">Pre-designed templates with structured layouts for academic sheets.</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       8.5x11 layout
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Fixed structure
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Professional
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Print ready
                     </div>
                   </div>
@@ -148,38 +148,38 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-300/90 hover:via-pink-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between min-h-[400px] w-full">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-300/90 hover:via-pink-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between">
                 {/* AI Lighting Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/20 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                 <div className="absolute top-3 left-3 w-2 h-2 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping delay-75"></div>
                 <div className="absolute bottom-6 right-6 w-1 h-1 bg-pink-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-pulse delay-150"></div>
                 <div className="absolute top-1/3 right-3 w-1.5 h-1.5 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce delay-300"></div>
-                <div className="flex flex-col items-center mb-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-                    <Brain className="text-gray-800 text-3xl" />
+                <div className="flex flex-col items-center mb-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                    <Brain className="text-gray-800 text-2xl" />
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Cheatsheet</h3>
-                  <p className="text-lg text-gray-700 text-center">Cheat Sheets Powered by AI</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1 text-center">Cheatsheet</h3>
+                  <p className="text-sm text-gray-700 text-center">Cheat Sheets Powered by AI</p>
                 </div>
 
                 {/* Feature List */}
-                <div className="bg-gradient-to-br from-white/65 via-purple-50/50 to-blue-50/40 backdrop-blur-xl border border-white/50 rounded-xl p-4 space-y-3 shadow-lg shadow-purple-200/30 ring-1 ring-white/20">
-                  <p className="text-sm text-gray-700 text-center mb-3 font-medium">Organized cheat sheets with auto-resizing content boxes.</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                <div className="bg-gradient-to-br from-white/65 via-purple-50/50 to-blue-50/40 backdrop-blur-xl border border-white/50 rounded-xl p-3 space-y-2 shadow-lg shadow-purple-200/30 ring-1 ring-white/20">
+                  <p className="text-xs text-gray-700 text-center mb-2 font-medium">Organized cheat sheets with auto-resizing content boxes.</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Auto-sizing
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Formulas
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       History
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Export ready
                     </div>
                   </div>
@@ -220,38 +220,38 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document/test-doc-1">
-              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-blue-300/90 hover:via-green-300/90 hover:to-cyan-300/90 aspect-square flex flex-col justify-between min-h-[400px] w-full">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-blue-300/90 hover:via-green-300/90 hover:to-cyan-300/90 aspect-square flex flex-col justify-between">
                 {/* AI Lighting Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                 <div className="absolute top-4 right-4 w-2 h-2 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping delay-100"></div>
                 <div className="absolute bottom-3 left-6 w-1 h-1 bg-green-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-pulse delay-200"></div>
                 <div className="absolute top-2/3 left-2 w-1.5 h-1.5 bg-cyan-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce delay-250"></div>
-                <div className="flex flex-col items-center mb-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-                    <PenTool className="text-gray-800 text-3xl" />
+                <div className="flex flex-col items-center mb-3">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg mb-3">
+                    <PenTool className="text-gray-800 text-2xl" />
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Document</h3>
-                  <p className="text-lg text-gray-700 text-center">Smart Documents Powered by AI</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1 text-center">Document</h3>
+                  <p className="text-sm text-gray-700 text-center">Smart Documents Powered by AI</p>
                 </div>
 
                 {/* Feature List */}
-                <div className="bg-gradient-to-br from-white/70 via-blue-50/55 to-green-50/45 backdrop-blur-xl border border-white/50 rounded-xl p-4 space-y-3 shadow-lg shadow-blue-200/30 ring-1 ring-white/20">
-                  <p className="text-sm text-gray-700 text-center mb-3 font-medium">Documents with AI assistance and LaTeX for academic content.</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                <div className="bg-gradient-to-br from-white/70 via-blue-50/55 to-green-50/45 backdrop-blur-xl border border-white/50 rounded-xl p-3 space-y-2 shadow-lg shadow-blue-200/30 ring-1 ring-white/20">
+                  <p className="text-xs text-gray-700 text-center mb-2 font-medium">Documents with AI assistance and LaTeX for academic content.</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       Rich editing
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       LaTeX math
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       History
                     </div>
                     <div className="flex items-center">
-                      <Check className="w-4 h-4 text-emerald-600 mr-2 flex-shrink-0" />
+                      <Check className="w-3 h-3 text-emerald-600 mr-1 flex-shrink-0" />
                       AI formatting
                     </div>
                   </div>
