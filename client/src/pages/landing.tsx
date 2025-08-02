@@ -72,11 +72,11 @@ export default function Landing() {
         </div>
 
         {/* Workspace Cards and Video Previews */}
-        <div className="grid md:grid-cols-3 gap-16 mb-12 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-24 mb-12 max-w-8xl mx-auto px-8">
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-cyan-300/90 hover:via-purple-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between min-h-[320px]">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-cyan-300/90 hover:via-purple-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between min-h-[400px] w-full">
                 {/* AI Lighting Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                 <div className="absolute top-2 right-2 w-2 h-2 bg-cyan-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"></div>
@@ -148,7 +148,7 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-300/90 hover:via-pink-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between min-h-[320px]">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-purple-300/90 hover:via-pink-300/90 hover:to-blue-300/90 aspect-square flex flex-col justify-between min-h-[400px] w-full">
                 {/* AI Lighting Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/20 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                 <div className="absolute top-3 left-3 w-2 h-2 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping delay-75"></div>
@@ -220,7 +220,7 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document/test-doc-1">
-              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-blue-300/90 hover:via-green-300/90 hover:to-cyan-300/90 aspect-square flex flex-col justify-between min-h-[320px]">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer group relative overflow-hidden hover:scale-105 hover:bg-gradient-to-br hover:from-blue-300/90 hover:via-green-300/90 hover:to-cyan-300/90 aspect-square flex flex-col justify-between min-h-[400px] w-full">
                 {/* AI Lighting Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
                 <div className="absolute top-4 right-4 w-2 h-2 bg-blue-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping delay-100"></div>
