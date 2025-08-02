@@ -37,27 +37,27 @@ export default function Landing() {
         <div className="absolute top-[15%] right-[60%] text-2xl text-white/20 font-light select-none animate-float-up">φ</div>
       </div>
       {/* Header */}
-      <header className="relative z-10 px-4 py-4">
-        <nav className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 flex items-center justify-center">
+      <header className="absolute top-0 left-0 right-0 z-10 px-8 py-6">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-4">
+            <div className="w-20 h-20 flex items-center justify-center">
               <img 
                 src="/src/assets/brain-logo.png" 
                 alt="StudyFlow" 
-                className="w-12 h-12 brightness-110 contrast-125"
+                className="w-20 h-20 brightness-110 contrast-125"
               />
             </div>
-            <h1 className="text-lg font-light text-white tracking-wider" style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: '300', letterSpacing: '0.15em' }}>StudyFlow</h1>
+            <h1 className="text-xl font-light text-white tracking-wider" style={{ fontFamily: '"Space Grotesk", sans-serif', fontWeight: '300', letterSpacing: '0.15em' }}>StudyFlow</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" className="text-white/90 hover:text-white font-medium hover:bg-white/10 transition-all duration-300 px-4 py-2 text-sm rounded-lg" style={{ fontFamily: '"Inter", sans-serif', fontWeight: '500' }}>
+            <Button variant="ghost" className="text-white/90 hover:text-white font-medium hover:bg-white/10 transition-all duration-300 px-5 py-2 text-sm rounded-lg" style={{ fontFamily: '"Inter", sans-serif', fontWeight: '500' }}>
               Log In
             </Button>
-            <Button variant="ghost" className="text-white/90 hover:text-white font-medium hover:bg-white/10 transition-all duration-300 px-4 py-2 text-sm rounded-lg" style={{ fontFamily: '"Inter", sans-serif', fontWeight: '500' }}>
+            <Button variant="ghost" className="text-white/90 hover:text-white font-medium hover:bg-white/10 transition-all duration-300 px-5 py-2 text-sm rounded-lg" style={{ fontFamily: '"Inter", sans-serif', fontWeight: '500' }}>
               Register
             </Button>
           </div>
-        </nav>
+        </div>
       </header>
 
       {/* Hero Section */}
