@@ -96,6 +96,17 @@ export default function DocumentWorkspace() {
     enabled: !!id,
   });
 
+  // Fetch document history
+  const { data: documentHistory = [], refetch: refetchHistory } = useQuery({
+    queryKey: ['documentHistory', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/documents/${id}/history`);
+      if (!response.ok) throw new Error('Failed to fetch document history');
+      return response.json();
+    },
+    enabled: !!id,
+  });
+
   // Fetch chat sessions for this document
   const { data: chatSessions = [], refetch: refetchSessions } = useQuery<ChatSession[]>({
     queryKey: ['chatSessions', id],
@@ -349,6 +360,38 @@ export default function DocumentWorkspace() {
     }
   };
 
+  // Create document history entry
+  const createHistoryEntry = async () => {
+    try {
+      const response = await fetch(`/api/documents/${id}/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: id,
+          title: `Version ${new Date().toLocaleTimeString()}`,
+          content: editor?.getHTML() || '<p></p>',
+          pages: [],
+          changeDescription: 'Manual snapshot created'
+        }),
+      });
+      if (response.ok) {
+        refetchHistory();
+        toast({ title: "Document snapshot created" });
+      }
+    } catch (error) {
+      console.error('Failed to create history entry:', error);
+      toast({ title: "Failed to create snapshot", variant: "destructive" });
+    }
+  };
+
+  // Load document version from history
+  const loadDocumentVersion = (historyItem: any) => {
+    if (editor && historyItem.content) {
+      editor.commands.setContent(historyItem.content);
+      toast({ title: `Loaded version: ${historyItem.title}` });
+    }
+  };
+
   // Toggle session expansion
   const toggleSessionExpansion = (sessionId: string) => {
     const newExpanded = new Set(expandedSessions);
@@ -496,71 +539,105 @@ export default function DocumentWorkspace() {
 
       {/* Main content area */}
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Left panel - Chat Sessions History */}
+        {/* Left panel - Document History */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
           <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-r border-white/20">
             <div className="p-4 border-b border-white/20">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                <History className="w-5 h-5 mr-2" />
-                Chat History
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                All conversations with your document
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <History className="w-5 h-5 mr-2" />
+                    Document History
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    All versions and snapshots
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={createHistoryEntry}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Save Version
+                </Button>
+              </div>
             </div>
             
             <ScrollArea className="h-full p-4">
               <div className="space-y-2">
-                {chatSessions.map((session: ChatSession) => (
-                  <div key={session.id} className="group">
-                    <div
-                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                        defaultSessionId === session.id
-                          ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
-                          : 'bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                      }`}
-                      onClick={() => {
-                        setDefaultSessionId(session.id);
-                        toggleSessionExpansion(session.id);
-                      }}
-                    >
+                {documentHistory.map((historyItem: any) => (
+                  <div key={historyItem.id} className="group">
+                    <div className="p-3 rounded-lg border bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          {expandedSessions.has(session.id) ? (
-                            <ChevronDown className="w-4 h-4 text-gray-500" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-gray-500" />
-                          )}
-                          <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
                           <span className="font-medium text-gray-900 dark:text-white truncate">
-                            {session.title}
+                            {historyItem.title}
                           </span>
                         </div>
                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button size="sm" variant="ghost" className="p-1">
-                            <Share className="w-3 h-3" />
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="p-1"
+                            onClick={() => loadDocumentVersion(historyItem)}
+                            title="Load this version"
+                          >
+                            <Eye className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="p-1">
-                            <Edit3 className="w-3 h-3" />
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="p-1"
+                            title="Copy version"
+                          >
+                            <Copy className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="p-1 text-red-500">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="p-1"
+                            title="Download version"
+                          >
+                            <Download className="w-3 h-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="p-1 text-red-500"
+                            title="Delete version"
+                          >
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {new Date(session.createdAt || Date.now()).toLocaleDateString()}
+                        {new Date(historyItem.createdAt || Date.now()).toLocaleString()}
                       </div>
+                      {historyItem.changeDescription && (
+                        <div className="text-xs text-gray-600 dark:text-gray-300 mt-1 italic">
+                          {historyItem.changeDescription}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
                 
-                {chatSessions.length === 0 && (
+                {documentHistory.length === 0 && (
                   <div className="text-center py-8">
-                    <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Start chatting to see conversation history
+                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      No document versions yet
                     </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={createHistoryEntry}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Create First Version
+                    </Button>
                   </div>
                 )}
               </div>

@@ -7,7 +7,8 @@ import {
   insertCheatSheetSchema, 
   insertTemplateSchema,
   insertChatMessageSchema,
-  insertChatSessionSchema
+  insertChatSessionSchema,
+  insertDocumentHistorySchema
 } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -74,6 +75,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/documents/:id/history", async (req, res) => {
+    try {
+      const validatedData = insertDocumentHistorySchema.parse(req.body);
+      const history = await storage.createDocumentHistory({
+        ...validatedData,
+        documentId: req.params.id
+      });
+      res.json(history);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid document history data" });
+    }
+  });
+
   // Chat Sessions API
   app.get("/api/documents/:id/chat-sessions", async (req, res) => {
     try {
@@ -90,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const session = await storage.createChatSession({
         ...validatedData,
         documentId: req.params.id
-      });
+      } as any);
       res.json(session);
     } catch (error) {
       res.status(400).json({ message: "Invalid chat session data" });

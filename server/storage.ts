@@ -303,6 +303,26 @@ export class MemStorage implements IStorage {
     this.chatMessages.set(id, message);
     return message;
   }
+
+  async getDocumentHistory(documentId: string): Promise<DocumentHistory[]> {
+    return Array.from(this.documentHistory.values())
+      .filter(history => history.documentId === documentId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async createDocumentHistory(history: InsertDocumentHistory): Promise<DocumentHistory> {
+    const id = randomUUID();
+    const now = new Date();
+    const newHistory: DocumentHistory = { 
+      ...history,
+      pages: history.pages || [],
+      changeDescription: history.changeDescription || null,
+      id, 
+      createdAt: now 
+    };
+    this.documentHistory.set(id, newHistory);
+    return newHistory;
+  }
 }
 
 export const storage = new MemStorage();
