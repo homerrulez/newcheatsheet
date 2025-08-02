@@ -61,7 +61,7 @@ export default function Landing() {
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="bg-gradient-to-br from-emerald-200 via-cyan-200 to-teal-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <FileSpreadsheet className="text-white text-3xl" />
@@ -96,7 +96,7 @@ export default function Landing() {
             {/* Embedded Video Preview */}
             <button 
               onClick={() => openVideoModal('template', 'Smart Templates Powered by AI')}
-              className="w-full aspect-video bg-gradient-to-br from-emerald-300 via-cyan-300 to-teal-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="w-full aspect-video bg-gradient-to-br from-cyan-300 via-purple-300 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
@@ -107,7 +107,7 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="bg-gradient-to-br from-violet-200 via-purple-200 to-indigo-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <Grid3X3 className="text-white text-3xl" />
@@ -142,7 +142,7 @@ export default function Landing() {
             {/* Embedded Video Preview */}
             <button 
               onClick={() => openVideoModal('cheatsheet', 'Cheat Sheets Powered by AI')}
-              className="w-full aspect-video bg-gradient-to-br from-violet-300 via-purple-300 to-indigo-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="w-full aspect-video bg-gradient-to-br from-cyan-300 via-purple-300 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
@@ -153,7 +153,7 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document">
-              <div className="bg-gradient-to-br from-sky-200 via-blue-200 to-cyan-200 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
+              <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <FileText className="text-white text-3xl" />
@@ -188,7 +188,7 @@ export default function Landing() {
             {/* Embedded Video Preview */}
             <button 
               onClick={() => openVideoModal('document', 'Smart Documents Powered by AI')}
-              className="w-full aspect-video bg-gradient-to-br from-sky-300 via-blue-300 to-cyan-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="w-full aspect-video bg-gradient-to-br from-cyan-300 via-purple-300 to-blue-300 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Play className="text-white text-xl ml-1" />
