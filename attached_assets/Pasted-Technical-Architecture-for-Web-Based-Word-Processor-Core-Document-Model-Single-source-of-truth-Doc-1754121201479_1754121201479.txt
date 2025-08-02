@@ -1,0 +1,64 @@
+Technical Architecture for Web-Based Word Processor
+Core Document Model
+
+Single source of truth: Document stored as structured data (JSON/XML), not HTML
+Content representation: Use a document tree (paragraphs, runs, styles) rather than DOM
+State management: Immutable document state with operational transforms for changes
+
+Rendering Layer
+
+Virtual pagination: Measure content and calculate page breaks programmatically
+Canvas or SVG rendering: For precise layout control (like Figma/Google Docs)
+Or controlled DOM: Single contentEditable with precise layout measurement
+Viewport optimization: Only render visible pages for performance
+
+Editing Engine
+
+Command pattern: All edits as reversible operations (insert, delete, format)
+Rich text handling: Parse browser's execCommand results into document operations
+Selection tracking: Abstract selection model separate from DOM selection
+Undo/redo stack: Operation-based history, not HTML snapshots
+
+Pagination System
+
+Layout engine: Measure text/elements and calculate line breaks, page breaks
+Reflow algorithm: When content changes, recalculate affected page ranges only
+Page boundary rules: Widow/orphan control, keep-together elements
+Dynamic page creation: Add/remove pages based on content flow
+
+Technical Stack Options
+Option 1: Custom Engine
+
+Raw contentEditable + custom layout calculation
+Manual text measurement and line breaking
+Canvas rendering for final output
+Full control but high complexity
+
+Option 2: Editor Framework
+
+ProseMirror/Slate.js for document model and editing
+Custom pagination layer on top
+More reliable but less flexible
+
+Option 3: Hybrid Approach
+
+Web-based editor for input
+Server-side layout engine (like headless Chrome)
+WebAssembly for complex layout calculations
+
+Key Engineering Challenges
+
+Text measurement: Browser font rendering inconsistencies
+Performance: Large documents with real-time pagination
+Collaborative editing: Operational transforms for multi-user
+Cross-browser: Layout differences between browsers
+Print fidelity: Screen vs print layout matching
+
+Production Architecture
+
+Document service: Backend handles document operations
+Layout service: Server-side pagination and rendering
+Real-time sync: WebSocket for collaborative features
+Caching layer: Pre-calculated layout for common operations
+
+The key insight: Separate content model from visual representation. Never try to make the DOM your document model - it's a rendering target, not a data structure.
