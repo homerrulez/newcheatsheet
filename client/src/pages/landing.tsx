@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Grid3X3, FileSpreadsheet, Play, Check, X } from 'lucide-react';
+import { FileText, Grid3X3, FileSpreadsheet, Play, Check, X, BookOpen, Calculator, PenTool } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Landing() {
@@ -64,7 +64,7 @@ export default function Landing() {
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
-                    <FileSpreadsheet className="text-gray-800 text-3xl" />
+                    <BookOpen className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Template</h3>
@@ -110,7 +110,7 @@ export default function Landing() {
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Grid3X3 className="text-gray-800 text-3xl" />
+                    <Calculator className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Cheatsheet</h3>
@@ -156,7 +156,7 @@ export default function Landing() {
               <div className="bg-gradient-to-br from-cyan-200/80 via-purple-200/80 to-blue-200/80 backdrop-blur-sm border border-white/20 rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group relative">
                 <div className="flex justify-center mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-300/20 via-purple-300/20 to-blue-300/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
-                    <FileText className="text-gray-800 text-3xl" />
+                    <PenTool className="text-gray-800 text-3xl" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2 text-center">Document</h3>
