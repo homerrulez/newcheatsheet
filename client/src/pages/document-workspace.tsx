@@ -405,8 +405,14 @@ export default function DocumentWorkspace() {
 
   // Calculate page metrics - with error protection
   const currentPageSize = PAGE_SIZES[pageSize] || PAGE_SIZES.letter;
-  const pageWidth = currentPageSize.width * (zoomLevel / 100);
-  const pageHeight = currentPageSize.height * (zoomLevel / 100);
+  // Swap dimensions for landscape orientation
+  let baseWidth = currentPageSize.width;
+  let baseHeight = currentPageSize.height;
+  if (pageOrientation === 'landscape') {
+    [baseWidth, baseHeight] = [baseHeight, baseWidth];
+  }
+  const pageWidth = baseWidth * (zoomLevel / 100);
+  const pageHeight = baseHeight * (zoomLevel / 100);
   const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
 
   // Calculate number of pages based on content height - FIXED PAGINATION
@@ -711,7 +717,14 @@ export default function DocumentWorkspace() {
                 onValueChange={(value) => {
                   setFontFamily(value);
                   if (editor) {
-                    editor.chain().focus().setFontFamily(value).run();
+                    const { selection } = editor.state;
+                    if (!selection.empty) {
+                      // Apply to selected text only
+                      editor.chain().focus().setFontFamily(value).run();
+                    } else {
+                      // Set default for new text
+                      editor.chain().focus().setFontFamily(value).run();
+                    }
                   }
                 }}
               >
@@ -776,6 +789,16 @@ export default function DocumentWorkspace() {
                 onClick={() => {
                   const newSize = Math.min(72, fontSize + 2);
                   setFontSize(newSize);
+                  
+                  if (editor) {
+                    const { selection } = editor.state;
+                    if (!selection.empty) {
+                      // Apply size to selected text only
+                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                      editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
+                    }
+                  }
+                  
                   if (layoutEngine) {
                     const newLayoutEngine = createLayoutEngine(pageSize, newSize);
                     setLayoutEngine(newLayoutEngine);
@@ -792,6 +815,16 @@ export default function DocumentWorkspace() {
                 onClick={() => {
                   const newSize = Math.max(8, fontSize - 2);
                   setFontSize(newSize);
+                  
+                  if (editor) {
+                    const { selection } = editor.state;
+                    if (!selection.empty) {
+                      // Apply size to selected text only
+                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                      editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
+                    }
+                  }
+                  
                   if (layoutEngine) {
                     const newLayoutEngine = createLayoutEngine(pageSize, newSize);
                     setLayoutEngine(newLayoutEngine);
@@ -904,7 +937,14 @@ export default function DocumentWorkspace() {
                   const newColor = e.target.value;
                   setTextColor(newColor);
                   if (editor) {
-                    editor.chain().focus().setColor(newColor).run();
+                    const { selection } = editor.state;
+                    if (!selection.empty) {
+                      // Apply color to selected text only
+                      editor.chain().focus().setColor(newColor).run();
+                    } else {
+                      // Set default color for new text
+                      editor.chain().focus().setColor(newColor).run();
+                    }
                   }
                 }}
                 className="w-8 h-6 border rounded cursor-pointer"
@@ -1027,7 +1067,14 @@ export default function DocumentWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Select value={pageOrientation} onValueChange={setPageOrientation}>
+              <Select value={pageOrientation} onValueChange={(value: 'portrait' | 'landscape') => {
+                setPageOrientation(value);
+                // Trigger page layout recalculation
+                const newLayoutEngine = createLayoutEngine(pageSize, fontSize);
+                setLayoutEngine(newLayoutEngine);
+                setPageMetrics(newLayoutEngine.getCurrentMetrics());
+                toast({ title: `Page orientation changed to ${value}` });
+              }}>
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
@@ -1056,9 +1103,23 @@ export default function DocumentWorkspace() {
                 variant="outline"
                 onClick={() => {
                   if (editor) {
-                    // For now, insert a placeholder for image
-                    editor.chain().focus().insertContent('<p>[Image placeholder - click to upload]</p>').run();
-                    toast({ title: "Image placeholder inserted" });
+                    // Create hidden file input for image upload
+                    const input = window.document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e: Event) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const imageSrc = e.target?.result as string;
+                          editor.chain().focus().insertContent(`<img src="${imageSrc}" alt="${file.name}" style="max-width: 100%; height: auto;" />`).run();
+                          toast({ title: "Image inserted successfully" });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
                   }
                 }}
                 disabled={!editor}
@@ -1071,8 +1132,31 @@ export default function DocumentWorkspace() {
                 variant="outline"
                 onClick={() => {
                   if (editor) {
-                    // Insert a simple 3x3 table
-                    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+                    // Insert a simple HTML table since Tiptap table extension might not be available
+                    const tableHTML = `
+                      <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+                        <thead>
+                          <tr>
+                            <th style="border: 1px solid #ccc; padding: 8px; background-color: #f5f5f5;">Header 1</th>
+                            <th style="border: 1px solid #ccc; padding: 8px; background-color: #f5f5f5;">Header 2</th>
+                            <th style="border: 1px solid #ccc; padding: 8px; background-color: #f5f5f5;">Header 3</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style="border: 1px solid #ccc; padding: 8px;">Cell 1</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">Cell 2</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">Cell 3</td>
+                          </tr>
+                          <tr>
+                            <td style="border: 1px solid #ccc; padding: 8px;">Cell 4</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">Cell 5</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">Cell 6</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    `;
+                    editor.chain().focus().insertContent(tableHTML).run();
                     toast({ title: "Table inserted" });
                   }
                 }}
