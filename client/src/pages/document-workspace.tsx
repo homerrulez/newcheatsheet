@@ -592,6 +592,33 @@ export default function DocumentWorkspace() {
     setPageCount(newDistributedPages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
+  // Calculate page count based on content height for viewport windowing
+  const calculatePageCount = useCallback(() => {
+    console.log('🔄 Calculating viewport page count');
+    
+    if (!editor || !editorContainerRef.current) {
+      console.log('❌ No editor or container ref');
+      return;
+    }
+
+    const editorElement = editorContainerRef.current.querySelector('.ProseMirror');
+    if (!editorElement) {
+      console.log('❌ No ProseMirror element found');
+      return;
+    }
+
+    const contentHeight = editorElement.scrollHeight;
+    const availablePageHeight = pageHeight - (padding * 2);
+    const calculatedPages = Math.max(1, Math.ceil(contentHeight / availablePageHeight));
+    
+    console.log('📊 VIEWPORT CALCULATION:');
+    console.log('- Content height:', contentHeight);
+    console.log('- Available per page:', availablePageHeight);
+    console.log('- Viewport pages needed:', calculatedPages);
+    
+    setPageCount(calculatedPages);
+  }, [editor, pageHeight, padding]);
+
   // Calculate page count for viewport windowing (Word-style)
   useEffect(() => {
     if (editor && editorContainerRef.current) {
