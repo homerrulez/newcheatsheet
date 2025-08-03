@@ -48,6 +48,16 @@
   --radius: 0.5rem;
 }
 
+/* Viewport constraints for fixed layout */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+}
+
 /* StudyFlow gradient background - using uploaded background image */
 .studyflow-gradient {
   background: url('/src/assets/background.jpg') no-repeat center center;

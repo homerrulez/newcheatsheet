@@ -1213,88 +1213,88 @@ export default function DocumentWorkspace() {
         {/* Right panel - Always-On ChatGPT Interface */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
           <div className="h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-gray-700 flex flex-col">
-            {/* ChatGPT Assistant - Always at top */}
-            <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 p-6 flex-shrink-0">
-              <div className="flex items-center justify-between mb-6">
+            {/* ChatGPT Assistant Header - Fixed at top */}
+            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Brain className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <Brain className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">ChatGPT Assistant</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm">ChatGPT Assistant</h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400 font-light">
                       Always available • {pageCount} pages
                     </p>
                   </div>
                 </div>
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/30" title="AI Active"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="AI Active"></div>
               </div>
               
-              {/* Smart AI Suggestions */}
-              <div className="mb-6 space-y-3">
-                <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Smart Suggestions</h4>
-                <div className="space-y-2">
-                  <button className="w-full text-left p-3 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
-                    💡 Need help rephrasing?
+              {/* Smart AI Suggestions - Compact */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Quick Actions</h4>
+                <div className="grid grid-cols-1 gap-1">
+                  <button className="w-full text-left p-2 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
+                    💡 Rephrase selection
                   </button>
-                  <button className="w-full text-left p-3 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 rounded-xl border border-purple-200 dark:border-purple-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
-                    📝 Add summary to this section?
+                  <button className="w-full text-left p-2 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
+                    📝 Add summary
                   </button>
-                  <button className="w-full text-left p-3 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-xl border border-green-200 dark:border-green-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
-                    🎯 Check for tone and clarity?
+                  <button className="w-full text-left p-2 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
+                    🎯 Check tone
                   </button>
                 </div>
               </div>
-              
-              {/* Chat messages area - Proper height */}
-              <div className="mb-6">
-                <ScrollArea className="h-[45rem] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 bg-gray-50 dark:bg-gray-800">
-                  <div className="space-y-2">
-                    {chatMessages.length === 0 && (
-                      <div className="text-center py-8">
-                        <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                          Ready to Help!
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          Try natural language requests:
-                        </p>
-                        <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-                          <p>"create a title about Ali and make it adventurous"</p>
-                          <p>"make the text bold"</p>
-                          <p>"add a paragraph about nature"</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {chatMessages.map((message: ChatMessage) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[85%] p-3 rounded-lg text-sm ${
-                            message.role === 'user'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white border shadow-sm'
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                        </div>
-                      </div>
-                    ))}
+            </div>
+            
+            {/* Chat messages area - Flexible middle section with independent scroll */}
+            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+              <div className="space-y-2">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-6">
+                    <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">
+                      Ready to Help!
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      Try natural language requests:
+                    </p>
+                    <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
+                      <p>"create a title about Ali"</p>
+                      <p>"make the text bold"</p>
+                      <p>"add a paragraph"</p>
+                    </div>
                   </div>
-                </ScrollArea>
+                )}
+                
+                {chatMessages.map((message: ChatMessage) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                  >
+                    <div
+                      className={`max-w-[85%] p-2 rounded-lg text-xs ${
+                        message.role === 'user'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white border shadow-sm'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              
-              {/* Chat input - Always visible */}
+            </div>
+            
+            {/* Chat input - Fixed at bottom */}
+            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-gray-700 p-4">
               <div className="space-y-2">
                 <div className="flex space-x-2">
                   <Textarea
                     placeholder="Ask me to help with your document..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    className="flex-1 min-h-[60px] max-h-[60px] resize-none text-sm"
+                    className="flex-1 min-h-[50px] max-h-[50px] resize-none text-sm"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -1307,7 +1307,7 @@ export default function DocumentWorkspace() {
                     disabled={!chatInput.trim() || sendMessageMutation.isPending}
                     className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 self-end"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3 h-3" />
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
