@@ -768,12 +768,15 @@ export default function DocumentWorkspace() {
                 onValueChange={(value) => {
                   const newSize = parseInt(value);
                   if (!isNaN(newSize) && newSize >= 8 && newSize <= 72) {
-                    setFontSize(newSize);
-                    // Update layout engine metrics
-                    if (layoutEngine) {
-                      const newLayoutEngine = createLayoutEngine(pageSize, newSize);
-                      setLayoutEngine(newLayoutEngine);
-                      setPageMetrics(newLayoutEngine.getCurrentMetrics());
+                    if (editor) {
+                      const { selection } = editor.state;
+                      if (!selection.empty) {
+                        // Apply size to selected text only using custom FontSize extension
+                        editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
+                        toast({ title: `Font size changed to ${newSize}pt for selected text` });
+                      } else {
+                        toast({ title: "Please select text to change font size" });
+                      }
                     }
                   }
                 }}
