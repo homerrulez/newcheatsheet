@@ -368,17 +368,17 @@ export default function CheatSheetWorkspace() {
         
         // Box creation keywords (existing functionality)
         if (content.includes('formula') || content.includes('equation')) {
-          addBox('Math Formulas', '<p><strong>Quadratic Formula:</strong></p><p>x = (-b ± √(b² - 4ac)) / 2a</p><p><strong>Distance Formula:</strong></p><p>d = √((x₂-x₁)² + (y₂-y₁)²)</p>', '#e0f2fe', 150, 150);
+          addBox('Power Rule for Differentiation', 'd/dx x^n = nx^(n-1)', 'from-blue-50 to-blue-100', 150, 150);
           toast({ title: 'Created formula box' });
         }
         
         if (content.includes('definition') || content.includes('key terms')) {
-          addBox('Key Definitions', '<p><strong>Algorithm:</strong> A step-by-step procedure for solving a problem</p><p><strong>Variable:</strong> A storage location with an associated name</p>', '#f3e5f5', 380, 150);
+          addBox('Sum Rule for Differentiation', 'd/dx [f(x) + g(x)] = d/dx f(x) + d/dx g(x)', 'from-green-50 to-green-100', 380, 150);
           toast({ title: 'Created definitions box' });
         }
         
         if (content.includes('summary') || content.includes('overview')) {
-          addBox('Summary', '<p><strong>Main Points:</strong></p><ul><li>Key concept 1</li><li>Key concept 2</li><li>Key concept 3</li></ul>', '#e8f5e8', 150, 320);
+          addBox('Chain Rule for Differentiation', 'd/dx f(g(x)) = f\'(g(x)) · g\'(x)', 'from-purple-50 to-purple-100', 150, 320);
           toast({ title: 'Created summary box' });
         }
       }
@@ -1066,9 +1066,9 @@ export default function CheatSheetWorkspace() {
                     {/* Quick add button for testing */}
                     <Button
                       onClick={() => addBox(
-                        'Sample Box', 
-                        '<p><strong>Sample Content</strong></p><p>This is a draggable and resizable box!</p>',
-                        '#f0f9ff'
+                        'Power Rule for Differentiation', 
+                        'd/dx x^n = nx^(n-1)',
+                        'from-blue-50 to-blue-100'
                       )}
                       className="mt-4"
                       variant="outline"

@@ -323,49 +323,30 @@ export default function AutoResizeMathBox({
           maxConstraints={[maxWidth, maxHeight]}
           onResize={handleResize}
           onResizeStop={handleResizeStop}
-          resizeHandles={['se', 'sw', 'ne', 'nw', 's', 'n', 'e', 'w']}
+          resizeHandles={['se']}
           className={`relative group ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
         >
           <div 
-            className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative`} 
-            style={{ border: `3px solid ${borderColor}` }}
+            className={`w-full h-full bg-gradient-to-br ${color} rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 relative`} 
+            style={{ borderColor: '#e2e8f0', borderWidth: '1px' }}
           >
-            {/* Corner number indicator */}
-            <div 
-              className="absolute top-2 right-2 w-5 h-5 bg-black/10 text-slate-700 text-xs font-bold rounded-full flex items-center justify-center z-10"
-              aria-hidden="true"
-            >
-              {boxNumber}
-            </div>
             <div 
               className="drag-handle w-full h-full cursor-move"
               role="button"
               aria-label={`Drag to move box ${boxNumber}`}
               tabIndex={0}
             >
-              {/* Title Header */}
-              <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
-                <div className="flex items-center space-x-2 flex-1 min-w-0">
-                  <div 
-                    className="w-7 h-7 bg-gradient-to-br from-slate-700 to-slate-800 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 shadow-md border border-white/20"
-                    aria-label={`Box number ${boxNumber}`}
-                  >
-                    {boxNumber}
-                  </div>
-                  <h4 className="font-semibold text-slate-900 text-sm truncate select-none">
-                    <span className="text-slate-600 font-medium mr-1">#{boxNumber}</span>
-                    {title}
-                  </h4>
-                </div>
+              {/* Clean Title Header */}
+              <div className="flex items-center justify-between p-3 border-b border-gray-200">
+                <h4 className="font-medium text-gray-800 text-sm truncate select-none">
+                  {title}
+                </h4>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
-                  <div className="text-xs text-slate-600 bg-white/20 px-2 py-1 rounded">
-                    {Math.round(optimalFontSize)}px
-                  </div>
                   {onEdit && (
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0"
+                      className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEdit();
@@ -378,7 +359,7 @@ export default function AutoResizeMathBox({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                      className="h-5 w-5 p-0 text-gray-400 hover:text-red-600"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDelete();
@@ -390,24 +371,33 @@ export default function AutoResizeMathBox({
                 </div>
               </div>
               
-              {/* Content Container - Always fits content */}
+              {/* Content Container - Math formulas centered */}
               <div 
-                className="relative"
+                className="relative flex items-center justify-center p-4"
                 style={{ 
                   height: `${boxSize.height - SIZING_CONSTANTS.TITLE_HEIGHT}px`,
-                  padding: `${SIZING_CONSTANTS.PADDING / 2}px`,
                   overflow: 'hidden'
                 }}
               >
                 <div 
                   ref={contentRef}
-                  className="w-full h-full"
-                  style={contentStyles}
+                  className="text-center"
+                  style={{
+                    fontSize: `${optimalFontSize}px`,
+                    lineHeight: contentLayout.lineHeight,
+                    color: 'black',
+                    fontFamily: 'serif'
+                  }}
                   onClick={(e) => e.stopPropagation()}
                   role="region"
-                  aria-label="Auto-fitting content"
+                  aria-label="Math content"
                   dangerouslySetInnerHTML={{ __html: content }}
                 />
+              </div>
+              
+              {/* Bottom right resize indicator - only visible on hover */}
+              <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-3 h-3 border-r-2 border-b-2 border-gray-300"></div>
               </div>
             </div>
           </div>
