@@ -509,32 +509,91 @@ export default function DocumentWorkspace() {
       console.log('- Layout engine error:', layoutError);
     }
     
-    // 4. Create simple pagination (current approach)
-    console.log('🎯 SIMPLE PAGINATION LOGIC:');
-    console.log('- Strategy: All content on page 1, empty placeholders for overflow pages');
+    // 4. REAL CONTENT SPLITTING BY HEIGHT
+    console.log('🎯 IMPLEMENTING REAL CONTENT SPLITTING:');
     
-    const allContent = mainEditorContent;
-    const pages: string[] = [allContent];
+    const splitContentByHeight = (htmlContent: string, maxPageHeight: number): string[] => {
+      const pages: string[] = [];
+      
+      try {
+        // Parse HTML into individual elements
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+        const elements = Array.from(tempDiv.children);
+        
+        console.log('📄 Splitting', elements.length, 'elements across pages');
+        
+        // Distribute elements across pages by measuring height
+        let currentPageElements: Element[] = [];
+        let currentPageHeight = 0;
+        
+        elements.forEach((element, index) => {
+          // Measure this element's height
+          const testDiv = document.createElement('div');
+          testDiv.style.cssText = `
+            position: absolute; 
+            top: -9999px; 
+            left: -9999px;
+            width: ${pageWidth - (padding * 2)}px; 
+            font-size: ${fontSize}pt; 
+            font-family: ${fontFamily}; 
+            line-height: 1.6;
+            color: ${textColor};
+            visibility: hidden;
+          `;
+          testDiv.appendChild(element.cloneNode(true));
+          document.body.appendChild(testDiv);
+          
+          const elementHeight = testDiv.offsetHeight;
+          document.body.removeChild(testDiv);
+          
+          console.log(`Element ${index + 1}: ${elementHeight}px height, total so far: ${currentPageHeight + elementHeight}px`);
+          
+          // Check if element fits on current page
+          if (currentPageHeight + elementHeight > maxPageHeight && currentPageElements.length > 0) {
+            // Save current page and start new one
+            const pageContent = currentPageElements.map(el => el.outerHTML).join('');
+            pages.push(pageContent);
+            console.log(`📄 Completed page ${pages.length}: ${currentPageHeight}px, ${currentPageElements.length} elements`);
+            
+            currentPageElements = [element];
+            currentPageHeight = elementHeight;
+          } else {
+            // Add to current page
+            currentPageElements.push(element);
+            currentPageHeight += elementHeight;
+          }
+        });
+        
+        // Add final page
+        if (currentPageElements.length > 0) {
+          const pageContent = currentPageElements.map(el => el.outerHTML).join('');
+          pages.push(pageContent);
+          console.log(`📄 Final page ${pages.length}: ${currentPageHeight}px, ${currentPageElements.length} elements`);
+        }
+        
+        return pages;
+        
+      } catch (error) {
+        console.error('❌ Content splitting error:', error);
+        // Fallback: return all content on first page
+        return [htmlContent];
+      }
+    };
     
-    // Add placeholder pages for overflow
-    for (let i = 1; i < calculatedPages; i++) {
-      const placeholderContent = `<p class="text-gray-400 text-center italic">Page ${i + 1} placeholder - Content continues from page 1...</p>`;
-      pages.push(placeholderContent);
-    }
+    console.log('🔄 Splitting content by actual height measurements...');
+    const distributedPages = splitContentByHeight(mainEditorContent, availablePageHeight);
     
-    console.log('📚 CREATED PAGES:');
-    pages.forEach((page, i) => {
-      console.log(`- Page ${i + 1}: "${page.substring(0, 100)}..." (${page.length} chars)`);
+    console.log('📚 REAL CONTENT DISTRIBUTION COMPLETE:');
+    distributedPages.forEach((page, i) => {
+      console.log(`- Page ${i + 1}: ${page.length} chars - "${page.substring(0, 100)}..."`);
     });
     
-    console.log('❓ KEY QUESTIONS:');
-    console.log('- Should main editor be hidden after pagination?', 'Currently:', 'visible');
-    console.log('- Should content be physically split between pages?', 'Currently:', 'no - all on page 1');
-    console.log('- Are we showing 1 real page + placeholders?', 'Currently:', 'yes');
+    console.log('✅ Now each page contains REAL content, not placeholders!');
     console.log('════════════════════════════════════════');
     
-    setDistributedPages(pages);
-    setPageCount(pages.length);
+    setDistributedPages(distributedPages);
+    setPageCount(distributedPages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
   // Calculate visual pagination based on content height (Word-style)
