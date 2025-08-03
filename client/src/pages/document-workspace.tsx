@@ -1789,19 +1789,44 @@ export default function DocumentWorkspace() {
                         }}
                       >
                         {console.log('   ✅ Showing EditorContent component (main unified editor)')}
-                        <EditorContent
-                          editor={editor}
-                          className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
+                        {console.log('   📏 HEIGHT DEBUG:', {
+                          pageHeight,
+                          padding,
+                          calculatedMaxHeight: pageHeight - (padding * 2),
+                          actualStyleMaxHeight: `${pageHeight - (padding * 2)}px`,
+                          containerHeight: `${pageHeight}px`,
+                          availableContentHeight: pageHeight - (padding * 2)
+                        })}
+                        <div 
+                          className="debug-wrapper"
                           style={{
-                            fontFamily,
-                            fontSize: `${fontSize}pt`,
-                            color: textColor,
-                            lineHeight: '1.6',
-                            minHeight: `${pageHeight - (padding * 2)}px`,
+                            height: `${pageHeight - (padding * 2)}px`,
                             maxHeight: `${pageHeight - (padding * 2)}px`,
                             overflow: 'hidden',
+                            border: '2px solid red', // DEBUG: Outer boundary
+                            position: 'relative'
                           }}
-                        />
+                        >
+                          <EditorContent
+                            editor={editor}
+                            className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
+                            style={{
+                              fontFamily,
+                              fontSize: `${fontSize}pt`,
+                              color: textColor,
+                              lineHeight: '1.6',
+                              height: '100%',
+                              overflow: 'visible', // Let wrapper handle overflow
+                            }}
+                          />
+                          {/* DEBUG: Show actual constraint */}
+                          <div 
+                            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1"
+                            style={{ zIndex: 1000 }}
+                          >
+                            {pageHeight - (padding * 2)}px limit
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       /* Subsequent pages with clickable content - maps to unified editor */
