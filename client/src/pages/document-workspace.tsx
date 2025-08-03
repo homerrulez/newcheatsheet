@@ -434,27 +434,37 @@ export default function DocumentWorkspace() {
   const pageHeight = baseHeight * (zoomLevel / 100);
   const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
 
-  // Calculate number of pages based on content height - FIXED PAGINATION
-  const [pageCount, setPageCount] = useState(1);
+  // True Content Distribution using Layout Engine
+  const [pageContent, setPageContent] = useState<Array<{ pageNumber: number; content: string; wordCount: number; characterCount: number; isFull: boolean }>>([
+    { pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }
+  ]);
   const editorRef = useRef<HTMLDivElement>(null);
 
+  // Content distribution effect - splits content across real pages
   useEffect(() => {
-    if (editor && editorRef.current) {
-      const updatePageCount = () => {
-        const editorElement = editorRef.current?.querySelector('.ProseMirror');
-        if (editorElement) {
-          const contentHeight = editorElement.scrollHeight;
-          const availableHeight = pageHeight - (padding * 2);
-          const calculatedPages = Math.max(1, Math.ceil(contentHeight / availableHeight));
-          setPageCount(calculatedPages);
+    if (editor && layoutEngine) {
+      const distributeContent = () => {
+        const htmlContent = editor.getHTML();
+        
+        // Use layout engine to split content into pages
+        const layoutResult = layoutEngine.LAYOUT_TEXT(htmlContent);
+        
+        if (layoutResult.pages.length > 0) {
+          setPageContent(layoutResult.pages);
+        } else {
+          // Fallback: single empty page
+          setPageContent([{ pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }]);
         }
       };
 
-      // Update page count when content changes
-      const timer = setTimeout(updatePageCount, 100);
+      // Distribute content when it changes
+      const timer = setTimeout(distributeContent, 100);
       return () => clearTimeout(timer);
     }
-  }, [editor?.getHTML(), pageHeight, padding, zoomLevel]);
+  }, [editor?.getHTML(), layoutEngine, pageHeight, padding, zoomLevel]);
+
+  // Page count is now derived from distributed content
+  const pageCount = pageContent.length;
 
   // Handle send message
   const handleSendMessage = () => {
@@ -1420,10 +1430,10 @@ export default function DocumentWorkspace() {
               <div className="min-h-full p-8 flex flex-col items-center">
 
 
-                {/* Render pages with AI glow and proper content distribution */}
-                {Array.from({ length: pageCount }, (_, pageIndex) => (
+                {/* Render pages with real distributed content */}
+                {pageContent.map((page, pageIndex) => (
                   <div
-                    key={pageIndex}
+                    key={page.pageNumber}
                     className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
                     style={{
                       width: `${pageWidth}px`,
@@ -1432,9 +1442,9 @@ export default function DocumentWorkspace() {
                       minHeight: `${pageHeight}px`,
                     }}
                   >
-                    {/* Page number indicator */}
+                    {/* Page number indicator with content info */}
                     <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                      Page {pageIndex + 1}
+                      Page {page.pageNumber} • {page.wordCount} words
                     </div>
                     
                     {/* Page content */}
@@ -1447,11 +1457,10 @@ export default function DocumentWorkspace() {
                       }}
                     >
                       {pageIndex === 0 ? (
-                        // Single continuous editor that flows across pages visually
+                        // First page: Editable content
                         <div 
                           className="w-full h-full"
                           style={{
-                            // Create a scrollable container that allows content to flow
                             maxHeight: 'none',
                             overflow: 'visible'
                           }}
@@ -1469,12 +1478,27 @@ export default function DocumentWorkspace() {
                           />
                         </div>
                       ) : (
-                        // Subsequent pages show continuation indicator
-                        <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-600 italic">
-                          <div className="text-center">
-                            <div className="w-8 h-8 border-2 border-dashed border-gray-300 rounded-full mb-2 mx-auto"></div>
-                            <p className="text-sm">Content continues here...</p>
-                          </div>
+                        // Subsequent pages: Distributed content (read-only for now)
+                        <div 
+                          className="w-full h-full"
+                          style={{
+                            fontFamily,
+                            fontSize: `${fontSize}pt`,
+                            color: textColor,
+                            lineHeight: '1.6',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <div 
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: page.content }}
+                            style={{
+                              fontFamily,
+                              fontSize: `${fontSize}pt`,
+                              color: textColor,
+                              lineHeight: '1.6',
+                            }}
+                          />
                         </div>
                       )}
                     </div>
@@ -1484,6 +1508,11 @@ export default function DocumentWorkspace() {
                       <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
                         ••• Page Break •••
                       </div>
+                    )}
+                    
+                    {/* Page status indicator */}
+                    {page.isFull && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full" title="Page Full"></div>
                     )}
                   </div>
                 ))}
