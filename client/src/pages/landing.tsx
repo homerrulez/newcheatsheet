@@ -76,7 +76,7 @@ export default function Landing() {
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="w-80 h-64 rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
+              <div className="w-[368px] h-[346px] rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
                 background: 'linear-gradient(145deg, rgba(200, 240, 220, 0.6), rgba(184, 230, 204, 0.4))', 
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)'
@@ -107,7 +107,7 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="w-80 h-64 rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
+              <div className="w-[368px] h-[346px] rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
                 background: 'linear-gradient(145deg, rgba(245, 230, 211, 0.6), rgba(255, 192, 203, 0.4))', 
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)'
@@ -138,7 +138,7 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document/test-doc-1">
-              <div className="w-80 h-64 rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
+              <div className="w-[368px] h-[346px] rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
                 background: 'linear-gradient(145deg, rgba(173, 216, 230, 0.6), rgba(221, 160, 221, 0.4))', 
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)'
