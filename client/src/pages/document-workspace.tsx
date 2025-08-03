@@ -626,9 +626,17 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline" 
                 onClick={() => {
-                  const content = editor?.getHTML() || '';
-                  navigator.clipboard.writeText(content);
-                  toast({ title: "Content copied to clipboard" });
+                  if (!editor) {
+                    toast({ title: "Editor not ready", variant: "destructive" });
+                    return;
+                  }
+                  try {
+                    const content = editor.getHTML() || '';
+                    navigator.clipboard.writeText(content);
+                    toast({ title: "Content copied to clipboard" });
+                  } catch (error) {
+                    toast({ title: "Copy failed", description: "Please use Ctrl+C", variant: "destructive" });
+                  }
                 }}
               >
                 <Copy className="w-4 h-4 mr-1" />
@@ -638,13 +646,23 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline"
                 onClick={() => {
-                  if (editor?.state.selection.empty) {
-                    editor?.chain().focus().selectAll().run();
+                  if (!editor) {
+                    toast({ title: "Editor not ready", variant: "destructive" });
+                    return;
                   }
-                  const content = editor?.getHTML() || '';
-                  navigator.clipboard.writeText(content);
-                  editor?.chain().focus().deleteSelection().run();
-                  toast({ title: "Content cut to clipboard" });
+                  try {
+                    // If no selection, select all
+                    if (editor.state.selection.empty) {
+                      editor.chain().focus().selectAll().run();
+                    }
+                    
+                    const content = editor.getHTML() || '';
+                    navigator.clipboard.writeText(content);
+                    editor.chain().focus().deleteSelection().run();
+                    toast({ title: "Content cut to clipboard" });
+                  } catch (error) {
+                    toast({ title: "Cut failed", description: "Please use Ctrl+X", variant: "destructive" });
+                  }
                 }}
               >
                 <Scissors className="w-4 h-4 mr-1" />
@@ -688,7 +706,15 @@ export default function DocumentWorkspace() {
 
             {/* Font controls */}
             <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
-              <Select value={fontFamily} onValueChange={setFontFamily}>
+              <Select 
+                value={fontFamily} 
+                onValueChange={(value) => {
+                  setFontFamily(value);
+                  if (editor) {
+                    editor.chain().focus().setFontFamily(value).run();
+                  }
+                }}
+              >
                 <SelectTrigger className="w-36">
                   <SelectValue />
                 </SelectTrigger>
@@ -706,7 +732,21 @@ export default function DocumentWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+              <Select 
+                value={fontSize.toString()} 
+                onValueChange={(value) => {
+                  const newSize = parseInt(value);
+                  if (!isNaN(newSize) && newSize >= 8 && newSize <= 72) {
+                    setFontSize(newSize);
+                    // Update layout engine metrics
+                    if (layoutEngine) {
+                      const newLayoutEngine = createLayoutEngine(pageSize, newSize);
+                      setLayoutEngine(newLayoutEngine);
+                      setPageMetrics(newLayoutEngine.getCurrentMetrics());
+                    }
+                  }
+                }}
+              >
                 <SelectTrigger className="w-16">
                   <SelectValue />
                 </SelectTrigger>
@@ -730,10 +770,36 @@ export default function DocumentWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Button size="sm" variant="outline" onClick={() => setFontSize(Math.min(72, fontSize + 2))}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  const newSize = Math.min(72, fontSize + 2);
+                  setFontSize(newSize);
+                  if (layoutEngine) {
+                    const newLayoutEngine = createLayoutEngine(pageSize, newSize);
+                    setLayoutEngine(newLayoutEngine);
+                    setPageMetrics(newLayoutEngine.getCurrentMetrics());
+                  }
+                }}
+                disabled={fontSize >= 72}
+              >
                 <Plus className="w-3 h-3" />
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setFontSize(Math.max(8, fontSize - 2))}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  const newSize = Math.max(8, fontSize - 2);
+                  setFontSize(newSize);
+                  if (layoutEngine) {
+                    const newLayoutEngine = createLayoutEngine(pageSize, newSize);
+                    setLayoutEngine(newLayoutEngine);
+                    setPageMetrics(newLayoutEngine.getCurrentMetrics());
+                  }
+                }}
+                disabled={fontSize <= 8}
+              >
                 <Minus className="w-3 h-3" />
               </Button>
             </div>
@@ -773,11 +839,19 @@ export default function DocumentWorkspace() {
                 variant="outline" 
                 title="Subscript"
                 onClick={() => {
-                  // Subscript formatting
+                  if (!editor) return;
                   const { selection } = editor.state;
-                  const text = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                  editor?.chain().focus().insertContent(`<sub>${text || 'text'}</sub>`).run();
+                  const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                  
+                  if (selectedText.trim()) {
+                    // Replace selected text with subscript version
+                    editor.chain().focus().deleteSelection().insertContent(`<sub>${selectedText}</sub>`).run();
+                  } else {
+                    // Insert placeholder subscript
+                    editor.chain().focus().insertContent('<sub>text</sub>').run();
+                  }
                 }}
+                disabled={!editor}
               >
                 <span className="text-xs">X₂</span>
               </Button>
@@ -786,11 +860,19 @@ export default function DocumentWorkspace() {
                 variant="outline" 
                 title="Superscript"
                 onClick={() => {
-                  // Superscript formatting
+                  if (!editor) return;
                   const { selection } = editor.state;
-                  const text = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                  editor?.chain().focus().insertContent(`<sup>${text || 'text'}</sup>`).run();
+                  const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                  
+                  if (selectedText.trim()) {
+                    // Replace selected text with superscript version
+                    editor.chain().focus().deleteSelection().insertContent(`<sup>${selectedText}</sup>`).run();
+                  } else {
+                    // Insert placeholder superscript
+                    editor.chain().focus().insertContent('<sup>text</sup>').run();
+                  }
                 }}
+                disabled={!editor}
               >
                 <span className="text-xs">X²</span>
               </Button>
@@ -799,11 +881,19 @@ export default function DocumentWorkspace() {
                 variant="outline" 
                 title="Highlight"
                 onClick={() => {
-                  // Highlight text with yellow background
+                  if (!editor) return;
                   const { selection } = editor.state;
-                  const text = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                  editor?.chain().focus().insertContent(`<span style="background-color: #ffff00;">${text || 'text'}</span>`).run();
+                  const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                  
+                  if (selectedText.trim()) {
+                    // Replace selected text with highlighted version
+                    editor.chain().focus().deleteSelection().insertContent(`<mark>${selectedText}</mark>`).run();
+                  } else {
+                    // Insert placeholder highlight
+                    editor.chain().focus().insertContent('<mark>highlighted text</mark>').run();
+                  }
                 }}
+                disabled={!editor}
               >
                 <div className="w-4 h-4 bg-yellow-300 border rounded" />
               </Button>
@@ -811,11 +901,15 @@ export default function DocumentWorkspace() {
                 type="color"
                 value={textColor}
                 onChange={(e) => {
-                  setTextColor(e.target.value);
-                  editor?.chain().focus().setColor(e.target.value).run();
+                  const newColor = e.target.value;
+                  setTextColor(newColor);
+                  if (editor) {
+                    editor.chain().focus().setColor(newColor).run();
+                  }
                 }}
                 className="w-8 h-6 border rounded cursor-pointer"
                 title="Font Color"
+                disabled={!editor}
               />
             </div>
 
@@ -871,7 +965,12 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline" 
                 title="Increase Indent"
-                onClick={() => editor?.chain().focus().sinkListItem('listItem').run()}
+                onClick={() => {
+                  if (editor?.isActive('listItem')) {
+                    editor.chain().focus().sinkListItem('listItem').run();
+                  }
+                }}
+                disabled={!editor?.isActive('listItem')}
               >
                 <Indent className="w-4 h-4" />
               </Button>
@@ -879,7 +978,12 @@ export default function DocumentWorkspace() {
                 size="sm" 
                 variant="outline" 
                 title="Decrease Indent"
-                onClick={() => editor?.chain().focus().liftListItem('listItem').run()}
+                onClick={() => {
+                  if (editor?.isActive('listItem')) {
+                    editor.chain().focus().liftListItem('listItem').run();
+                  }
+                }}
+                disabled={!editor?.isActive('listItem')}
               >
                 <Outdent className="w-4 h-4" />
               </Button>
@@ -892,16 +996,22 @@ export default function DocumentWorkspace() {
             {/* Page Layout Controls */}
             <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
               <Select value={pageSize} onValueChange={(value: keyof typeof PAGE_SIZES) => {
-                setPageSize(value);
-                // Auto-scale font size based on page size change
-                const scaledFontSize = layoutEngine.getScaledFontSize();
-                if (scaledFontSize !== fontSize) {
-                  setFontSize(scaledFontSize);
+                try {
+                  setPageSize(value);
+                  // Update layout engine with new page size
+                  const newLayoutEngine = createLayoutEngine(value, fontSize);
+                  setLayoutEngine(newLayoutEngine);
+                  setPageMetrics(newLayoutEngine.getCurrentMetrics());
+                  
+                  toast({ title: `Page size changed to ${value}` });
+                } catch (error) {
+                  console.error('Error updating page size:', error);
+                  toast({ 
+                    title: "Error changing page size", 
+                    description: "Please try again", 
+                    variant: "destructive" 
+                  });
                 }
-                // Update layout engine with new page size
-                const newLayoutEngine = createLayoutEngine(value, fontSize);
-                setLayoutEngine(newLayoutEngine);
-                setPageMetrics(newLayoutEngine.getCurrentMetrics());
               }}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="Page Size" />
@@ -941,19 +1051,64 @@ export default function DocumentWorkspace() {
 
             {/* Insert options */}
             <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (editor) {
+                    // For now, insert a placeholder for image
+                    editor.chain().focus().insertContent('<p>[Image placeholder - click to upload]</p>').run();
+                    toast({ title: "Image placeholder inserted" });
+                  }
+                }}
+                disabled={!editor}
+              >
                 <Image className="w-4 h-4 mr-1" />
                 Image
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (editor) {
+                    // Insert a simple 3x3 table
+                    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+                    toast({ title: "Table inserted" });
+                  }
+                }}
+                disabled={!editor}
+              >
                 <Table className="w-4 h-4 mr-1" />
                 Table
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (editor) {
+                    const url = prompt('Enter URL:');
+                    if (url) {
+                      editor.chain().focus().setLink({ href: url }).run();
+                      toast({ title: "Link added" });
+                    }
+                  }
+                }}
+                disabled={!editor}
+              >
                 <Link className="w-4 h-4 mr-1" />
                 Link
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (editor) {
+                    editor.chain().focus().insertContent('<div style="page-break-before: always;"></div>').run();
+                    toast({ title: "Page break inserted" });
+                  }
+                }}
+                disabled={!editor}
+              >
                 <FileText className="w-4 h-4 mr-1" />
                 Page Break
               </Button>
