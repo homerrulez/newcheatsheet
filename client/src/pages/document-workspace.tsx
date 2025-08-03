@@ -476,88 +476,37 @@ export default function DocumentWorkspace() {
       return;
     }
 
-    // Multiple pages - need to split content
-    const jsonDoc = editor.getJSON();
-    console.log('📄 Document JSON:', jsonDoc);
+    // Debug what layout engine would do vs simple approach
+    console.log('🔍 DEBUGGING LAYOUT ENGINE BEHAVIOR:');
+    console.log('- Height-based calculation says:', calculatedPages, 'pages');
+    console.log('- Available page height:', availablePageHeight, 'px');
+    console.log('- Total content height:', contentHeight, 'px');
     
+    // Test what layout engine would create
     try {
-      // Create temporary measuring container
-      const measureContainer = document.createElement('div');
-      measureContainer.style.cssText = `
-        position: absolute;
-        visibility: hidden;
-        top: -9999px;
-        left: -9999px;
-        width: ${pageWidth - (padding * 2)}px;
-        font-family: ${fontFamily};
-        font-size: ${fontSize}pt;
-        color: ${textColor};
-        line-height: 1.6;
-        overflow: hidden;
-      `;
-      document.body.appendChild(measureContainer);
-
-      const pages: string[] = [];
-      let currentPageContent: any[] = [];
-      let currentPageHeight = 0;
-
-      // Process each node in the document
-      if (jsonDoc.content) {
-        for (const node of jsonDoc.content) {
-          // Add node to measuring container
-          const tempDoc = { type: 'doc', content: [node] };
-          const tempHTML = editor.getHTML(); // This is a simplified approach
-          measureContainer.innerHTML = tempHTML;
-          
-          const nodeHeight = measureContainer.scrollHeight;
-          
-          if (currentPageHeight + nodeHeight > availablePageHeight && currentPageContent.length > 0) {
-            // Node would overflow, finish current page
-            const pageDoc = { type: 'doc', content: currentPageContent };
-            const pageHTML = editor.getHTML(); // Convert back to HTML
-            pages.push(pageHTML);
-            
-            // Start new page with this node
-            currentPageContent = [node];
-            currentPageHeight = nodeHeight;
-          } else {
-            // Node fits on current page
-            currentPageContent.push(node);
-            currentPageHeight += nodeHeight;
-          }
-        }
-      }
-
-      // Add final page if it has content
-      if (currentPageContent.length > 0) {
-        const pageDoc = { type: 'doc', content: currentPageContent };
-        const pageHTML = editor.getHTML(); // Convert back to HTML
-        pages.push(pageHTML);
-      }
-
-      document.body.removeChild(measureContainer);
-      
-      console.log('📚 Distributed into', pages.length, 'pages');
-      setDistributedPages(pages.length > 0 ? pages : [editor.getHTML()]);
-      setPageCount(pages.length || 1);
-      
-    } catch (error) {
-      console.error('❌ Content distribution error:', error);
-      // Fallback: use simple text-based splitting
-      const fullText = editor.getText();
-      const charsPerPage = Math.ceil(fullText.length / calculatedPages);
-      const pages: string[] = [];
-      
-      for (let i = 0; i < calculatedPages; i++) {
-        const start = i * charsPerPage;
-        const end = Math.min((i + 1) * charsPerPage, fullText.length);
-        const pageText = fullText.slice(start, end);
-        pages.push(`<p>${pageText}</p>`);
-      }
-      
-      setDistributedPages(pages);
-      setPageCount(pages.length);
+      const layoutResult = LAYOUT_TEXT(editor.getHTML(), availablePageHeight, pageWidth - (padding * 2));
+      console.log('🚨 LAYOUT_TEXT would create:', layoutResult.length, 'pages');
+      console.log('🚨 Layout pages preview:', layoutResult.map((page, i) => `Page ${i + 1}: ${page.substring(0, 50)}...`));
+    } catch (layoutError) {
+      console.log('❌ Layout engine error:', layoutError);
     }
+    
+    // Use simple approach instead - don't over-split content
+    console.log('📄 Using simple pagination - calculated pages:', calculatedPages);
+    
+    // Just create visual pages but keep all content in first page
+    // This prevents over-splitting while maintaining visual pagination
+    const allContent = editor.getHTML();
+    const pages: string[] = [allContent];
+    
+    // Add empty visual pages for the calculated overflow
+    for (let i = 1; i < calculatedPages; i++) {
+      pages.push('<p class="text-gray-400 text-center">Content continues from previous page...</p>');
+    }
+    
+    console.log('📚 Simple distribution - Created', pages.length, 'visual pages');
+    setDistributedPages(pages);
+    setPageCount(pages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
   // Calculate visual pagination based on content height (Word-style)
@@ -618,28 +567,38 @@ export default function DocumentWorkspace() {
           approximateCharPosition
         });
 
-        // Convert character position to ProseMirror position
+        // Safer cursor positioning with validation
         const doc = editor.state.doc;
-        let currentPos = 1; // Start after doc node
-        let currentChar = 0;
+        const maxValidPos = doc.content.size;
         
-        // Walk through the document to find the position
-        doc.descendants((node, pos) => {
-          if (currentChar >= approximateCharPosition) {
-            // Found our target position
-            editor.commands.setTextSelection(Math.min(pos, doc.content.size));
-            console.log('✅ Cursor positioned at ProseMirror pos:', pos);
-            return false; // Stop traversal
-          }
-          
-          if (node.isText) {
-            currentChar += node.text?.length || 0;
-          } else if (node.isBlock) {
-            currentChar += 1; // Count block boundaries
-          }
-          
-          return true; // Continue traversal
+        console.log('📏 Document info:', {
+          docSize: maxValidPos,
+          textLength: fullText.length,
+          approximateCharPosition
         });
+        
+        // Use a much simpler approach - just position proportionally
+        const targetPos = Math.min(
+          Math.max(1, Math.floor((approximateCharPosition / fullText.length) * maxValidPos)),
+          maxValidPos - 1
+        );
+        
+        console.log('🎯 Calculated target position:', targetPos, 'of max:', maxValidPos);
+        
+        // Validate position before setting
+        try {
+          if (targetPos >= 1 && targetPos < maxValidPos) {
+            editor.commands.setTextSelection(targetPos);
+            console.log('✅ Cursor positioned at validated pos:', targetPos);
+          } else {
+            console.log('⚠️ Invalid position, using end of document');
+            editor.commands.setTextSelection(maxValidPos - 1);
+          }
+        } catch (positionError) {
+          console.error('❌ Position setting error:', positionError);
+          // Fallback to end of document
+          editor.commands.setTextSelection(maxValidPos - 1);
+        }
 
         // Scroll the editor to approximate position for visual feedback
         const scrollRatio = approximateDocumentY / docHeight;
