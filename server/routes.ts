@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import OpenAI from "openai";
+import aiRoutes from "./ai-routes";
 import { 
   insertDocumentSchema, 
   insertCheatSheetSchema, 
@@ -17,6 +18,9 @@ const openai = new OpenAI({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // AI Writing Assistant Routes
+  app.use("/api/ai", aiRoutes);
   
   // Documents API
   app.get("/api/documents", async (req, res) => {
