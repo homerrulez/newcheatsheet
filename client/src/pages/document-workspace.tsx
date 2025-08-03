@@ -592,40 +592,23 @@ export default function DocumentWorkspace() {
     setPageCount(newDistributedPages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
-  // Calculate page count based on content height for viewport windowing
+  // Simplified page count calculation
   const calculatePageCount = useCallback(() => {
-    console.log('🔄 Calculating viewport page count');
-    
-    if (!editor || !editorContainerRef.current) {
-      console.log('❌ No editor or container ref');
-      return;
-    }
+    if (!editor) return 1;
+    const contentHeight = editor.view.dom.offsetHeight;
+    const pages = Math.ceil(contentHeight / 928) || 1;
+    console.log('📊 Total pages needed:', pages);
+    return pages;
+  }, [editor]);
 
-    const editorElement = editorContainerRef.current.querySelector('.ProseMirror');
-    if (!editorElement) {
-      console.log('❌ No ProseMirror element found');
-      return;
-    }
-
-    const contentHeight = editorElement.scrollHeight;
-    const availablePageHeight = pageHeight - (padding * 2);
-    const calculatedPages = Math.max(1, Math.ceil(contentHeight / availablePageHeight));
-    
-    console.log('📊 VIEWPORT CALCULATION:');
-    console.log('- Content height:', contentHeight);
-    console.log('- Available per page:', availablePageHeight);
-    console.log('- Viewport pages needed:', calculatedPages);
-    
-    setPageCount(calculatedPages);
-  }, [editor, pageHeight, padding]);
-
-  // Calculate page count for viewport windowing (Word-style)
+  // Update page count when content changes
   useEffect(() => {
-    if (editor && editorContainerRef.current) {
-      const timer = setTimeout(calculatePageCount, 100);
-      return () => clearTimeout(timer);
+    if (editor) {
+      editor.on('update', () => {
+        setPageCount(calculatePageCount());
+      });
     }
-  }, [calculatePageCount, editor?.getHTML(), pageHeight, padding, zoomLevel]);
+  }, [editor, calculatePageCount]);
 
   // Track content flow between pages for true Word/Google Docs experience
   useEffect(() => {
@@ -1804,144 +1787,80 @@ export default function DocumentWorkspace() {
                 {console.log('📏 Page height:', pageHeight, 'Padding:', padding)}
                 {console.log('📖 Available content height per page:', pageHeight - (padding * 2))}
                 
-                {/* Render viewport windows - each shows different section of same editor */}
-                {Array.from({ length: pageCount }, (_, pageIndex) => (
-                  <div
-                    key={pageIndex}
-                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group transition-all duration-500 cursor-text hover:shadow-cyan-300/20"
-                    style={{
-                      width: `${pageWidth}px`,
-                      height: `${pageHeight}px`,
-                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
-                    }}
-                  >
-                    {/* Page number indicator */}
-                    <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                      Page {pageIndex + 1} of {pageCount}
-                    </div>
-                    
-                    {console.log(`🪟 VIEWPORT ${pageIndex + 1}: Window offset ${pageIndex * (pageHeight - padding * 2)}px`)}
-                    
-                    {/* Viewport Window: Each page shows different section of unified editor */}
+                {/* SIMPLIFIED: Clean viewport windowing implementation */}
+                <div className="document-pages">
+                  {Array.from({ length: pageCount }).map((_, pageIndex) => (
                     <div
-                      ref={pageIndex === 0 ? editorContainerRef : undefined}
-                      className="w-full h-full relative"
-                      style={{ 
-                        padding: `${padding}px`,
+                      key={pageIndex}
+                      className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group transition-all duration-500 cursor-text hover:shadow-cyan-300/20"
+                      style={{
+                        width: `${pageWidth}px`,
+                        height: `${pageHeight}px`,
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                       }}
                     >
-                      {/* DEBUG: Viewport information */}
-                      <div 
-                        className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-1"
-                        style={{ zIndex: 1000 }}
-                      >
-                        VIEWPORT {pageIndex + 1}: -{pageIndex * (pageHeight - padding * 2)}px
+                      {/* Page number indicator */}
+                      <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
+                        Page {pageIndex + 1} of {pageCount}
                       </div>
                       
-                      {/* FIXED: Strict viewport clipping with absolute positioning wrapper */}
+                      {/* Viewport window with clean implementation */}
                       <div
+                        ref={pageIndex === 0 ? editorContainerRef : undefined}
                         className="viewport-window"
                         style={{
-                          height: `${pageHeight - (padding * 2)}px`,
+                          height: `${pageHeight}px`,
                           maxHeight: `${pageHeight - (padding * 2)}px`,
                           overflow: 'hidden',
                           position: 'relative',
-                          border: '2px solid rgba(0,150,255,0.5)', // DEBUG: viewport boundary
+                          border: '1px solid rgba(0,150,255,0.3)',
+                          padding: `${padding}px`,
                         }}
                       >
-                        {console.log(`🪟 VIEWPORT ${pageIndex + 1}: Strict clipping at ${pageHeight - (padding * 2)}px height`)}
-                        
-                        {/* CRITICAL: Absolute wrapper for strict Tiptap content clipping */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: `${pageHeight - (padding * 2)}px`,
-                            maxHeight: `${pageHeight - (padding * 2)}px`,
-                            overflow: 'hidden', // Double-enforce clipping
-                            transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`,
-                            transition: 'transform 0.1s ease',
-                          }}
-                        >
+                        {/* Strict clipping wrapper */}
+                        <div style={{ 
+                          maxHeight: `${pageHeight - (padding * 2)}px`, 
+                          overflow: 'hidden', 
+                          position: 'absolute', 
+                          width: '100%',
+                          top: 0,
+                          left: 0,
+                          padding: `${padding}px`,
+                        }}>
                           <EditorContent
                             editor={editor}
                             className="w-full focus:outline-none prose prose-sm max-w-none cursor-text"
-                            style={{
-                              fontFamily,
-                              fontSize: `${fontSize}pt`,
-                              color: textColor,
+                            style={{ 
+                              transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`, 
+                              height: 'auto',
+                              fontFamily: '"Times New Roman"',
+                              fontSize: '12pt',
+                              color: 'rgb(0, 0, 0)',
                               lineHeight: '1.6',
-                              minHeight: `${pageCount * (pageHeight - padding * 2)}px`, // Full document height
-                              width: '100%',
-                              pointerEvents: 'auto', // Direct editing enabled
-                              position: 'relative',
-                              top: `${pageIndex * (pageHeight - padding * 2)}px`, // Offset content back to show correct section
                             }}
                           />
                         </div>
-                      </div>
-                      
-                      {/* ENHANCED: True click-to-edit with viewport focus retention */}
-                      <div 
-                        className="absolute inset-0 bg-transparent"
-                        style={{ 
-                          cursor: 'text',
-                          zIndex: 10, // Higher z-index for reliable clicks
-                          padding: `${padding}px`,
-                          pointerEvents: 'auto',
-                        }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const clickY = e.clientY - rect.top - padding;
-                          const documentY = (pageIndex * (pageHeight - padding * 2)) + clickY;
-                          
-                          console.log(`📍 TRUE DIRECT EDIT: Page ${pageIndex + 1} clicked at Y=${clickY}, Document Y=${documentY}`);
-                          
-                          if (editor) {
-                            // CRITICAL: Focus editor and maintain viewport
-                            editor.commands.focus();
-                            
-                            // Calculate precise cursor position
-                            try {
-                              const editorElement = editorContainerRef.current?.querySelector('.ProseMirror');
-                              if (editorElement) {
-                                const totalContentHeight = editorElement.scrollHeight;
-                                const scrollRatio = documentY / totalContentHeight;
-                                const docSize = editor.state.doc.content.size;
-                                const targetPos = Math.max(1, Math.min(Math.floor(docSize * scrollRatio), docSize - 1));
-                                
-                                editor.commands.setTextSelection(targetPos);
-                                
-                                console.log(`✅ Page ${pageIndex + 1} editing active:`);
-                                console.log(`   📊 Click Y: ${clickY}, Document Y: ${documentY}`);
-                                console.log(`   🎯 Cursor at position: ${targetPos} (${Math.round(scrollRatio * 100)}%)`);
-                                console.log(`   📜 Content flow enabled for page-to-page typing`);
-                                
-                                // Verify cursor is in correct viewport
-                                setTimeout(() => {
-                                  const selection = editor.state.selection;
-                                  console.log(`   ✅ Cursor confirmed at: ${selection.from}-${selection.to}`);
-                                }, 100);
-                              }
-                            } catch (error) {
-                              console.log('❌ Cursor positioning failed:', error);
-                              // Fallback to proportional positioning
-                              const docSize = editor.state.doc.content.size;
-                              const fallbackPos = Math.max(1, Math.min(Math.floor(docSize * 0.5), docSize - 1));
-                              editor.commands.setTextSelection(fallbackPos);
+                        
+                        {/* Click handler for direct editing */}
+                        <div
+                          className="absolute inset-0 bg-transparent"
+                          style={{ cursor: 'text', zIndex: 5, pointerEvents: 'auto', padding: `${padding}px` }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const documentY = pageIndex * (pageHeight - padding * 2) + e.clientY - 64;
+                            const targetPos = editor?.view.posAtCoords({ left: e.clientX, top: documentY });
+                            if (targetPos && editor) {
+                              editor.commands.focus();
+                              editor.commands.setTextSelection(targetPos.pos);
+                              console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} at Y=${e.clientY}, Document Y=${documentY}`);
                             }
-                          }
-                        }}
-                        title={`EDIT PAGE ${pageIndex + 1} DIRECTLY - True Word/Google Docs experience`}
-                      />
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </ScrollArea>
           </div>

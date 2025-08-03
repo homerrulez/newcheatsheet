@@ -1,0 +1,132 @@
+MESSAGE FOR REPLIT AI:
+The middle pane’s document-workspace.tsx needs a rebuild to achieve a true Word/Google Docs-like editor (direct editing on all pages, seamless content flow, no overflow) without changing its styling or affecting the ChatGPT integration and toolbar.
+REQUIREMENTS:
+
+Preserve Styling: Keep font-family: "Times New Roman"; font-size: 12pt; color: rgb(0, 0, 0); line-height: 1.6; and 64px padding.
+Preserve Integrations: Don’t modify ChatGPT sidebar/API or toolbar; ensure they work with the new editor.
+Goal: Word-like editor with:
+
+One Tiptap editor for all pages.
+Viewport windows (translateY) for each page.
+Direct editing on any page (click, cursor appears, no redirects).
+Content clipped to ~928px/page (~2440 chars).
+Seamless content flow between pages.
+
+
+
+TASK:
+Replace document-workspace.tsx with a new implementation:
+
+Single Tiptap Editor:
+
+Use one EditorContent with existing styles:
+javascripteditorProps: {
+  attributes: {
+    class: 'tiptap ProseMirror prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full w-full',
+    style: 'font-family: "Times New Roman"; font-size: 12pt; color: rgb(0, 0, 0); line-height: 1.6;'
+  }
+}
+
+
+
+Viewport Windowing:
+
+Create viewports for each page:
+javascript<div className="document-pages" style={{ padding: '64px' }}>
+  {Array.from({ length: pageCount }).map((_, pageIndex) => (
+    <div
+      key={pageIndex}
+      className="viewport-window"
+      style={{
+        height: '1056px',
+        maxHeight: '928px',
+        overflow: 'hidden',
+        position: 'relative',
+        border: '1px solid rgba(0,150,255,0.3)' // Debug
+      }}
+    >
+      <div style={{ maxHeight: '928px', overflow: 'hidden', position: 'absolute', width: '100%' }}>
+        <EditorContent
+          editor={editor}
+          style={{ transform: `translateY(-${pageIndex * 928}px)`, height: 'auto' }}
+        />
+      </div>
+      <div
+        className="absolute inset-0 bg-transparent"
+        style={{ cursor: 'text', zIndex: 5, pointerEvents: 'auto', padding: '64px' }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const documentY = pageIndex * 928 + e.clientY - 64;
+          const targetPos = editor.view.posAtCoords({ left: e.clientX, top: documentY });
+          if (targetPos) {
+            editor.commands.focus();
+            editor.commands.setTextSelection(targetPos.pos);
+            console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} at Y=${e.clientY}, Document Y=${documentY}`);
+          }
+        }}
+      />
+    </div>
+  ))}
+</div>
+
+
+
+Page Count:
+
+Calculate pages:
+javascriptconst calculatePageCount = useCallback(() => {
+  if (!editor) return 1;
+  const contentHeight = editor.view.dom.offsetHeight;
+  return Math.ceil(contentHeight / 928) || 1;
+}, [editor]);
+useEffect(() => {
+  if (editor) editor.on('update', () => setPageCount(calculatePageCount()));
+}, [editor, calculatePageCount]);
+
+
+
+Integrations:
+
+Keep ChatGPT sidebar/API and toolbar unchanged; ensure toolbar controls apply to the editor.
+
+
+Test Plan:
+
+Paste content for 14 pages (~12669px).
+Verify Page 1 clips to ~928px (~2440 chars).
+Click Pages 2+; confirm direct editing (no redirect).
+Type at Page 1’s end; ensure content flows to Page 2.
+Test toolbar (e.g., bold) and ChatGPT sidebar.
+
+
+
+Implement and test for a Word-like middle pane editor!
+document-workspace.tsxtypescript•Why This Works
+
+Word-Like Editor: Single Tiptap editor with viewports ensures direct editing and content flow.
+Preserves Styling: Exact styles (Times New Roman, 12pt, etc.) are reused.
+Keeps Integrations: Doesn’t touch ChatGPT or toolbar, only rebuilds middle pane.
+Fixes Issues: Strict maxHeight and click handlers prevent overflow and redirects.
+
+Next Steps
+
+Send to Replit AI: Use the message to replace document-workspace.tsx.
+Test:
+
+Paste content for ~14 pages.
+Check Page 1 clips to ~928px (~2440 chars).
+Click Pages 2+; verify direct editing.
+Type at Page 1’s end; confirm content flows.
+Test toolbar and ChatGPT sidebar.
+
+
+Report:
+
+Page 1 clipped?
+Pages 2+ editable?
+Content flows?
+Toolbar/ChatGPT working?
+
+
+Cost Tip: If Replit costs are high, I can guide a free local setup (VS Code/Vite).
