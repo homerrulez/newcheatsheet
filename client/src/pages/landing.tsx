@@ -76,13 +76,13 @@ export default function Landing() {
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 hover:bg-white/25 transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
+              <div className="bg-gradient-to-br from-green-100/40 via-cyan-50/30 to-blue-100/20 backdrop-blur-md border border-white/40 rounded-3xl p-8 hover:shadow-xl hover:shadow-cyan-200/20 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-white/25 backdrop-blur-md border border-white/40 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                    <Layout className="text-white text-2xl" />
+                  <div className="w-20 h-20 bg-gray-900/90 backdrop-blur-sm border-2 border-gray-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300 shadow-lg">
+                    <Layout className="text-white text-3xl" />
                   </div>
-                  <h3 className="text-2xl font-medium text-white mb-2 text-center" style={{ fontFamily: '"Inter", sans-serif' }}>Template</h3>
-                  <p className="text-sm text-white/80 text-center leading-relaxed">Smart Templates Powered by AI</p>
+                  <h3 className="text-3xl font-semibold text-gray-900 mb-3 text-center" style={{ fontFamily: '"Inter", sans-serif' }}>Template</h3>
+                  <p className="text-base text-gray-700 text-center leading-relaxed font-medium">With Built-in AI</p>
                 </div>
               </div>
             </Link>
@@ -103,13 +103,13 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 hover:bg-white/25 transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
+              <div className="bg-gradient-to-br from-orange-100/40 via-pink-50/30 to-purple-100/20 backdrop-blur-md border border-white/40 rounded-3xl p-8 hover:shadow-xl hover:shadow-purple-200/20 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-white/25 backdrop-blur-md border border-white/40 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                    <Brain className="text-white text-2xl" />
+                  <div className="w-20 h-20 bg-gray-900/90 backdrop-blur-sm border-2 border-gray-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300 shadow-lg">
+                    <Brain className="text-white text-3xl" />
                   </div>
-                  <h3 className="text-2xl font-medium text-white mb-2 text-center" style={{ fontFamily: '"Inter", sans-serif' }}>Cheatsheet</h3>
-                  <p className="text-sm text-white/80 text-center leading-relaxed">Cheat Sheets Powered by AI</p>
+                  <h3 className="text-3xl font-semibold text-gray-900 mb-3 text-center" style={{ fontFamily: '"Inter", sans-serif' }}>Cheatsheet</h3>
+                  <p className="text-base text-gray-700 text-center leading-relaxed font-medium">With Built-in AI</p>
                 </div>
               </div>
             </Link>
@@ -130,13 +130,13 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document/test-doc-1">
-              <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 hover:bg-white/25 transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
+              <div className="bg-gradient-to-br from-cyan-100/40 via-blue-50/30 to-indigo-100/20 backdrop-blur-md border border-white/40 rounded-3xl p-8 hover:shadow-xl hover:shadow-blue-200/20 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-white/25 backdrop-blur-md border border-white/40 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                    <PenTool className="text-white text-2xl" />
+                  <div className="w-20 h-20 bg-gray-900/90 backdrop-blur-sm border-2 border-gray-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300 shadow-lg">
+                    <PenTool className="text-white text-3xl" />
                   </div>
-                  <h3 className="text-2xl font-medium text-white mb-2 text-center" style={{ fontFamily: '"Inter", sans-serif' }}>Document</h3>
-                  <p className="text-sm text-white/80 text-center leading-relaxed">Smart Documents Powered by AI</p>
+                  <h3 className="text-3xl font-semibold text-gray-900 mb-3 text-center" style={{ fontFamily: '"Inter", sans-serif' }}>Document</h3>
+                  <p className="text-base text-gray-700 text-center leading-relaxed font-medium">With Built-in AI</p>
                 </div>
               </div>
             </Link>
