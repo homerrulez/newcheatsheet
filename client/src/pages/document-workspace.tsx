@@ -1779,7 +1779,7 @@ export default function DocumentWorkspace() {
                     })}
                     
                     {pageIndex === 0 ? (
-                      /* First page with editable Tiptap editor */
+                      /* First page - FIXED: Show distributed content like other pages, with hidden editor overlay */
                       <div
                         ref={editorContainerRef}
                         className="w-full h-full relative"
@@ -1788,64 +1788,55 @@ export default function DocumentWorkspace() {
                           minHeight: `${pageHeight}px`,
                         }}
                       >
-                        {console.log('   ✅ Showing EditorContent component (main unified editor)')}
-                        {console.log('   📏 pageHeight:', pageHeight)}
-                        {console.log('   📏 padding:', padding)}
-                        {console.log('   📏 calculatedMaxHeight:', pageHeight - (padding * 2))}
-                        {console.log('   📏 constraint height:', `${pageHeight - (padding * 2)}px`)}
-                        {console.log('   🔍 CONTENT MISMATCH ANALYSIS:')}
-                        {console.log('   - Page 1 (unified editor) content:', editor?.getHTML()?.length || 0, 'chars')}
-                        {console.log('   - Page 1 (distributed) content:', distributedPages[0]?.length || 0, 'chars')}
-                        {console.log('   - Pages 2+ show distributed content only')}
-                        <div
-                          className="editor-constraint-wrapper"
+                        {console.log('   ✅ FIXED: Page 1 now shows distributed content only')}
+                        {console.log('   📏 Page 1 distributed content:', distributedPages[0]?.length || 0, 'chars')}
+                        
+                        {/* Show Page 1's distributed content (same as other pages) */}
+                        <div 
+                          className="w-full h-full prose prose-sm max-w-none"
                           style={{
+                            fontFamily,
+                            fontSize: `${fontSize}pt`,
+                            color: textColor,
+                            lineHeight: '1.6',
                             height: `${pageHeight - (padding * 2)}px`,
                             maxHeight: `${pageHeight - (padding * 2)}px`,
                             overflow: 'hidden',
-                            border: '3px solid red', // DEBUG: Constraint boundary
-                            position: 'relative',
-                            display: 'block',
+                            border: '2px solid green', // DEBUG: Fixed boundary
+                          }}
+                          dangerouslySetInnerHTML={{ __html: distributedPages[0] || '<p>Loading page 1...</p>' }}
+                        />
+                        
+                        {/* Hidden editor overlay for editing - positioned absolutely but invisible */}
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            padding: `${padding}px`,
+                            opacity: 0.01, // Nearly invisible but still functional
+                            pointerEvents: 'auto',
+                            zIndex: 10,
                           }}
                         >
-                          <style>
-                            {`
-                              .editor-constraint-wrapper .ProseMirror {
-                                height: auto !important;
-                                max-height: none !important;
-                                overflow: visible !important;
-                              }
-                            `}
-                          </style>
                           <EditorContent
                             editor={editor}
-                            className="w-full focus:outline-none prose prose-sm max-w-none cursor-text"
+                            className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
                             style={{
                               fontFamily,
                               fontSize: `${fontSize}pt`,
                               color: textColor,
                               lineHeight: '1.6',
-                              height: 'auto',
-                              overflow: 'visible',
+                              height: `${pageHeight - (padding * 2)}px`,
+                              overflow: 'hidden',
                             }}
                           />
-                          {/* DEBUG: Show content mismatch info */}
-                          <div 
-                            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1"
-                            style={{ zIndex: 1000 }}
-                          >
-                            UNIFIED: {editor?.getHTML()?.length || 0}ch | DISTRIBUTED: {distributedPages[0]?.length || 0}ch
-                          </div>
-                          
-                          {/* DEBUG: Visual comparison - show what distributed page 1 would look like */}
-                          {distributedPages[0] && (
-                            <div 
-                              className="absolute bottom-0 left-0 bg-blue-500 text-white text-xs px-1 max-w-xs"
-                              style={{ zIndex: 999 }}
-                            >
-                              P1 distributed preview: "{distributedPages[0].substring(0, 50)}..."
-                            </div>
-                          )}
+                        </div>
+                        
+                        {/* DEBUG: Show fix confirmation */}
+                        <div 
+                          className="absolute top-0 right-0 bg-green-500 text-white text-xs px-1"
+                          style={{ zIndex: 1000 }}
+                        >
+                          FIXED: Page 1 = {distributedPages[0]?.length || 0}ch (distributed)
                         </div>
                       </div>
                     ) : (
