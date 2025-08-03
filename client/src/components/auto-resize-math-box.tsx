@@ -1,25 +1,51 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Draggable from 'react-draggable';
-import { ResizableBox } from 'react-resizable';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
+import { ResizableBox, ResizeCallbackData } from 'react-resizable';
+import { SyntheticEvent } from 'react';
 import 'react-resizable/css/styles.css';
-import LaTeXRenderer from './latex-renderer';
+import { Button } from '@/components/ui/button';
+import { Edit3, Trash2 } from 'lucide-react';
+
+// Constants
+const SIZING_CONSTANTS = {
+  TITLE_HEIGHT: 48,
+  PADDING: 24,
+  MIN_FONT_SIZE: 8,
+  MAX_FONT_SIZE: 24,
+  DEFAULT_FONT_SIZE: 14,
+  DEBOUNCE_DELAY: 100,
+} as const;
+
+interface Size {
+  width: number;
+  height: number;
+}
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 interface AutoResizeMathBoxProps {
   id: string;
   title: string;
   content: string;
   color: string;
-  position: { x: number; y: number };
-  size?: { width: number; height: number };
-  onPositionChange: (position: { x: number; y: number }) => void;
-  onSizeChange: (size: { width: number; height: number }) => void;
+  position: Position;
+  size?: Size;
+  onPositionChange: (position: Position) => void;
+  onSizeChange: (size: Size) => void;
   onSaveRequest: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   boxNumber: number;
   isGridMode?: boolean;
   minWidth?: number;
   maxWidth?: number;
   minHeight?: number;
   maxHeight?: number;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
 export default function AutoResizeMathBox({
@@ -32,155 +58,188 @@ export default function AutoResizeMathBox({
   onPositionChange,
   onSizeChange,
   onSaveRequest,
+  onEdit,
+  onDelete,
   boxNumber,
   isGridMode = false,
-  minWidth = 160,
-  maxWidth = 800,
-  minHeight = 100,
-  maxHeight = 600
+  minWidth = 100,
+  maxWidth = 1200,
+  minHeight = 80,
+  maxHeight = 800,
+  isSelected = false,
+  onClick
 }: AutoResizeMathBoxProps) {
-  const [autoSize, setAutoSize] = useState({ width: 200, height: 120 });
-  const [isManuallyResized, setIsManuallyResized] = useState(false);
+  const [currentSize, setCurrentSize] = useState<Size>(externalSize || { width: 300, height: 200 });
   const [isDragging, setIsDragging] = useState(false);
+  const [optimalFontSize, setOptimalFontSize] = useState(SIZING_CONSTANTS.DEFAULT_FONT_SIZE);
+  const [contentLayout, setContentLayout] = useState({ lineHeight: 1.4, wordSpacing: 'normal' });
+  
   const contentRef = useRef<HTMLDivElement>(null);
+  const resizeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Advanced content-aware size calculation with ResizeObserver
-  const calculateContentSize = useCallback(() => {
-    if (!contentRef.current) return { width: 200, height: 120 };
-    
-    const contentElement = contentRef.current;
-    const titleHeight = 48;
-    const padding = 24;
-    
-    // Detect content characteristics for specialized sizing
-    const hasImages = contentElement.querySelector('img') || content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i);
-    const hasLongText = content.length > 200;
-    const isMultiLine = content.includes('\n') || content.includes('<br>') || content.split(' ').length > 15;
-    const isMathFormula = content.includes('\\') || content.includes('=') || content.includes('^') || content.includes('frac');
-    const isComplexMath = content.includes('\\sum') || content.includes('\\int') || content.includes('\\sqrt') || content.includes('matrix');
-    
-    // Create measurement container with proper styling
-    const measureElement = document.createElement('div');
-    measureElement.style.cssText = `
+  // Calculate optimal font size and layout for current box dimensions
+  const calculateOptimalDisplay = useCallback((boxSize: Size): { fontSize: number; lineHeight: number; wordSpacing: string; letterSpacing: string } => {
+    if (!contentRef.current || !content.trim()) {
+      return { 
+        fontSize: SIZING_CONSTANTS.DEFAULT_FONT_SIZE, 
+        lineHeight: 1.4, 
+        wordSpacing: 'normal',
+        letterSpacing: 'normal'
+      };
+    }
+
+    const availableWidth = boxSize.width - SIZING_CONSTANTS.PADDING;
+    const availableHeight = boxSize.height - SIZING_CONSTANTS.TITLE_HEIGHT - SIZING_CONSTANTS.PADDING;
+
+    // Create measurement container
+    const measureContainer = document.createElement('div');
+    measureContainer.style.cssText = `
       position: absolute;
       visibility: hidden;
       top: -9999px;
       left: -9999px;
-      width: auto;
-      height: auto;
-      max-width: ${maxWidth - padding}px;
-      font-family: ${window.getComputedStyle(contentElement).fontFamily};
-      font-size: ${window.getComputedStyle(contentElement).fontSize};
-      line-height: ${window.getComputedStyle(contentElement).lineHeight};
-      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       white-space: pre-wrap;
       word-wrap: break-word;
-      font-family: ${window.getComputedStyle(contentElement).fontFamily};
-      line-height: ${window.getComputedStyle(contentElement).lineHeight};
-      white-space: pre-wrap;
-      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      contain: layout style paint;
     `;
-    measureElement.innerHTML = contentElement.innerHTML;
-    document.body.appendChild(measureElement);
-    
-    let optimalWidth, optimalHeight;
-    
-    if (hasImages) {
-      // Image content: generous sizing to accommodate visual content
-      const img = measureElement.querySelector('img');
-      if (img) {
-        optimalWidth = Math.min(maxWidth, Math.max(300, img.naturalWidth + padding));
-        optimalHeight = Math.min(maxHeight, Math.max(200, img.naturalHeight + titleHeight + padding));
-      } else {
-        optimalWidth = 400;
-        optimalHeight = 300;
+
+    try {
+      document.body.appendChild(measureContainer);
+      
+      // Binary search for optimal font size
+      let minFont = SIZING_CONSTANTS.MIN_FONT_SIZE;
+      let maxFont = SIZING_CONSTANTS.MAX_FONT_SIZE;
+      let bestFit = { fontSize: minFont, lineHeight: 1.2, wordSpacing: 'normal', letterSpacing: 'normal' };
+      
+      while (maxFont - minFont > 0.5) {
+        const testFont = (minFont + maxFont) / 2;
+        
+        // Test different line heights for better fitting
+        const lineHeights = [1.1, 1.2, 1.3, 1.4, 1.5];
+        let fitsWithThisFont = false;
+        
+        for (const lineHeight of lineHeights) {
+          measureContainer.style.cssText += `
+            font-size: ${testFont}px;
+            line-height: ${lineHeight};
+            width: ${availableWidth}px;
+            height: auto;
+            max-height: none;
+          `;
+          
+          measureContainer.textContent = content;
+          
+          const contentHeight = measureContainer.scrollHeight;
+          
+          if (contentHeight <= availableHeight) {
+            bestFit = { 
+              fontSize: testFont, 
+              lineHeight, 
+              wordSpacing: availableWidth < 200 ? '-0.05em' : 'normal',
+              letterSpacing: availableWidth < 150 ? '-0.02em' : 'normal'
+            };
+            fitsWithThisFont = true;
+            break;
+          }
+        }
+        
+        if (fitsWithThisFont) {
+          minFont = testFont;
+        } else {
+          maxFont = testFont;
+        }
       }
-    } else if (hasLongText) {
-      // Long text: prioritize readability with comfortable width
-      const idealWidth = Math.min(500, Math.max(300, Math.sqrt(content.length) * 25));
-      measureElement.style.width = `${idealWidth - padding}px`;
-      optimalWidth = idealWidth;
-      optimalHeight = Math.min(maxHeight, Math.max(150, measureElement.scrollHeight + titleHeight + padding));
-    } else if (isMultiLine) {
-      // Multi-line content: balanced proportions
-      const naturalWidth = Math.min(400, measureElement.scrollWidth);
-      measureElement.style.width = `${naturalWidth}px`;
-      optimalWidth = naturalWidth + padding;
-      optimalHeight = Math.min(maxHeight, Math.max(120, measureElement.scrollHeight + titleHeight + padding));
-    } else if (isMathFormula) {
-      // Math formulas: compact but ensure visibility
-      const naturalWidth = Math.min(350, measureElement.scrollWidth);
-      optimalWidth = Math.max(200, naturalWidth + padding);
-      measureElement.style.width = `${optimalWidth - padding}px`;
-      optimalHeight = Math.min(maxHeight, Math.max(100, measureElement.scrollHeight + titleHeight + padding));
-    } else {
-      // Short text/single line: compact sizing
-      const naturalWidth = Math.min(300, measureElement.scrollWidth);
-      optimalWidth = Math.max(minWidth, naturalWidth + padding);
-      measureElement.style.width = `${optimalWidth - padding}px`;
-      optimalHeight = Math.min(maxHeight, Math.max(minHeight, measureElement.scrollHeight + titleHeight + padding));
+      
+      // If content still doesn't fit, try more aggressive spacing
+      if (bestFit.fontSize === SIZING_CONSTANTS.MIN_FONT_SIZE) {
+        measureContainer.style.cssText += `
+          font-size: ${bestFit.fontSize}px;
+          line-height: 1.1;
+          width: ${availableWidth}px;
+          word-spacing: -0.1em;
+          letter-spacing: -0.03em;
+        `;
+        measureContainer.textContent = content;
+        
+        if (measureContainer.scrollHeight <= availableHeight) {
+          bestFit = {
+            fontSize: bestFit.fontSize,
+            lineHeight: 1.1,
+            wordSpacing: '-0.1em',
+            letterSpacing: '-0.03em'
+          };
+        }
+      }
+      
+      return bestFit;
+      
+    } catch (error) {
+      console.error('Error calculating optimal display:', error);
+      return { 
+        fontSize: SIZING_CONSTANTS.DEFAULT_FONT_SIZE, 
+        lineHeight: 1.4, 
+        wordSpacing: 'normal',
+        letterSpacing: 'normal'
+      };
+    } finally {
+      if (measureContainer.parentNode) {
+        document.body.removeChild(measureContainer);
+      }
     }
-    
-    document.body.removeChild(measureElement);
-    
-    // Apply constraints
-    optimalWidth = Math.max(minWidth, Math.min(maxWidth, optimalWidth));
-    optimalHeight = Math.max(minHeight, Math.min(maxHeight, optimalHeight));
-    
-    // Ensure reasonable aspect ratios
-    const ratio = optimalWidth / optimalHeight;
-    if (ratio > 4) { // Too wide
-      optimalHeight = Math.max(optimalHeight, optimalWidth / 3.5);
-    } else if (ratio < 0.4) { // Too tall
-      optimalWidth = Math.max(optimalWidth, optimalHeight * 0.5);
-    }
-    
-    return { 
-      width: Math.round(optimalWidth), 
-      height: Math.round(optimalHeight) 
-    };
   }, [content]);
 
-  // Update size when content changes or component mounts - but respect manual resizing
-  useEffect(() => {
-    if (contentRef.current && !isManuallyResized && !isDragging) {
-      const timer = setTimeout(() => {
-        const newSize = calculateContentSize();
-        setAutoSize(newSize);
-        onSizeChange(newSize);
-      }, 150); // Slightly longer delay to ensure content is rendered
-      return () => clearTimeout(timer);
+  // Debounced recalculation
+  const debouncedRecalculate = useCallback(() => {
+    if (resizeTimerRef.current) {
+      clearTimeout(resizeTimerRef.current);
     }
-  }, [content, calculateContentSize, onSizeChange, isManuallyResized, isDragging]);
+    
+    resizeTimerRef.current = setTimeout(() => {
+      const optimal = calculateOptimalDisplay(currentSize);
+      setOptimalFontSize(optimal.fontSize);
+      setContentLayout({
+        lineHeight: optimal.lineHeight,
+        wordSpacing: optimal.wordSpacing
+      });
+    }, SIZING_CONSTANTS.DEBOUNCE_DELAY);
+  }, [calculateOptimalDisplay, currentSize]);
 
-  // Initial size calculation on mount
+  // Recalculate when size or content changes
   useEffect(() => {
-    if (contentRef.current && !externalSize) {
-      const initialTimer = setTimeout(() => {
-        const newSize = calculateContentSize();
-        setAutoSize(newSize);
-        onSizeChange(newSize);
-      }, 300); // Longer delay for initial load
-      return () => clearTimeout(initialTimer);
+    debouncedRecalculate();
+  }, [currentSize, content, debouncedRecalculate]);
+
+  // Sync with external size changes
+  useEffect(() => {
+    if (externalSize && (externalSize.width !== currentSize.width || externalSize.height !== currentSize.height)) {
+      setCurrentSize(externalSize);
     }
+  }, [externalSize, currentSize]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (resizeTimerRef.current) {
+        clearTimeout(resizeTimerRef.current);
+      }
+    };
   }, []);
-
-  // Use external size if manually resized, otherwise use auto size
-  const boxSize = isManuallyResized && externalSize ? externalSize : autoSize;
 
   const handleDragStart = useCallback(() => {
     setIsDragging(true);
   }, []);
 
-  const handleDragStop = useCallback((e: any, data: any) => {
+  const handleDragStop = useCallback((e: DraggableEvent, data: DraggableData) => {
     setIsDragging(false);
     onPositionChange({ x: data.x, y: data.y });
     onSaveRequest();
   }, [onPositionChange, onSaveRequest]);
 
-  const handleResize = useCallback((e: any, { size }: any) => {
-    setIsManuallyResized(true); // Permanently disable auto-resize once user manually resizes
-    setAutoSize(size); // Update auto size to match manual size
+  const handleResize = useCallback((e: SyntheticEvent, { size }: ResizeCallbackData) => {
+    setCurrentSize(size);
     onSizeChange(size);
   }, [onSizeChange]);
 
@@ -188,104 +247,164 @@ export default function AutoResizeMathBox({
     onSaveRequest();
   }, [onSaveRequest]);
 
+  // Calculate initial size if not provided
+  const initialSize = useMemo(() => {
+    if (externalSize) return externalSize;
+    
+    // Quick estimation for initial size
+    const wordCount = content.split(/\s+/).length;
+    const hasComplexMath = /\\[a-zA-Z]+|\^|\{|\}|_/.test(content);
+    
+    let estimatedWidth = Math.min(maxWidth, Math.max(minWidth, Math.sqrt(wordCount) * 40));
+    let estimatedHeight = Math.min(maxHeight, Math.max(minHeight, wordCount * 2 + 100));
+    
+    if (hasComplexMath) {
+      estimatedHeight += 50;
+      estimatedWidth += 100;
+    }
+    
+    return { 
+      width: Math.round(estimatedWidth), 
+      height: Math.round(estimatedHeight) 
+    };
+  }, [content, externalSize, maxWidth, minWidth, maxHeight, minHeight]);
+
+  // Use initial size if currentSize hasn't been set
+  const boxSize = currentSize.width > 0 ? currentSize : initialSize;
+
+  const borderColor = `hsl(${(boxNumber * 50) % 360}, 70%, 50%)`;
+
+  // Dynamic styles for content
+  const contentStyles = useMemo(() => ({
+    fontSize: `${optimalFontSize}px`,
+    lineHeight: contentLayout.lineHeight,
+    wordSpacing: contentLayout.wordSpacing,
+    letterSpacing: (contentLayout as any).letterSpacing || 'normal',
+    overflow: 'hidden',
+    textOverflow: 'clip',
+    wordWrap: 'break-word' as const,
+    overflowWrap: 'break-word' as const,
+    hyphens: 'auto' as const,
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    textAlign: 'left' as const,
+    width: '100%',
+    height: '100%',
+    padding: '0',
+    margin: '0',
+    color: 'black' // Set text color to black instead of white
+  }), [optimalFontSize, contentLayout]);
+
   return (
     <Draggable
       position={isDragging ? undefined : position}
       defaultPosition={isDragging ? position : undefined}
       onStart={handleDragStart}
       onStop={handleDragStop}
-      grid={[10, 10]}
+      grid={[5, 5]}
       handle=".drag-handle"
       disabled={isGridMode}
     >
-      <div className="absolute" style={{ 
-        width: `${boxSize.width}px`,
-        height: `${boxSize.height}px`
-      }}>
-        {!isGridMode ? (
-          // Free positioning mode with resize handles
-          <ResizableBox
-            width={boxSize.width}
-            height={boxSize.height}
-            minConstraints={[150, 80]}
-            maxConstraints={[800, 600]}
-            onResize={handleResize}
-            onResizeStop={handleResizeStop}
-            resizeHandles={['se']}
-            className="relative group"
+      <div 
+        className="absolute" 
+        style={{ 
+          width: `${boxSize.width}px`,
+          height: `${boxSize.height}px`
+        }}
+        role="region"
+        aria-label={`Math box ${boxNumber}: ${title}`}
+        onClick={onClick}
+      >
+        <ResizableBox
+          width={boxSize.width}
+          height={boxSize.height}
+          minConstraints={[minWidth, minHeight]}
+          maxConstraints={[maxWidth, maxHeight]}
+          onResize={handleResize}
+          onResizeStop={handleResizeStop}
+          resizeHandles={['se', 'sw', 'ne', 'nw', 's', 'n', 'e', 'w']}
+          className={`relative group ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+        >
+          <div 
+            className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative`} 
+            style={{ border: `3px solid ${borderColor}` }}
           >
-            <div className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`} style={{ border: `3px solid hsl(${(boxNumber * 50) % 360}, 70%, 50%)` }}>
-              {/* Make entire box draggable */}
-              <div className="drag-handle w-full h-full cursor-move">
-                {/* Title Header */}
-                <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                      {boxNumber}
-                    </div>
-                    <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-4 h-4 bg-slate-400/30 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Content Container */}
-                <div className="p-3" style={{ height: `${boxSize.height - 48}px` }}>
+            <div 
+              className="drag-handle w-full h-full cursor-move"
+              role="button"
+              aria-label={`Drag to move box ${boxNumber}`}
+              tabIndex={0}
+            >
+              {/* Title Header */}
+              <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
                   <div 
-                    ref={contentRef}
-                    className="text-sm leading-relaxed h-full overflow-hidden flex items-center justify-center"
-                    style={{ cursor: 'text' }}
-                    onClick={(e) => e.stopPropagation()}
+                    className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0"
+                    aria-label={`Box number ${boxNumber}`}
                   >
-                    <LaTeXRenderer 
-                      content={content} 
-                      className="text-base math-content w-full h-full flex items-center justify-center"
-                      displayMode={false}
-                    />
+                    {boxNumber}
                   </div>
+                  <h4 className="font-semibold text-slate-900 text-sm truncate select-none">
+                    {title}
+                  </h4>
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
+                  <div className="text-xs text-slate-600 bg-white/20 px-2 py-1 rounded">
+                    {Math.round(optimalFontSize)}px
+                  </div>
+                  {onEdit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit();
+                      }}
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete();
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
-            </div>
-          </ResizableBox>
-        ) : (
-          // Grid mode - auto-sizing only, no manual resize
-          <div className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}>
-            {/* Title Header */}
-            <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                  {boxNumber}
-                </div>
-                <h4 className="font-semibold text-slate-900 text-sm truncate select-none">{title}</h4>
-              </div>
-            </div>
-            
-            {/* Content Container */}
-            <div className="p-3" style={{ height: `${boxSize.height - 48}px` }}>
+              
+              {/* Content Container - Always fits content */}
               <div 
-                ref={contentRef}
-                className="text-sm leading-relaxed h-full overflow-hidden flex items-center justify-center"
+                className="relative"
+                style={{ 
+                  height: `${boxSize.height - SIZING_CONSTANTS.TITLE_HEIGHT}px`,
+                  padding: `${SIZING_CONSTANTS.PADDING / 2}px`,
+                  overflow: 'hidden'
+                }}
               >
-                <LaTeXRenderer 
-                  content={content} 
-                  className="text-base math-content w-full h-full flex items-center justify-center"
-                  displayMode={false}
+                <div 
+                  ref={contentRef}
+                  className="w-full h-full"
+                  style={contentStyles}
+                  onClick={(e) => e.stopPropagation()}
+                  role="region"
+                  aria-label="Auto-fitting content"
+                  dangerouslySetInnerHTML={{ __html: content }}
                 />
               </div>
             </div>
-            
-            {/* Grid mode indicator */}
-            <div className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none">
-              <div className="w-full h-full bg-blue-400 rounded-tl-lg transform rotate-45 scale-75"></div>
-            </div>
           </div>
-        )}
+        </ResizableBox>
       </div>
     </Draggable>
   );
 }
-
-export { AutoResizeMathBox };

@@ -8,8 +8,7 @@ import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
-import Draggable from 'react-draggable';
-import { ResizableBox } from 'react-resizable';
+import AutoResizeMathBox from '@/components/auto-resize-math-box';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -873,94 +872,27 @@ export default function CheatSheetWorkspace() {
             {/* Boxes container */}
             <div className="absolute inset-0 z-10">
               {/* Render boxes */}
-              {boxes.map(box => (
-                <Draggable
+              {boxes.map((box, index) => (
+                <AutoResizeMathBox
                   key={box.id}
+                  id={box.id}
+                  title={box.title}
+                  content={box.content}
+                  color={box.color}
                   position={{ x: box.x, y: box.y }}
-                  onDrag={(e, data) => {
-                    updateBox(box.id, { x: data.x, y: data.y });
+                  size={{ width: box.width, height: box.height }}
+                  boxNumber={index + 1}
+                  isSelected={selectedBox === box.id}
+                  onClick={() => setSelectedBox(box.id)}
+                  onPositionChange={(position) => updateBox(box.id, position)}
+                  onSizeChange={(size) => updateBox(box.id, size)}
+                  onSaveRequest={saveCheatSheet}
+                  onDelete={() => deleteBox(box.id)}
+                  onEdit={() => {
+                    const newTitle = prompt('Edit title:', box.title);
+                    if (newTitle) updateBox(box.id, { title: newTitle });
                   }}
-                  handle=".box-handle"
-                  bounds="parent"
-                >
-                  <div className="absolute">
-                    <ResizableBox
-                      width={box.width}
-                      height={box.height}
-                      onResize={(e, data) => {
-                        updateBox(box.id, { width: data.size.width, height: data.size.height });
-                      }}
-                      minConstraints={[120, 80]}
-                      maxConstraints={[600, 400]}
-                      resizeHandles={['se']}
-                      className={`relative ${selectedBox === box.id ? 'ring-2 ring-blue-500' : ''}`}
-                    >
-                      <div
-                        className="w-full h-full border-2 border-gray-300 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl group"
-                        style={{ backgroundColor: box.color }}
-                        onClick={() => setSelectedBox(box.id)}
-                      >
-                        {/* Box header with handle */}
-                        <div className="box-handle flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white/80 rounded-t-lg cursor-move">
-                          <h4 className="font-medium text-sm text-gray-900 truncate">{box.title}</h4>
-                          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Edit box functionality
-                                const newTitle = prompt('Edit title:', box.title);
-                                if (newTitle) updateBox(box.id, { title: newTitle });
-                              }}
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteBox(box.id);
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Box content */}
-                        <div className="p-3 h-full overflow-auto">
-                          {selectedBox === box.id ? (
-                            <Textarea
-                              value={box.content.replace(/<[^>]*>/g, '')} // Strip HTML for editing
-                              onChange={(e) => {
-                                const newContent = e.target.value;
-                                // Convert to basic HTML
-                                const htmlContent = newContent
-                                  .split('\n')
-                                  .map(line => `<p>${line || '&nbsp;'}</p>`)
-                                  .join('');
-                                updateBox(box.id, { content: htmlContent });
-                              }}
-                              className="w-full h-full resize-none border-none focus:ring-0 text-sm bg-transparent"
-                              placeholder="Enter box content..."
-                              style={{ minHeight: 'calc(100% - 20px)' }}
-                            />
-                          ) : (
-                            <div
-                              className="text-sm text-gray-800 leading-relaxed cursor-text"
-                              dangerouslySetInnerHTML={{ __html: box.content }}
-                              onClick={() => setSelectedBox(box.id)}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </ResizableBox>
-                  </div>
-                </Draggable>
+                />
               ))}
 
               {/* Empty state when no boxes */}
