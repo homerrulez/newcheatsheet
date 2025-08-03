@@ -19,7 +19,7 @@ export default function Landing() {
     setVideoModal({ isOpen: false, type: '', title: '' });
   };
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative">
       {/* Frosted overlay with floating math symbols */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-blue-400/5 to-purple-600/10 backdrop-blur-[1px] z-0">
         {/* Floating math symbols - more visible */}
@@ -61,7 +61,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <main className="relative z-10 max-w-6xl mx-auto px-8 py-16">
+      <main className="relative z-10 max-w-6xl mx-auto px-8 py-16 pb-32">
         <div className="text-center mb-20">
           <h1 className="text-8xl font-normal text-white mb-6 leading-tight tracking-wide" style={{ fontFamily: '"Crimson Text", serif' }}>
             StudyFlow
@@ -168,7 +168,7 @@ export default function Landing() {
         </div>
 
         {/* Additional Features Section */}
-        <div className="mt-40 mx-auto max-w-6xl space-y-8">
+        <div className="mt-24 mx-auto max-w-6xl space-y-8">
           {/* First Row - 2 boxes centered */}
           <div className="flex justify-center gap-8">
             {/* Academic Excellence */}
