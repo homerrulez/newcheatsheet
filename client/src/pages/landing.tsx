@@ -72,11 +72,15 @@ export default function Landing() {
         </div>
 
         {/* Workspace Cards and Video Previews */}
-        <div className="grid md:grid-cols-3 gap-16 mb-16 scale-[1.19]">
+        <div className="grid md:grid-cols-3 gap-6 mb-16 justify-center max-w-4xl mx-auto">
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center" style={{ backgroundColor: '#c8f0dc' }}>
+              <div className="w-72 h-72 rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
+                background: 'linear-gradient(145deg, rgba(200, 240, 220, 0.6), rgba(184, 230, 204, 0.4))', 
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)'
+              }}>
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
                     <Layout className="text-white text-2xl" />
@@ -103,7 +107,11 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center" style={{ backgroundColor: '#f5e6d3' }}>
+              <div className="w-72 h-72 rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
+                background: 'linear-gradient(145deg, rgba(245, 230, 211, 0.6), rgba(255, 192, 203, 0.4))', 
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)'
+              }}>
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
                     <Brain className="text-white text-2xl" />
@@ -130,7 +138,11 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document/test-doc-1">
-              <div className="rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center" style={{ backgroundColor: '#c8f0dc' }}>
+              <div className="w-72 h-72 rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
+                background: 'linear-gradient(145deg, rgba(173, 216, 230, 0.6), rgba(221, 160, 221, 0.4))', 
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)'
+              }}>
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
                     <PenTool className="text-white text-2xl" />
