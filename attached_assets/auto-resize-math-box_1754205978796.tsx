@@ -364,67 +364,91 @@ export default function AutoResizeMathBox({
                 }}
               >
                 {/* Title Header */}
-                <div className="absolute top-0 left-0 right-0 bg-black/10 backdrop-blur-sm px-4 py-2 flex items-center justify-between border-b border-white/20">
-                  <h3 className="text-white font-semibold text-sm truncate pr-2">{title}</h3>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-white/30 rounded-full"></div>
-                    <div className="w-2 h-2 bg-white/30 rounded-full"></div>
-                    <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+                <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0"
+                      aria-label={`Box number ${boxNumber}`}
+                    >
+                      {boxNumber}
+                    </div>
+                    <h4 className="font-semibold text-slate-900 text-sm truncate select-none">
+                      {title}
+                    </h4>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div 
+                      className="w-4 h-4 bg-slate-400/30 rounded-full flex items-center justify-center"
+                      aria-label="Drag indicator"
+                    >
+                      <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
-
-                {/* Content Area */}
-                <div 
-                  ref={contentRef}
-                  className="absolute top-12 left-0 right-0 bottom-0 p-4 overflow-auto"
-                >
-                  <div className="text-white/90 text-sm leading-relaxed">
-                    <LaTeXRenderer content={content} />
+                
+                {/* Content Container */}
+                <div className="p-3" style={{ height: `${boxSize.height - SIZING_CONSTANTS.TITLE_HEIGHT}px` }}>
+                  <div 
+                    ref={contentRef}
+                    className="text-sm leading-relaxed h-full overflow-hidden flex items-center justify-center"
+                    style={{ cursor: 'text' }}
+                    onClick={(e) => e.stopPropagation()}
+                    role="region"
+                    aria-label="Math content"
+                  >
+                    <LaTeXRenderer 
+                      content={content} 
+                      className="text-base math-content w-full h-full flex items-center justify-center"
+                      displayMode={false}
+                    />
                   </div>
-                </div>
-
-                {/* Box Number Badge */}
-                <div 
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center text-white shadow-lg"
-                  style={{ backgroundColor: borderColor }}
-                >
-                  {boxNumber}
                 </div>
               </div>
             </div>
           </ResizableBox>
         ) : (
-          // Grid mode - fixed size, no resize handles
+          // Grid mode - auto-sizing only, no manual resize
           <div 
-            className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`} 
+            className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in overflow-hidden relative`}
             style={{ border: `3px solid ${borderColor}` }}
           >
             {/* Title Header */}
-            <div className="absolute top-0 left-0 right-0 bg-black/10 backdrop-blur-sm px-4 py-2 flex items-center justify-between border-b border-white/20">
-              <h3 className="text-white font-semibold text-sm truncate pr-2">{title}</h3>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-white/30 rounded-full"></div>
-                <div className="w-2 h-2 bg-white/30 rounded-full"></div>
-                <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+            <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
+              <div className="flex items-center space-x-2">
+                <div 
+                  className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0"
+                  aria-label={`Box number ${boxNumber}`}
+                >
+                  {boxNumber}
+                </div>
+                <h4 className="font-semibold text-slate-900 text-sm truncate select-none">
+                  {title}
+                </h4>
               </div>
             </div>
-
-            {/* Content Area */}
-            <div 
-              ref={contentRef}
-              className="absolute top-12 left-0 right-0 bottom-0 p-4 overflow-auto"
-            >
-              <div className="text-white/90 text-sm leading-relaxed">
-                <LaTeXRenderer content={content} />
+            
+            {/* Content Container */}
+            <div className="p-3" style={{ height: `${boxSize.height - SIZING_CONSTANTS.TITLE_HEIGHT}px` }}>
+              <div 
+                ref={contentRef}
+                className="text-sm leading-relaxed h-full overflow-hidden flex items-center justify-center"
+                role="region"
+                aria-label="Math content"
+              >
+                <LaTeXRenderer 
+                  content={content} 
+                  className="text-base math-content w-full h-full flex items-center justify-center"
+                  displayMode={false}
+                />
               </div>
             </div>
-
-            {/* Box Number Badge */}
+            
+            {/* Grid mode indicator */}
             <div 
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center text-white shadow-lg"
-              style={{ backgroundColor: borderColor }}
+              className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none"
+              aria-label="Grid mode indicator"
             >
-              {boxNumber}
+              <div className="w-full h-full bg-blue-400 rounded-tl-lg transform rotate-45 scale-75"></div>
             </div>
           </div>
         )}
@@ -432,3 +456,5 @@ export default function AutoResizeMathBox({
     </Draggable>
   );
 }
+
+export { AutoResizeMathBox };
