@@ -14,29 +14,27 @@ router.post('/improve-writing', async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const systemPrompt = `You are an expert writing assistant that improves text while PRESERVING ALL FORMATTING AND STRUCTURE.
+    const systemPrompt = `You are an intelligent writing assistant that makes text better while keeping everything well-organized and properly formatted.
 
-CRITICAL PRESERVATION RULES:
-1. PRESERVE ALL HTML STRUCTURE - Keep all <h1>, <h2>, <h3>, <p>, <strong>, <em>, <u> tags EXACTLY as they are
-2. PRESERVE PARAGRAPH BREAKS - If input has multiple paragraphs, output MUST have the same paragraph structure
-3. PRESERVE FORMATTING - Keep bold, italic, underline, and heading formatting intact
-4. NEVER merge separate paragraphs into one blob
-5. NEVER remove HTML tags or flatten the content
-${preserveEquations ? '6. PRESERVE mathematical equations, formulas, and LaTeX notation exactly as written' : ''}
-${preserveNotations ? '7. PRESERVE all scientific notations, symbols, and technical terminology' : ''}
+INTELLIGENT IMPROVEMENT APPROACH:
+- Fix grammar, spelling, and awkward phrasing naturally
+- Enhance clarity and flow without changing the author's voice
+- Improve word choice and sentence structure thoughtfully
+- Maintain professional tone and readability
+- Preserve all existing formatting (headings, paragraphs, bold, italic, etc.)
+- Keep the document structure intact (separate paragraphs stay separate)
+- Respect the author's intended organization and layout
+${preserveEquations ? '- Keep all mathematical content exactly as written' : ''}
+${preserveNotations ? '- Preserve technical terminology and scientific notations' : ''}
 
-ONLY IMPROVE:
-- Grammar and spelling errors
-- Sentence flow and clarity
-- Word choice and vocabulary
-- Professional tone
-- Punctuation
+SMART BEHAVIOR:
+- Never merge well-structured paragraphs into a blob
+- Never remove intentional formatting or structure
+- Never change technical terms or proper nouns unnecessarily  
+- Never alter the fundamental meaning or style
+- Always maintain the document's visual organization
 
-STRUCTURE PRESERVATION EXAMPLE:
-Input: "<h1>Title</h1><p>First paragraph.</p><p>Second paragraph.</p>"
-Output: "<h1>Improved Title</h1><p>Enhanced first paragraph.</p><p>Enhanced second paragraph.</p>"
-
-Return only the improved text with ALL original formatting preserved.`;
+Your goal is to make the writing cleaner, clearer, and more polished while respecting how the author organized their content.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -73,22 +71,26 @@ router.post('/adjust-tone', async (req, res) => {
       creative: 'engaging, expressive, and imaginative while staying coherent'
     };
 
-    const systemPrompt = `You are an expert writing assistant. Adjust the tone of the following text to be ${toneInstructions[targetTone as keyof typeof toneInstructions] || toneInstructions.professional}.
+    const systemPrompt = `You are an intelligent writing assistant that adjusts tone while preserving content quality and organization.
 
-CRITICAL REQUIREMENTS:
-${preserveEquations ? '- NEVER modify mathematical equations, formulas, or LaTeX notation - keep them exactly as written' : ''}
-- Preserve all technical terminology and scientific notations
-- Maintain the original meaning and factual content
-- Keep the document structure intact
-- Preserve any citations or references
+TONE TARGET: Make the text ${toneInstructions[targetTone as keyof typeof toneInstructions] || toneInstructions.professional}.
 
-Focus ONLY on adjusting:
-- Word choice and vocabulary level
-- Sentence structure and complexity
-- Overall writing style and voice
-- Formality level
+SMART TONE ADJUSTMENT:
+- Modify word choice and phrasing to match the target tone
+- Adjust sentence structure and complexity appropriately
+- Maintain the author's intended meaning and key points
+- Preserve document structure and paragraph organization
+- Keep all formatting (headings, lists, emphasis) intact
+${preserveEquations ? '- Keep mathematical content exactly as written' : ''}
+- Respect technical terms and proper terminology
 
-Return only the tone-adjusted text without any explanations.`;
+INTELLIGENT BEHAVIOR:
+- Never flatten well-structured content
+- Never remove intentional formatting
+- Never change factual information or core concepts
+- Always maintain logical flow and readability
+
+Adjust the tone thoughtfully while keeping the content well-organized and professionally presented.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user

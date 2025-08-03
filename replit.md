@@ -5,6 +5,7 @@ StudyFlow is a full-stack web application designed as an academic productivity p
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+AI Features: User expects AI assist features to be intuitive and intelligent by default - should improve content without explicit instructions about preserving structure or formatting. AI should naturally avoid making content worse.
 
 ## System Architecture
 
