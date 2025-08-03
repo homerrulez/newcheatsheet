@@ -378,7 +378,7 @@ export default function AutoResizeMathBox({
                   ref={contentRef}
                   className="absolute top-12 left-0 right-0 bottom-0 p-4 overflow-auto"
                 >
-                  <div className="text-white/90 text-sm leading-relaxed">
+                  <div className="text-gray-900 dark:text-gray-100 text-sm leading-relaxed">
                     <LaTeXRenderer content={content} />
                   </div>
                 </div>
@@ -414,7 +414,7 @@ export default function AutoResizeMathBox({
               ref={contentRef}
               className="absolute top-12 left-0 right-0 bottom-0 p-4 overflow-auto"
             >
-              <div className="text-white/90 text-sm leading-relaxed">
+              <div className="text-gray-900 dark:text-gray-100 text-sm leading-relaxed">
                 <LaTeXRenderer content={content} />
               </div>
             </div>
