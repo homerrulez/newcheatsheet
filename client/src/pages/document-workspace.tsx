@@ -612,7 +612,21 @@ export default function DocumentWorkspace() {
     event.preventDefault();
     event.stopPropagation();
 
+    // Add visual feedback on clicked page
     const pageElement = event.currentTarget as HTMLElement;
+    const clickedContentDiv = pageElement.querySelector('.prose') as HTMLElement;
+    
+    if (clickedContentDiv) {
+      // Brief highlight effect
+      clickedContentDiv.style.transition = 'background-color 0.2s ease';
+      clickedContentDiv.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'; // blue highlight
+      
+      // Remove highlight after brief delay
+      setTimeout(() => {
+        clickedContentDiv.style.backgroundColor = 'transparent';
+      }, 300);
+    }
+
     const rect = pageElement.getBoundingClientRect();
     const clickY = event.clientY - rect.top - padding; // Relative Y position within page
     
@@ -628,8 +642,10 @@ export default function DocumentWorkspace() {
       approximateDocumentY
     });
 
-    // Focus the editor first
-    editor.commands.focus();
+    // Small delay to let user see the click feedback, then focus editor
+    setTimeout(() => {
+      editor.commands.focus();
+    }, 150);
 
     // Use the layout engine to find the closest node position
     try {
@@ -1782,6 +1798,8 @@ export default function DocumentWorkspace() {
                             color: textColor,
                             lineHeight: '1.6',
                             minHeight: `${pageHeight - (padding * 2)}px`,
+                            maxHeight: `${pageHeight - (padding * 2)}px`,
+                            overflow: 'hidden',
                           }}
                         />
                       </div>
