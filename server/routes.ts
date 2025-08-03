@@ -23,9 +23,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Writing Assistant Routes
   app.use("/api/ai", aiRoutes);
   
-  // Real ChatGPT-like Routes
-  app.use("/api", chatgptRoutes);
-  
   // Documents API
   app.get("/api/documents", async (req, res) => {
     try {
@@ -151,125 +148,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/chat-sessions/:id/messages", async (req, res) => {
     try {
       const { content, documentContent, documentId } = req.body;
-      
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(400).json({ message: "OpenAI API key not configured" });
+
+      if (!content) {
+        return res.status(400).json({ error: 'Message content is required' });
       }
 
-      // Enhanced natural language system prompt
-      const systemPrompt = `You are an intelligent writing assistant for a document editor. You help users in two distinct ways:
+      // Real ChatGPT system prompt - natural conversation with document awareness
+      const systemPrompt = `You are ChatGPT, a helpful AI assistant created by OpenAI. You can have natural conversations about any topic, help with writing, answer questions, provide explanations, and assist with various tasks.
 
-1. CONTENT CREATION: When users ask to create/write/add content, respond with ONLY the pure content
-2. DOCUMENT COMMANDS: When users ask to format/edit existing text, use command syntax
+You are currently integrated into StudyFlow, a document editing platform. The user is working on a document, and you can help them with:
+- Writing and editing content
+- Answering questions about any topic
+- Providing explanations and clarifications  
+- Helping with research and analysis
+- Giving feedback and suggestions
+- Performing document operations when requested
 
-CONTENT CREATION (respond with content only, no commands):
-- "create a title about Ali and make it adventurous" → "The Epic Adventures of Ali"
-- "write a paragraph about nature" → "Nature provides sanctuary and peace..."
-- "add a conclusion" → "In conclusion, this demonstrates..."
+Current document content length: ${documentContent ? documentContent.length : 0} characters
 
-DOCUMENT COMMANDS (use exact syntax):
-- "center the title" → CENTER_TEXT "The Epic Adventures of Ali"
-- "make the title bold" → FORMAT_TEXT "The Epic Adventures of Ali" BOLD
-- "italicize this word" → FORMAT_TEXT "word" ITALIC
+IMPORTANT: Respond naturally and conversationally like the real ChatGPT. Only provide structured commands when the user explicitly asks you to modify their document.
 
-CRITICAL INTELLIGENCE:
-1. "create X" = content creation (respond with pure content)
-2. "format/center/bold X" = command execution (respond with command only)
-3. NEVER mix content and commands in one response
-4. NEVER add explanatory text or commands when creating content
+If the user asks you to modify the document, you can include special markers in your response:
+- [COMMAND:ADD_TEXT]text content here[/COMMAND] to add text
+- [COMMAND:REPLACE_TEXT:old_text]new text here[/COMMAND] to replace text
+- [COMMAND:DELETE_TEXT]text to delete[/COMMAND] to delete text
+- [COMMAND:FORMAT_TEXT:text_to_format:BOLD/ITALIC/UNDERLINE][/COMMAND] to format text
 
-Current document: ${documentContent}
+But use these ONLY when explicitly asked to modify the document. For everything else, just chat naturally like ChatGPT.`;
 
-User request: ${content}`;
-
-      const completion = await openai.chat.completions.create({
+      const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content }
+          { role: "user", content: content }
         ],
-        max_tokens: 1000,
         temperature: 0.7,
+        max_tokens: 2000,
       });
 
-      const responseContent = completion.choices[0]?.message?.content || "I couldn't generate a response. Please try again.";
+      const aiContent = response.choices[0].message.content || '';
+
+      // Parse any document commands from the response
+      const documentCommands = parseDocumentCommands(aiContent);
       
-      // Parse document commands from response
-      let documentCommand = null;
-      let insertText = null;
-      let insertAtEnd = false;
-
-      // Enhanced command parsing for natural language
-      if (responseContent.includes('DELETE_PAGE')) {
-        const pageMatch = responseContent.match(/DELETE_PAGE (\d+)/);
-        if (pageMatch) {
-          documentCommand = {
-            type: 'delete_page',
-            params: { pageNumber: parseInt(pageMatch[1]) }
-          };
-        }
-      } else if (responseContent.includes('CENTER_TEXT')) {
-        const centerMatch = responseContent.match(/CENTER_TEXT "([^"]+)"/);
-        if (centerMatch) {
-          documentCommand = {
-            type: 'center_text',
-            params: { text: centerMatch[1] }
-          };
-        }
-      } else if (responseContent.includes('FORMAT_TEXT')) {
-        const formatMatch = responseContent.match(/FORMAT_TEXT "([^"]+)" (BOLD|ITALIC|UNDERLINE)/);
-        if (formatMatch) {
-          documentCommand = {
-            type: 'format_text',
-            params: {
-              text: formatMatch[1],
-              formatting: { [formatMatch[2].toLowerCase()]: true }
-            }
-          };
-        }
-      } else if (responseContent.includes('ADD_TEXT')) {
-        const addMatch = responseContent.match(/ADD_TEXT "([^"]+)" TO (PAGE \d+|START|END)/);
-        if (addMatch) {
-          documentCommand = {
-            type: 'add_text',
-            params: {
-              text: addMatch[1],
-              position: addMatch[2].toLowerCase(),
-              pageNumber: addMatch[2].includes('PAGE') ? parseInt(addMatch[2].split(' ')[1]) : undefined
-            }
-          };
-        }
-      } else if (responseContent.includes('REPLACE_TEXT')) {
-        const replaceMatch = responseContent.match(/REPLACE_TEXT "([^"]+)" WITH "([^"]+)"/);
-        if (replaceMatch) {
-          documentCommand = {
-            type: 'replace_text',
-            params: {
-              targetText: replaceMatch[1],
-              newText: replaceMatch[2]
-            }
-          };
-        }
-      }
-
-      // Enhanced content detection for natural language responses
-      if (!documentCommand) {
-        // Check if response is pure content (not conversational)
-        const isConversational = responseContent.match(/\b(I am|I'll|I will|I can|I would|Let me|Here's|This is)\b/i);
-        const isShortContent = responseContent.length > 3 && responseContent.length < 200;
-        const isLikelyContent = !isConversational && (
-          isShortContent || 
-          responseContent.startsWith('"') || 
-          /^[A-Z][^.!?]*$/.test(responseContent.trim()) || // Title-like format
-          responseContent.split('\n').length <= 3 // Short paragraph format
-        );
-        
-        if (isLikelyContent) {
-          // Clean up any residual quotes
-          insertText = responseContent.replace(/^["']|["']$/g, '').trim();
-          insertAtEnd = true;
-        }
-      }
+      // Clean the response of command markers for display
+      const cleanContent = aiContent
+        .replace(/\[COMMAND:.*?\]/g, '')
+        .replace(/\[\/COMMAND\]/g, '')
+        .trim();
 
       // Save user message
       await storage.createChatMessage({
@@ -287,19 +213,23 @@ User request: ${content}`;
         workspaceId: documentId,
         workspaceType: 'document',
         role: 'assistant',
-        content: responseContent,
-        documentCommand
+        content: cleanContent,
+        documentCommand: documentCommands.length > 0 ? documentCommands[0] : null
       });
 
-      res.json({ 
-        content: responseContent, 
-        documentCommand,
-        insertText,
-        insertAtEnd
-      });
+      // Build response
+      const chatResponse = {
+        content: cleanContent,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        // Include document commands if any were found
+        ...(documentCommands.length > 0 && { documentCommands })
+      };
+
+      res.json(chatResponse);
     } catch (error) {
-      console.error('Chat error:', error);
-      res.status(500).json({ message: "Failed to process chat request" });
+      console.error('ChatGPT API error:', error);
+      res.status(500).json({ error: 'Failed to get response from ChatGPT' });
     }
   });
 
@@ -497,6 +427,71 @@ User request: ${content}`;
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Parse document commands from ChatGPT response
+function parseDocumentCommands(content: string): any[] {
+  const commands: any[] = [];
+  
+  // Parse ADD_TEXT commands
+  const addMatches = content.match(/\[COMMAND:ADD_TEXT\](.*?)\[\/COMMAND\]/g);
+  if (addMatches) {
+    addMatches.forEach(match => {
+      const text = match.replace(/\[COMMAND:ADD_TEXT\]/, '').replace(/\[\/COMMAND\]/, '');
+      commands.push({
+        type: 'add_text',
+        params: { text, position: 'end' }
+      });
+    });
+  }
+
+  // Parse REPLACE_TEXT commands
+  const replaceMatches = content.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/g);
+  if (replaceMatches) {
+    replaceMatches.forEach(match => {
+      const parts = match.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/);
+      if (parts && parts.length >= 3) {
+        commands.push({
+          type: 'replace_text',
+          params: { targetText: parts[1], newText: parts[2] }
+        });
+      }
+    });
+  }
+
+  // Parse DELETE_TEXT commands
+  const deleteMatches = content.match(/\[COMMAND:DELETE_TEXT\](.*?)\[\/COMMAND\]/g);
+  if (deleteMatches) {
+    deleteMatches.forEach(match => {
+      const text = match.replace(/\[COMMAND:DELETE_TEXT\]/, '').replace(/\[\/COMMAND\]/, '');
+      commands.push({
+        type: 'delete_text',
+        params: { text }
+      });
+    });
+  }
+
+  // Parse FORMAT_TEXT commands
+  const formatMatches = content.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/g);
+  if (formatMatches) {
+    formatMatches.forEach(match => {
+      const parts = match.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/);
+      if (parts && parts.length >= 3) {
+        const formatting: any = {};
+        const formatType = parts[2].toLowerCase();
+        if (formatType.includes('bold')) formatting.bold = true;
+        if (formatType.includes('italic')) formatting.italic = true;
+        if (formatType.includes('underline')) formatting.underline = true;
+        
+        commands.push({
+          type: 'format_text',
+          params: { text: parts[1], formatting }
+        });
+      }
+    });
+  }
+
+  return commands;
 }
 
 function getSystemPrompt(workspaceType: string, currentBoxes?: any[]): string {

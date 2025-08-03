@@ -42,7 +42,7 @@ But again, only use these when explicitly asked to modify the document. For ever
 
     // Get chat history for this session to maintain conversation context
     // Note: In a real implementation, you'd fetch this from storage
-    const messages = [
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: content }
     ];
@@ -87,7 +87,7 @@ function parseDocumentCommands(content: string): any[] {
   const commands: any[] = [];
   
   // Parse ADD_TEXT commands
-  const addMatches = content.match(/\[COMMAND:ADD_TEXT\](.*?)\[\/COMMAND\]/gs);
+  const addMatches = content.match(/\[COMMAND:ADD_TEXT\](.*?)\[\/COMMAND\]/g);
   if (addMatches) {
     addMatches.forEach(match => {
       const text = match.replace(/\[COMMAND:ADD_TEXT\]/, '').replace(/\[\/COMMAND\]/, '');
@@ -99,10 +99,10 @@ function parseDocumentCommands(content: string): any[] {
   }
 
   // Parse REPLACE_TEXT commands
-  const replaceMatches = content.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/gs);
+  const replaceMatches = content.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/g);
   if (replaceMatches) {
     replaceMatches.forEach(match => {
-      const parts = match.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/s);
+      const parts = match.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/);
       if (parts && parts.length >= 3) {
         commands.push({
           type: 'replace_text',
@@ -113,7 +113,7 @@ function parseDocumentCommands(content: string): any[] {
   }
 
   // Parse DELETE_TEXT commands
-  const deleteMatches = content.match(/\[COMMAND:DELETE_TEXT\](.*?)\[\/COMMAND\]/gs);
+  const deleteMatches = content.match(/\[COMMAND:DELETE_TEXT\](.*?)\[\/COMMAND\]/g);
   if (deleteMatches) {
     deleteMatches.forEach(match => {
       const text = match.replace(/\[COMMAND:DELETE_TEXT\]/, '').replace(/\[\/COMMAND\]/, '');
@@ -125,7 +125,7 @@ function parseDocumentCommands(content: string): any[] {
   }
 
   // Parse FORMAT_TEXT commands
-  const formatMatches = content.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/gs);
+  const formatMatches = content.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/g);
   if (formatMatches) {
     formatMatches.forEach(match => {
       const parts = match.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/);
