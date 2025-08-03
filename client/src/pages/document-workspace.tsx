@@ -568,11 +568,89 @@ export default function DocumentWorkspace() {
     }
   }, [distributeContent, editor?.getHTML(), pageHeight, padding, zoomLevel]);
 
-  // Simplified click handling - no longer needed with direct editor approach
-  const handleEditorClick = () => {
-    console.log('=== DIRECT EDITOR CLICK ===');
-    console.log('Editor clicked directly, focus should work naturally');
-  };
+  // Click-to-position mapping for multi-page editing
+  const handlePageClick = useCallback((pageIndex: number, event: React.MouseEvent) => {
+    console.log('🖱️ Page click mapping - Page:', pageIndex);
+    
+    if (!editor || pageIndex === 0) {
+      // Page 1 already has direct editor, no mapping needed
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const pageElement = event.currentTarget as HTMLElement;
+    const rect = pageElement.getBoundingClientRect();
+    const clickY = event.clientY - rect.top - padding; // Relative Y position within page
+    
+    console.log('📍 Click position:', { clickY, padding });
+
+    // Calculate approximate document position based on page and Y coordinate
+    const availablePageHeight = pageHeight - (padding * 2);
+    const approximateDocumentY = (pageIndex * availablePageHeight) + Math.max(0, clickY);
+    
+    console.log('📊 Document position calculation:', {
+      pageIndex,
+      availablePageHeight,
+      approximateDocumentY
+    });
+
+    // Focus the editor first
+    editor.commands.focus();
+
+    // Use the layout engine to find the closest node position
+    try {
+      const editorElement = editorContainerRef.current?.querySelector('.ProseMirror');
+      if (editorElement) {
+        // Create a temporary measuring approach
+        const docHeight = editorElement.scrollHeight;
+        const documentRatio = approximateDocumentY / docHeight;
+        
+        // Get document content and find approximate text position
+        const fullText = editor.getText();
+        const approximateCharPosition = Math.floor(fullText.length * documentRatio);
+        
+        console.log('🎯 Positioning cursor:', {
+          docHeight,
+          documentRatio,
+          fullText: fullText.length,
+          approximateCharPosition
+        });
+
+        // Convert character position to ProseMirror position
+        const doc = editor.state.doc;
+        let currentPos = 1; // Start after doc node
+        let currentChar = 0;
+        
+        // Walk through the document to find the position
+        doc.descendants((node, pos) => {
+          if (currentChar >= approximateCharPosition) {
+            // Found our target position
+            editor.commands.setTextSelection(Math.min(pos, doc.content.size));
+            console.log('✅ Cursor positioned at ProseMirror pos:', pos);
+            return false; // Stop traversal
+          }
+          
+          if (node.isText) {
+            currentChar += node.text?.length || 0;
+          } else if (node.isBlock) {
+            currentChar += 1; // Count block boundaries
+          }
+          
+          return true; // Continue traversal
+        });
+
+        // Scroll the editor to approximate position for visual feedback
+        const scrollRatio = approximateDocumentY / docHeight;
+        editorElement.scrollTop = editorElement.scrollHeight * scrollRatio;
+      }
+    } catch (error) {
+      console.error('❌ Position mapping error:', error);
+      // Fallback: just focus the editor
+      editor.commands.focus();
+    }
+  }, [editor, pageHeight, padding]);
 
   // Editor diagnostics and event handlers
   useEffect(() => {
@@ -1613,12 +1691,17 @@ export default function DocumentWorkspace() {
                 {distributedPages.map((pageContent, pageIndex) => (
                   <div
                     key={pageIndex}
-                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+                    className={`bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group transition-all duration-500 cursor-text ${
+                      pageIndex === 0 
+                        ? 'hover:shadow-cyan-300/20' 
+                        : 'hover:shadow-purple-300/20 hover:ring-1 hover:ring-purple-200'
+                    }`}
                     style={{
                       width: `${pageWidth}px`,
                       minHeight: `${pageHeight}px`,
                       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                     }}
+                    onClick={(e) => handlePageClick(pageIndex, e)}
                   >
                     {/* Page number indicator */}
                     <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
@@ -1648,9 +1731,9 @@ export default function DocumentWorkspace() {
                         />
                       </div>
                     ) : (
-                      /* Subsequent pages with read-only distributed content */
+                      /* Subsequent pages with clickable content - maps to unified editor */
                       <div
-                        className="w-full h-full relative"
+                        className="w-full h-full relative pointer-events-none"
                         style={{ 
                           padding: `${padding}px`,
                           minHeight: `${pageHeight}px`,
@@ -1667,6 +1750,15 @@ export default function DocumentWorkspace() {
                             overflow: 'hidden',
                           }}
                           dangerouslySetInnerHTML={{ __html: pageContent }}
+                        />
+                        
+                        {/* Invisible overlay for click detection */}
+                        <div 
+                          className="absolute inset-0 bg-transparent pointer-events-auto"
+                          style={{ 
+                            cursor: 'text',
+                          }}
+                          title={`Click to edit page ${pageIndex + 1}`}
                         />
                       </div>
                     )}
