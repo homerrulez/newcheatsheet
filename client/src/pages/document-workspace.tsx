@@ -94,22 +94,24 @@ export default function DocumentWorkspace() {
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Editor setup with extensive functionality
+  // Editor setup with extensive functionality - fixed duplicate extensions
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
+        // Disable underline in StarterKit since we're importing it separately
+        underline: false,
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      Underline,
-      TextStyle,
+      Underline, // Keep only this underline instance
+      // Removed TextStyle - FontSize extension already includes this functionality
       Color,
       FontFamily,
-      FontSize,
+      FontSize, // This already extends TextStyle, so no need for separate TextStyle
       Highlight.configure({
         multicolor: true,
       }),
