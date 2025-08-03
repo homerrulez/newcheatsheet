@@ -347,6 +347,11 @@ export default function DocumentWorkspace() {
           toast({ title: `Deleted text: "${deleteText}"` });
         }
         break;
+        
+      case 'clear_all':
+        editor.commands.clearContent();
+        toast({ title: "Document cleared" });
+        break;
     }
     
     // Save changes after executing command

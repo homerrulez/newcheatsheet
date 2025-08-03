@@ -153,28 +153,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Message content is required' });
       }
 
-      // Real ChatGPT system prompt - natural conversation with document awareness
-      const systemPrompt = `You are ChatGPT, a helpful AI assistant created by OpenAI. You can have natural conversations about any topic, help with writing, answer questions, provide explanations, and assist with various tasks.
+      // Document-integrated assistant prompt
+      const systemPrompt = `You are an intelligent writing assistant built into a document editor. You are helping the user work on their document.
 
-You are currently integrated into StudyFlow, a document editing platform. The user is working on a document, and you can help them with:
-- Writing and editing content
-- Answering questions about any topic
-- Providing explanations and clarifications  
-- Helping with research and analysis
-- Giving feedback and suggestions
-- Performing document operations when requested
+The user's current document contains:
+"${documentContent || 'No content yet'}"
 
-Current document content length: ${documentContent ? documentContent.length : 0} characters
+You can help by:
+1. Analyzing and discussing the document content
+2. Answering questions about what's written
+3. Making modifications when requested
+4. Providing writing assistance
 
-IMPORTANT: Respond naturally and conversationally like the real ChatGPT. Only provide structured commands when the user explicitly asks you to modify their document.
+When the user asks about their document, refer to the content shown above. When they request changes, you can execute them using these commands:
+- [COMMAND:ADD_TEXT]new text[/COMMAND] to add content
+- [COMMAND:REPLACE_TEXT:old_text]new text[/COMMAND] to replace text
+- [COMMAND:DELETE_TEXT]text to remove[/COMMAND] to delete content
+- [COMMAND:FORMAT_TEXT:text:BOLD/ITALIC/UNDERLINE][/COMMAND] to format text
 
-If the user asks you to modify the document, you can include special markers in your response:
-- [COMMAND:ADD_TEXT]text content here[/COMMAND] to add text
-- [COMMAND:REPLACE_TEXT:old_text]new text here[/COMMAND] to replace text
-- [COMMAND:DELETE_TEXT]text to delete[/COMMAND] to delete text
-- [COMMAND:FORMAT_TEXT:text_to_format:BOLD/ITALIC/UNDERLINE][/COMMAND] to format text
-
-But use these ONLY when explicitly asked to modify the document. For everything else, just chat naturally like ChatGPT.`;
+Always be helpful and direct about working with their document.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -488,6 +485,15 @@ function parseDocumentCommands(content: string): any[] {
           params: { text: parts[1], formatting }
         });
       }
+    });
+  }
+
+  // Parse CLEAR_ALL commands
+  const clearMatches = content.match(/\[COMMAND:CLEAR_ALL\]\[\/COMMAND\]/g);
+  if (clearMatches) {
+    commands.push({
+      type: 'clear_all',
+      params: {}
     });
   }
 

@@ -162,7 +162,7 @@ export type TemplateSection = {
 };
 
 export type DocumentCommand = {
-  type: 'delete_page' | 'format_text' | 'add_text' | 'insert_page' | 'replace_text' | 'center_text';
+  type: 'delete_page' | 'format_text' | 'add_text' | 'insert_page' | 'replace_text' | 'center_text' | 'delete_text' | 'clear_all';
   params: {
     pageNumber?: number;
     text?: string;
