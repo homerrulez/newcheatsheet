@@ -75,7 +75,7 @@ export default function Landing() {
         <div className="flex justify-center gap-10 mb-16 max-w-7xl mx-auto">
           {/* Template Workspace */}
           <div className="space-y-6">
-            <Link href="/template">
+            <Link href="/template-new/new">
               <div className="w-[368px] h-[346px] rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
                 background: 'linear-gradient(145deg, rgba(200, 240, 220, 0.6), rgba(184, 230, 204, 0.4))', 
                 backdropFilter: 'blur(10px)',
@@ -106,7 +106,7 @@ export default function Landing() {
 
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
-            <Link href="/cheatsheet">
+            <Link href="/cheatsheet-new/new">
               <div className="w-[368px] h-[346px] rounded-2xl px-5 py-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center border border-white/30" style={{ 
                 background: 'linear-gradient(145deg, rgba(245, 230, 211, 0.6), rgba(255, 192, 203, 0.4))', 
                 backdropFilter: 'blur(10px)',
