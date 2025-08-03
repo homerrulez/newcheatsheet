@@ -569,9 +569,9 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen">
+    <div className="h-screen flex flex-col">
       {/* Enhanced Microsoft Word-Style Toolbar */}
-      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20">
+      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20 flex-shrink-0">
         {/* Document title bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
@@ -1318,6 +1318,7 @@ export default function DocumentWorkspace() {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      
       
       {/* Fixed AI Status Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 z-50">
