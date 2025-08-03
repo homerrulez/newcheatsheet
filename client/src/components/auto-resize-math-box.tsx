@@ -330,6 +330,13 @@ export default function AutoResizeMathBox({
             className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative`} 
             style={{ border: `3px solid ${borderColor}` }}
           >
+            {/* Corner number indicator */}
+            <div 
+              className="absolute top-2 right-2 w-5 h-5 bg-black/10 text-slate-700 text-xs font-bold rounded-full flex items-center justify-center z-10"
+              aria-hidden="true"
+            >
+              {boxNumber}
+            </div>
             <div 
               className="drag-handle w-full h-full cursor-move"
               role="button"
@@ -340,12 +347,13 @@ export default function AutoResizeMathBox({
               <div className="flex items-center justify-between p-3 border-b border-white/20 bg-white/10 backdrop-blur-sm">
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                   <div 
-                    className="w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0"
+                    className="w-7 h-7 bg-gradient-to-br from-slate-700 to-slate-800 text-white text-sm font-bold rounded-full flex items-center justify-center flex-shrink-0 shadow-md border border-white/20"
                     aria-label={`Box number ${boxNumber}`}
                   >
                     {boxNumber}
                   </div>
                   <h4 className="font-semibold text-slate-900 text-sm truncate select-none">
+                    <span className="text-slate-600 font-medium mr-1">#{boxNumber}</span>
                     {title}
                   </h4>
                 </div>
