@@ -445,24 +445,128 @@ export default function DocumentWorkspace() {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // State for distributed content across pages
+  const [distributedPages, setDistributedPages] = useState<string[]>(['<p></p>']);
+
+  // Distribute content across multiple pages
+  const distributeContent = useCallback(() => {
+    console.log('🔄 distributeContent called');
+    
+    if (!editor || !editorContainerRef.current) {
+      console.log('❌ No editor or container ref');
+      return;
+    }
+
+    const editorElement = editorContainerRef.current.querySelector('.ProseMirror');
+    if (!editorElement) {
+      console.log('❌ No ProseMirror element found');
+      return;
+    }
+
+    const contentHeight = editorElement.scrollHeight;
+    const availablePageHeight = pageHeight - (padding * 2);
+    const calculatedPages = Math.max(1, Math.ceil(contentHeight / availablePageHeight));
+    
+    console.log('📊 Content height:', contentHeight, 'Available per page:', availablePageHeight, 'Pages:', calculatedPages);
+    
+    if (calculatedPages === 1) {
+      // Single page - use all content
+      setDistributedPages([editor.getHTML()]);
+      setPageCount(1);
+      return;
+    }
+
+    // Multiple pages - need to split content
+    const jsonDoc = editor.getJSON();
+    console.log('📄 Document JSON:', jsonDoc);
+    
+    try {
+      // Create temporary measuring container
+      const measureContainer = document.createElement('div');
+      measureContainer.style.cssText = `
+        position: absolute;
+        visibility: hidden;
+        top: -9999px;
+        left: -9999px;
+        width: ${pageWidth - (padding * 2)}px;
+        font-family: ${fontFamily};
+        font-size: ${fontSize}pt;
+        color: ${textColor};
+        line-height: 1.6;
+        overflow: hidden;
+      `;
+      document.body.appendChild(measureContainer);
+
+      const pages: string[] = [];
+      let currentPageContent: any[] = [];
+      let currentPageHeight = 0;
+
+      // Process each node in the document
+      if (jsonDoc.content) {
+        for (const node of jsonDoc.content) {
+          // Add node to measuring container
+          const tempDoc = { type: 'doc', content: [node] };
+          const tempHTML = editor.getHTML(); // This is a simplified approach
+          measureContainer.innerHTML = tempHTML;
+          
+          const nodeHeight = measureContainer.scrollHeight;
+          
+          if (currentPageHeight + nodeHeight > availablePageHeight && currentPageContent.length > 0) {
+            // Node would overflow, finish current page
+            const pageDoc = { type: 'doc', content: currentPageContent };
+            const pageHTML = editor.getHTML(); // Convert back to HTML
+            pages.push(pageHTML);
+            
+            // Start new page with this node
+            currentPageContent = [node];
+            currentPageHeight = nodeHeight;
+          } else {
+            // Node fits on current page
+            currentPageContent.push(node);
+            currentPageHeight += nodeHeight;
+          }
+        }
+      }
+
+      // Add final page if it has content
+      if (currentPageContent.length > 0) {
+        const pageDoc = { type: 'doc', content: currentPageContent };
+        const pageHTML = editor.getHTML(); // Convert back to HTML
+        pages.push(pageHTML);
+      }
+
+      document.body.removeChild(measureContainer);
+      
+      console.log('📚 Distributed into', pages.length, 'pages');
+      setDistributedPages(pages.length > 0 ? pages : [editor.getHTML()]);
+      setPageCount(pages.length || 1);
+      
+    } catch (error) {
+      console.error('❌ Content distribution error:', error);
+      // Fallback: use simple text-based splitting
+      const fullText = editor.getText();
+      const charsPerPage = Math.ceil(fullText.length / calculatedPages);
+      const pages: string[] = [];
+      
+      for (let i = 0; i < calculatedPages; i++) {
+        const start = i * charsPerPage;
+        const end = Math.min((i + 1) * charsPerPage, fullText.length);
+        const pageText = fullText.slice(start, end);
+        pages.push(`<p>${pageText}</p>`);
+      }
+      
+      setDistributedPages(pages);
+      setPageCount(pages.length);
+    }
+  }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
+
   // Calculate visual pagination based on content height (Word-style)
   useEffect(() => {
     if (editor && editorContainerRef.current) {
-      const calculatePages = () => {
-        const editorElement = editorContainerRef.current?.querySelector('.ProseMirror');
-        if (editorElement) {
-          const contentHeight = editorElement.scrollHeight;
-          const availablePageHeight = pageHeight - (padding * 2);
-          const calculatedPages = Math.max(1, Math.ceil(contentHeight / availablePageHeight));
-          console.log('📄 Content height:', contentHeight, 'Available per page:', availablePageHeight, 'Pages:', calculatedPages);
-          setPageCount(calculatedPages);
-        }
-      };
-
-      const timer = setTimeout(calculatePages, 100);
+      const timer = setTimeout(distributeContent, 100);
       return () => clearTimeout(timer);
     }
-  }, [editor?.getHTML(), pageHeight, padding, zoomLevel]);
+  }, [distributeContent, editor?.getHTML(), pageHeight, padding, zoomLevel]);
 
   // Simplified click handling - no longer needed with direct editor approach
   const handleEditorClick = () => {
@@ -1505,47 +1609,10 @@ export default function DocumentWorkspace() {
 
 
                 {/* Render unified document with visual page divisions */}
-                {/* Single page with directly editable Tiptap editor */}
-                <div
-                  className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
-                  style={{
-                    width: `${pageWidth}px`,
-                    minHeight: `${pageHeight}px`,
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
-                  }}
-                >
-                  {/* Page number indicator */}
-                  <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                    Page 1 of {pageCount}
-                  </div>
-                  
-                  {/* Direct Tiptap editor - fully clickable and interactive */}
+                {/* Render all pages with distributed content */}
+                {distributedPages.map((pageContent, pageIndex) => (
                   <div
-                    ref={editorContainerRef}
-                    className="w-full h-full relative"
-                    style={{ 
-                      padding: `${padding}px`,
-                      minHeight: `${pageHeight}px`,
-                    }}
-                  >
-                    <EditorContent
-                      editor={editor}
-                      className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
-                      style={{
-                        fontFamily,
-                        fontSize: `${fontSize}pt`,
-                        color: textColor,
-                        lineHeight: '1.6',
-                        minHeight: `${pageHeight - (padding * 2)}px`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Additional pages if content overflows */}
-                {pageCount > 1 && Array.from({ length: pageCount - 1 }, (_, pageIndex) => (
-                  <div
-                    key={pageIndex + 1}
+                    key={pageIndex}
                     className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
                     style={{
                       width: `${pageWidth}px`,
@@ -1555,21 +1622,54 @@ export default function DocumentWorkspace() {
                   >
                     {/* Page number indicator */}
                     <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                      Page {pageIndex + 2} of {pageCount}
+                      Page {pageIndex + 1} of {pageCount}
                     </div>
                     
-                    {/* Overflow content area */}
-                    <div
-                      className="w-full h-full relative"
-                      style={{ 
-                        padding: `${padding}px`,
-                        minHeight: `${pageHeight}px`,
-                      }}
-                    >
-                      <div className="text-gray-400 text-center pt-8">
-                        Content continues from previous page...
+                    {pageIndex === 0 ? (
+                      /* First page with editable Tiptap editor */
+                      <div
+                        ref={editorContainerRef}
+                        className="w-full h-full relative"
+                        style={{ 
+                          padding: `${padding}px`,
+                          minHeight: `${pageHeight}px`,
+                        }}
+                      >
+                        <EditorContent
+                          editor={editor}
+                          className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
+                          style={{
+                            fontFamily,
+                            fontSize: `${fontSize}pt`,
+                            color: textColor,
+                            lineHeight: '1.6',
+                            minHeight: `${pageHeight - (padding * 2)}px`,
+                          }}
+                        />
                       </div>
-                    </div>
+                    ) : (
+                      /* Subsequent pages with read-only distributed content */
+                      <div
+                        className="w-full h-full relative"
+                        style={{ 
+                          padding: `${padding}px`,
+                          minHeight: `${pageHeight}px`,
+                        }}
+                      >
+                        <div 
+                          className="w-full h-full prose prose-sm max-w-none"
+                          style={{
+                            fontFamily,
+                            fontSize: `${fontSize}pt`,
+                            color: textColor,
+                            lineHeight: '1.6',
+                            minHeight: `${pageHeight - (padding * 2)}px`,
+                            overflow: 'hidden',
+                          }}
+                          dangerouslySetInnerHTML={{ __html: pageContent }}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
