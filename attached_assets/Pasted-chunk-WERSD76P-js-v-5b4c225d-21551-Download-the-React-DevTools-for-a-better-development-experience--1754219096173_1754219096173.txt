@@ -1,0 +1,26 @@
+chunk-WERSD76P.js?v=5b4c225d:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+chunk-JFAIFCNQ.js?v=5b4c225d:12760 [tiptap warn]: Duplicate extension names found: ['underline']. This can lead to issues.
+resolveExtensions @ chunk-JFAIFCNQ.js?v=5b4c225d:12760
+chunk-WERSD76P.js?v=5b4c225d:521 Warning: findDOMNode is deprecated and will be removed in the next major release. Instead, add a ref directly to the element you want to reference. Learn more about using refs safely here: https://reactjs.org/link/strict-mode-find-node
+    at DraggableCore (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GCJRF6TX.js?v=5b4c225d:1311:9)
+    at Draggable (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GCJRF6TX.js?v=5b4c225d:1718:9)
+    at AutoResizeMathBox (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/src/components/auto-resize-math-box.tsx:33:3)
+    at div
+    at div
+    at div
+    at PanelWithForwardedRef (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=5b4c225d:40:3)
+    at forwardRef(Panel)
+    at div
+    at PanelGroupWithForwardedRef (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=5b4c225d:1423:3)
+    at forwardRef(PanelGroup)
+    at ResizablePanelGroup (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/src/components/ui/resizable.tsx:22:3)
+    at div
+    at CheatSheetWorkspace (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/src/pages/cheatsheet-workspace-new.tsx:80:18)
+    at Route (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=5b4c225d:191:16)
+    at Switch (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=5b4c225d:247:17)
+    at Router
+    at Provider (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-W63JOC3P.js?v=5b4c225d:54:15)
+    at TooltipProvider (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5b4c225d:56:5)
+    at QueryClientProvider (https://b7319caa-9b89-440e-8433-28a3fae3f305-00-1dprpdwn289cn.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=5b4c225d:2805:3)
+    at App
+printWarning @ chunk-WERSD76P.js?v=5b4c225d:521

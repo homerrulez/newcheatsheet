@@ -466,7 +466,81 @@ export default function CheatSheetWorkspace() {
           return;
         }
         
-        // Box creation keywords (existing functionality)
+        // Enhanced box creation for multiple items
+        const numberMatch = originalMessage.match(/(\d+)/);
+        const requestedCount = numberMatch ? parseInt(numberMatch[1]) : 1;
+        
+        // Check if user wants multiple math equations/formulas
+        if ((originalMessage.includes('math') || originalMessage.includes('formula') || originalMessage.includes('equation')) && requestedCount > 1) {
+          const mathFormulas = [
+            { title: 'Power Rule', content: 'd/dx x^n = nx^(n-1)', color: 'from-blue-50 to-blue-100' },
+            { title: 'Product Rule', content: 'd/dx [u(x)v(x)] = u\'(x)v(x) + u(x)v\'(x)', color: 'from-green-50 to-green-100' },
+            { title: 'Quotient Rule', content: 'd/dx [u(x)/v(x)] = [u\'(x)v(x) - u(x)v\'(x)] / [v(x)]²', color: 'from-purple-50 to-purple-100' },
+            { title: 'Chain Rule', content: 'd/dx f(g(x)) = f\'(g(x)) · g\'(x)', color: 'from-pink-50 to-pink-100' },
+            { title: 'Sum Rule', content: 'd/dx [f(x) + g(x)] = f\'(x) + g\'(x)', color: 'from-yellow-50 to-yellow-100' },
+            { title: 'Exponential', content: 'd/dx e^x = e^x', color: 'from-red-50 to-red-100' },
+            { title: 'Logarithm', content: 'd/dx ln x = 1/x', color: 'from-orange-50 to-orange-100' },
+            { title: 'Sine Function', content: 'd/dx sin x = cos x', color: 'from-teal-50 to-teal-100' },
+            { title: 'Cosine Function', content: 'd/dx cos x = -sin x', color: 'from-indigo-50 to-indigo-100' },
+            { title: 'Tangent Function', content: 'd/dx tan x = sec² x', color: 'from-cyan-50 to-cyan-100' },
+            { title: 'Integral Power', content: '∫ x^n dx = x^(n+1)/(n+1) + C, n ≠ -1', color: 'from-blue-50 to-blue-100' },
+            { title: 'Integral Exponential', content: '∫ e^x dx = e^x + C', color: 'from-green-50 to-green-100' },
+            { title: 'Integral Sine', content: '∫ sin x dx = -cos x + C', color: 'from-purple-50 to-purple-100' },
+            { title: 'Integral Cosine', content: '∫ cos x dx = sin x + C', color: 'from-pink-50 to-pink-100' },
+            { title: 'Pythagorean Theorem', content: 'a² + b² = c²', color: 'from-yellow-50 to-yellow-100' },
+            { title: 'Quadratic Formula', content: 'x = (-b ± √(b² - 4ac)) / 2a', color: 'from-red-50 to-red-100' },
+            { title: 'Distance Formula', content: 'd = √[(x₂-x₁)² + (y₂-y₁)²]', color: 'from-orange-50 to-orange-100' },
+            { title: 'Slope Formula', content: 'm = (y₂-y₁)/(x₂-x₁)', color: 'from-teal-50 to-teal-100' },
+            { title: 'Area of Circle', content: 'A = πr²', color: 'from-indigo-50 to-indigo-100' },
+            { title: 'Circumference', content: 'C = 2πr', color: 'from-cyan-50 to-cyan-100' },
+            { title: 'Volume of Sphere', content: 'V = (4/3)πr³', color: 'from-blue-50 to-blue-100' },
+            { title: 'Surface Area Sphere', content: 'SA = 4πr²', color: 'from-green-50 to-green-100' },
+            { title: 'Law of Cosines', content: 'c² = a² + b² - 2ab cos C', color: 'from-purple-50 to-purple-100' },
+            { title: 'Law of Sines', content: 'a/sin A = b/sin B = c/sin C', color: 'from-pink-50 to-pink-100' },
+            { title: 'Binomial Theorem', content: '(a+b)^n = Σ(k=0 to n) C(n,k) a^(n-k) b^k', color: 'from-yellow-50 to-yellow-100' },
+            { title: 'Fundamental Theorem', content: '∫[a to b] f\'(x) dx = f(b) - f(a)', color: 'from-red-50 to-red-100' },
+            { title: 'L\'Hôpital\'s Rule', content: 'lim[x→c] f(x)/g(x) = lim[x→c] f\'(x)/g\'(x)', color: 'from-orange-50 to-orange-100' },
+            { title: 'Taylor Series', content: 'f(x) = Σ(n=0 to ∞) f^(n)(a)(x-a)^n/n!', color: 'from-teal-50 to-teal-100' },
+            { title: 'Euler\'s Formula', content: 'e^(ix) = cos x + i sin x', color: 'from-indigo-50 to-indigo-100' },
+            { title: 'Integration by Parts', content: '∫ u dv = uv - ∫ v du', color: 'from-cyan-50 to-cyan-100' },
+            { title: 'Mean Value Theorem', content: 'f\'(c) = [f(b) - f(a)] / (b - a)', color: 'from-blue-50 to-blue-100' },
+            { title: 'Rolle\'s Theorem', content: 'If f(a) = f(b), then ∃c: f\'(c) = 0', color: 'from-green-50 to-green-100' },
+            { title: 'Partial Derivatives', content: '∂f/∂x = lim[h→0] [f(x+h,y) - f(x,y)]/h', color: 'from-purple-50 to-purple-100' },
+            { title: 'Divergence Theorem', content: '∫∫∫ ∇·F dV = ∫∫ F·n dS', color: 'from-pink-50 to-pink-100' },
+            { title: 'Green\'s Theorem', content: '∮ P dx + Q dy = ∫∫ (∂Q/∂x - ∂P/∂y) dA', color: 'from-yellow-50 to-yellow-100' },
+            { title: 'Stokes\' Theorem', content: '∮ F·dr = ∫∫ (∇×F)·n dS', color: 'from-red-50 to-red-100' },
+            { title: 'Cauchy-Schwarz', content: '|⟨u,v⟩| ≤ ||u|| ||v||', color: 'from-orange-50 to-orange-100' },
+            { title: 'Triangle Inequality', content: '||u + v|| ≤ ||u|| + ||v||', color: 'from-teal-50 to-teal-100' },
+            { title: 'Fourier Series', content: 'f(x) = a₀/2 + Σ[aₙcos(nx) + bₙsin(nx)]', color: 'from-indigo-50 to-indigo-100' },
+            { title: 'Laplace Transform', content: 'L{f(t)} = ∫₀^∞ e^(-st) f(t) dt', color: 'from-cyan-50 to-cyan-100' },
+            { title: 'Matrix Determinant', content: 'det(A) = Σ sgn(σ) ∏ aᵢ,σ(i)', color: 'from-blue-50 to-blue-100' },
+            { title: 'Eigenvalue Equation', content: 'Av = λv', color: 'from-green-50 to-green-100' },
+            { title: 'Characteristic Polynomial', content: 'det(A - λI) = 0', color: 'from-purple-50 to-purple-100' },
+            { title: 'Bayes\' Theorem', content: 'P(A|B) = P(B|A)P(A) / P(B)', color: 'from-pink-50 to-pink-100' },
+            { title: 'Normal Distribution', content: 'f(x) = (1/σ√2π) e^(-(x-μ)²/2σ²)', color: 'from-yellow-50 to-yellow-100' },
+            { title: 'Chi-Square Test', content: 'χ² = Σ (Oᵢ - Eᵢ)² / Eᵢ', color: 'from-red-50 to-red-100' },
+            { title: 'Confidence Interval', content: 'x̄ ± z(α/2) · σ/√n', color: 'from-orange-50 to-orange-100' },
+            { title: 'Regression Line', content: 'y = mx + b, m = Σ(xy)/Σ(x²)', color: 'from-teal-50 to-teal-100' },
+            { title: 'Complex Numbers', content: 'z = a + bi, |z| = √(a² + b²)', color: 'from-indigo-50 to-indigo-100' },
+            { title: 'De Moivre\'s Formula', content: '(cos θ + i sin θ)ⁿ = cos(nθ) + i sin(nθ)', color: 'from-cyan-50 to-cyan-100' }
+          ];
+          
+          const numToCreate = Math.min(requestedCount, mathFormulas.length);
+          let createdCount = 0;
+          
+          for (let i = 0; i < numToCreate; i++) {
+            const formula = mathFormulas[i];
+            const x = 100 + (i % 5) * 250; // 5 columns
+            const y = 100 + Math.floor(i / 5) * 180; // New row every 5 boxes
+            addBox(formula.title, formula.content, formula.color, x, y);
+            createdCount++;
+          }
+          
+          toast({ title: `Created ${createdCount} math formula boxes` });
+          return;
+        }
+        
+        // Single box creation fallbacks
         if (content.includes('formula') || content.includes('equation')) {
           addBox('Power Rule for Differentiation', 'd/dx x^n = nx^(n-1)', 'from-blue-50 to-blue-100', 150, 150);
           toast({ title: 'Created formula box' });
