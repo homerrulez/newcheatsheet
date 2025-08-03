@@ -75,9 +75,13 @@ export default function DocumentWorkspace() {
   const [pageOrientation, setPageOrientation] = useState('portrait');
   
   // Layout engine integration
-  const [layoutEngine, setLayoutEngine] = useState<LayoutEngine>(() => 
-    createLayoutEngine(pageSize, fontSize)
-  );
+  const [layoutEngine, setLayoutEngine] = useState<LayoutEngine>(() => {
+    const engine = createLayoutEngine(pageSize, fontSize);
+    console.log('🔧 Layout engine created with:', { pageSize, fontSize });
+    console.log('🔧 Page config:', engine.getPageConfig());
+    console.log('🔧 Current metrics:', engine.getCurrentMetrics());
+    return engine;
+  });
   const [documentInterface, setDocumentInterface] = useState<DocumentCommandInterface>(() => 
     createDocumentInterface('', pageSize, fontSize)
   );
@@ -444,14 +448,26 @@ export default function DocumentWorkspace() {
   useEffect(() => {
     if (editor && layoutEngine) {
       const distributeContent = () => {
+        console.log('🔄 distributeContent called');
         const htmlContent = editor.getHTML();
+        console.log('📝 HTML content length:', htmlContent.length);
+        console.log('📄 HTML content preview:', htmlContent.substring(0, 200) + '...');
         
         // Use layout engine to split content into pages
         const layoutResult = layoutEngine.LAYOUT_TEXT(htmlContent);
+        console.log('📊 Layout result pages:', layoutResult.pages.length);
+        console.log('📋 Layout metrics:', layoutResult.metrics);
         
         if (layoutResult.pages.length > 0) {
+          console.log('📑 First page content length:', layoutResult.pages[0]?.content.length);
+          console.log('📑 First page preview:', layoutResult.pages[0]?.content.substring(0, 100) + '...');
+          if (layoutResult.pages.length > 1) {
+            console.log('📑 Second page content length:', layoutResult.pages[1]?.content.length);
+            console.log('📑 Second page preview:', layoutResult.pages[1]?.content.substring(0, 100) + '...');
+          }
           setPageContent(layoutResult.pages);
         } else {
+          console.log('⚠️ No pages returned, using fallback');
           // Fallback: single empty page
           setPageContent([{ pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }]);
         }
