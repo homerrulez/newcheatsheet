@@ -592,50 +592,40 @@ export default function DocumentWorkspace() {
     setPageCount(newDistributedPages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
-  // Simplified page count calculation
+  // Fixed page count calculation using scrollHeight
   const calculatePageCount = useCallback(() => {
     if (!editor) return 1;
-    const contentHeight = editor.view.dom.offsetHeight;
+    const contentNode = editor.view.dom.querySelector('.ProseMirror') || editor.view.dom;
+    const contentHeight = contentNode.scrollHeight; // Use scrollHeight for full content
     const pages = Math.ceil(contentHeight / 928) || 1;
-    console.log('📊 Total pages needed:', pages);
+    console.log(`📏 Content height: ${contentHeight}px, Pages: ${pages}`);
     return pages;
   }, [editor]);
 
-  // Update page count when content changes
+  // Update page count with proper event handling
   useEffect(() => {
     if (editor) {
-      editor.on('update', () => {
-        setPageCount(calculatePageCount());
-      });
+      const updatePageCount = () => {
+        const newPageCount = calculatePageCount();
+        setPageCount(newPageCount);
+        
+        // Log content flow details
+        const chars = editor.getText().length;
+        console.log(`📜 CONTENT FLOW UPDATE:`);
+        console.log(`   📊 Total chars: ${chars}`);
+        console.log(`   📄 Pages: ${newPageCount}`);
+        console.log(`   📏 Avg chars/page: ${Math.round(chars / newPageCount)}`);
+        console.log(`   ✅ Content flow: ${newPageCount > 1 ? 'Multi-page active' : 'Single page'}`);
+      };
+      
+      editor.on('update', updatePageCount);
+      updatePageCount(); // Initial calculation
+      
+      return () => editor.off('update', updatePageCount);
     }
   }, [editor, calculatePageCount]);
 
-  // Track content flow between pages for true Word/Google Docs experience
-  useEffect(() => {
-    if (editor) {
-      const handleContentUpdate = () => {
-        const content = editor.getHTML();
-        const contentLength = content.length;
-        
-        console.log('📜 CONTENT FLOW TRACKING:');
-        console.log(`   📊 Total content: ${contentLength} chars`);
-        console.log(`   📄 Spread across: ${pageCount} pages`);
-        console.log(`   📏 Avg per page: ${Math.round(contentLength / pageCount)} chars`);
-        
-        // Log content distribution across viewports
-        for (let i = 0; i < pageCount; i++) {
-          const pageStartY = i * (pageHeight - padding * 2);
-          const pageEndY = (i + 1) * (pageHeight - padding * 2);
-          console.log(`   🪟 Page ${i + 1}: Viewport ${pageStartY}-${pageEndY}px`);
-        }
-        
-        console.log('   ✅ Seamless content flow enabled - type at page end to flow to next page');
-      };
 
-      editor.on('update', handleContentUpdate);
-      return () => editor.off('update', handleContentUpdate);
-    }
-  }, [editor, pageCount, pageHeight, padding]);
 
   // Click-to-position mapping for multi-page editing
   const handlePageClick = useCallback((pageIndex: number, event: React.MouseEvent) => {
@@ -1781,11 +1771,10 @@ export default function DocumentWorkspace() {
               <div className="min-h-full p-8 flex flex-col items-center">
 
 
-                {/* NEW ARCHITECTURE: Viewport Windowing for True Multi-Page Editing */}
-                {console.log('🚀 VIEWPORT WINDOWING ARCHITECTURE')}
-                {console.log('📊 Total pages needed:', pageCount)}
-                {console.log('📏 Page height:', pageHeight, 'Padding:', padding)}
-                {console.log('📖 Available content height per page:', pageHeight - (padding * 2))}
+                {/* FIXED: Viewport Windowing for True Word-Like Editing */}
+                {console.log('🚀 FIXED VIEWPORT ARCHITECTURE: scrollHeight-based pagination')}
+                {console.log('📊 Current page count:', pageCount)}
+                {console.log('📏 Standard page height: 928px')}
                 
                 {/* SIMPLIFIED: Clean viewport windowing implementation */}
                 <div className="document-pages">
@@ -1804,56 +1793,71 @@ export default function DocumentWorkspace() {
                         Page {pageIndex + 1} of {pageCount}
                       </div>
                       
-                      {/* Viewport window with clean implementation */}
+                      {/* Fixed viewport window with proper content flow */}
                       <div
                         ref={pageIndex === 0 ? editorContainerRef : undefined}
                         className="viewport-window"
                         style={{
-                          height: `${pageHeight}px`,
-                          maxHeight: `${pageHeight - (padding * 2)}px`,
+                          height: '1056px',
+                          maxHeight: '928px',
                           overflow: 'hidden',
                           position: 'relative',
                           border: '1px solid rgba(0,150,255,0.3)',
-                          padding: `${padding}px`,
                         }}
                       >
-                        {/* Strict clipping wrapper */}
+                        {console.log(`🪟 Page ${pageIndex + 1} viewport: ${pageIndex * 928}-${(pageIndex + 1) * 928}px`)}
+                        
+                        {/* Strict content clipping wrapper */}
                         <div style={{ 
-                          maxHeight: `${pageHeight - (padding * 2)}px`, 
+                          maxHeight: '928px', 
                           overflow: 'hidden', 
                           position: 'absolute', 
                           width: '100%',
                           top: 0,
                           left: 0,
-                          padding: `${padding}px`,
                         }}>
                           <EditorContent
                             editor={editor}
                             className="w-full focus:outline-none prose prose-sm max-w-none cursor-text"
                             style={{ 
-                              transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`, 
+                              transform: `translateY(-${pageIndex * 928}px)`, 
                               height: 'auto',
                               fontFamily: '"Times New Roman"',
                               fontSize: '12pt',
                               color: 'rgb(0, 0, 0)',
                               lineHeight: '1.6',
+                              padding: '64px',
                             }}
                           />
                         </div>
                         
-                        {/* Click handler for direct editing */}
+                        {/* Enhanced click handler for true direct editing */}
                         <div
                           className="absolute inset-0 bg-transparent"
-                          style={{ cursor: 'text', zIndex: 5, pointerEvents: 'auto', padding: `${padding}px` }}
+                          style={{ cursor: 'text', zIndex: 5, pointerEvents: 'auto', padding: '64px' }}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            const documentY = pageIndex * (pageHeight - padding * 2) + e.clientY - 64;
-                            const targetPos = editor?.view.posAtCoords({ left: e.clientX, top: documentY });
-                            if (targetPos && editor) {
-                              editor.commands.focus();
-                              editor.commands.setTextSelection(targetPos.pos);
-                              console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} at Y=${e.clientY}, Document Y=${documentY}`);
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const clickY = e.clientY - rect.top;
+                            const documentY = pageIndex * 928 + clickY - 64;
+                            
+                            console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} clicked at Y=${clickY}, Document Y=${documentY}`);
+                            
+                            if (editor) {
+                              const targetPos = editor.view.posAtCoords({ left: e.clientX, top: documentY });
+                              if (targetPos) {
+                                editor.commands.focus();
+                                editor.commands.setTextSelection(targetPos.pos);
+                                console.log(`   ✅ Cursor positioned at pos ${targetPos.pos} on page ${pageIndex + 1}`);
+                              } else {
+                                // Fallback positioning
+                                editor.commands.focus();
+                                const docSize = editor.state.doc.content.size;
+                                const fallbackPos = Math.max(1, Math.min(Math.floor(docSize * (documentY / (pageCount * 928))), docSize - 1));
+                                editor.commands.setTextSelection(fallbackPos);
+                                console.log(`   ⚠️ Fallback cursor at pos ${fallbackPos} on page ${pageIndex + 1}`);
+                              }
                             }
                           }}
                         />
