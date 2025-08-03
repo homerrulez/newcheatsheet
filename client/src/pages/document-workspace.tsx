@@ -723,11 +723,13 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply font family to selected text only using proper Tiptap commands
-                      editor.chain().focus().setFontFamily(value).run();
+                      // Apply font family to selected text only using TextStyle mark
+                      editor.chain().focus().setMark('textStyle', { fontFamily: value }).run();
                       toast({ title: `Font changed to ${value} for selected text` });
                     } else {
-                      toast({ title: "Please select text to change font" });
+                      // Set stored mark for next typed text
+                      editor.chain().focus().setStoredMark('textStyle', { fontFamily: value }).run();
+                      toast({ title: "Font family set for next typed text" });
                     }
                   }
                 }}
@@ -796,13 +798,14 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply size to selected text only using inline styles
-                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                      editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
+                      // Apply size to selected text only using TextStyle mark
+                      editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
                       toast({ title: `Font size increased to ${newSize}pt for selected text` });
                     } else {
+                      // Set stored mark for next typed text
                       setFontSize(newSize);
-                      toast({ title: "Please select text to change font size" });
+                      editor.chain().focus().setStoredMark('textStyle', { fontSize: `${newSize}pt` }).run();
+                      toast({ title: "Font size set for next typed text" });
                     }
                   }
                 }}
@@ -819,13 +822,14 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply size to selected text only using inline styles
-                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                      editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
+                      // Apply size to selected text only using TextStyle mark
+                      editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
                       toast({ title: `Font size decreased to ${newSize}pt for selected text` });
                     } else {
+                      // Set stored mark for next typed text
                       setFontSize(newSize);
-                      toast({ title: "Please select text to change font size" });
+                      editor.chain().focus().setStoredMark('textStyle', { fontSize: `${newSize}pt` }).run();
+                      toast({ title: "Font size set for next typed text" });
                     }
                   }
                 }}
@@ -936,11 +940,13 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply color to selected text only using proper Tiptap commands
-                      editor.chain().focus().setColor(newColor).run();
+                      // Apply color to selected text only using TextStyle mark
+                      editor.chain().focus().setMark('textStyle', { color: newColor }).run();
                       toast({ title: "Color changed for selected text" });
                     } else {
-                      toast({ title: "Please select text to change color" });
+                      // Set stored mark for next typed text
+                      editor.chain().focus().setStoredMark('textStyle', { color: newColor }).run();
+                      toast({ title: "Text color set for next typed text" });
                     }
                   }
                 }}
