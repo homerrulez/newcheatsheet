@@ -719,11 +719,12 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply to selected text only
-                      editor.chain().focus().setFontFamily(value).run();
+                      // Apply to selected text only - use proper formatting
+                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                      editor.chain().focus().deleteSelection().insertContent(`<span style="font-family: ${value};">${selectedText}</span>`).run();
+                      toast({ title: `Font changed to ${value} for selected text` });
                     } else {
-                      // Set default for new text
-                      editor.chain().focus().setFontFamily(value).run();
+                      toast({ title: "Please select text to change font" });
                     }
                   }
                 }}
@@ -788,7 +789,6 @@ export default function DocumentWorkspace() {
                 variant="outline" 
                 onClick={() => {
                   const newSize = Math.min(72, fontSize + 2);
-                  setFontSize(newSize);
                   
                   if (editor) {
                     const { selection } = editor.state;
@@ -796,13 +796,11 @@ export default function DocumentWorkspace() {
                       // Apply size to selected text only
                       const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
                       editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
+                      toast({ title: `Font size increased to ${newSize}pt for selected text` });
+                    } else {
+                      setFontSize(newSize);
+                      toast({ title: "Please select text to change font size" });
                     }
-                  }
-                  
-                  if (layoutEngine) {
-                    const newLayoutEngine = createLayoutEngine(pageSize, newSize);
-                    setLayoutEngine(newLayoutEngine);
-                    setPageMetrics(newLayoutEngine.getCurrentMetrics());
                   }
                 }}
                 disabled={fontSize >= 72}
@@ -814,7 +812,6 @@ export default function DocumentWorkspace() {
                 variant="outline" 
                 onClick={() => {
                   const newSize = Math.max(8, fontSize - 2);
-                  setFontSize(newSize);
                   
                   if (editor) {
                     const { selection } = editor.state;
@@ -822,13 +819,11 @@ export default function DocumentWorkspace() {
                       // Apply size to selected text only
                       const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
                       editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
+                      toast({ title: `Font size decreased to ${newSize}pt for selected text` });
+                    } else {
+                      setFontSize(newSize);
+                      toast({ title: "Please select text to change font size" });
                     }
-                  }
-                  
-                  if (layoutEngine) {
-                    const newLayoutEngine = createLayoutEngine(pageSize, newSize);
-                    setLayoutEngine(newLayoutEngine);
-                    setPageMetrics(newLayoutEngine.getCurrentMetrics());
                   }
                 }}
                 disabled={fontSize <= 8}
@@ -916,14 +911,13 @@ export default function DocumentWorkspace() {
                 onClick={() => {
                   if (!editor) return;
                   const { selection } = editor.state;
-                  const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
                   
-                  if (selectedText.trim()) {
-                    // Replace selected text with highlighted version
-                    editor.chain().focus().deleteSelection().insertContent(`<mark>${selectedText}</mark>`).run();
+                  if (!selection.empty) {
+                    // Apply proper highlighting to selected text
+                    editor.chain().focus().toggleHighlight({ color: '#ffff00' }).run();
+                    toast({ title: "Text highlighted" });
                   } else {
-                    // Insert placeholder highlight
-                    editor.chain().focus().insertContent('<mark>highlighted text</mark>').run();
+                    toast({ title: "Please select text to highlight" });
                   }
                 }}
                 disabled={!editor}
@@ -939,11 +933,12 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply color to selected text only
-                      editor.chain().focus().setColor(newColor).run();
+                      // Apply color to selected text only using proper formatting
+                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
+                      editor.chain().focus().deleteSelection().insertContent(`<span style="color: ${newColor};">${selectedText}</span>`).run();
+                      toast({ title: "Color changed for selected text" });
                     } else {
-                      // Set default color for new text
-                      editor.chain().focus().setColor(newColor).run();
+                      toast({ title: "Please select text to change color" });
                     }
                   }
                 }}
