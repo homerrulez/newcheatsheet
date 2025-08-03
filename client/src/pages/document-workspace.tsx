@@ -476,35 +476,63 @@ export default function DocumentWorkspace() {
       return;
     }
 
-    // Debug what layout engine would do vs simple approach
-    console.log('🔍 DEBUGGING LAYOUT ENGINE BEHAVIOR:');
-    console.log('- Height-based calculation says:', calculatedPages, 'pages');
+    // COMPREHENSIVE DIAGNOSTIC LOGGING
+    console.log('🔍 CONTENT DISTRIBUTION DIAGNOSTIC:');
+    console.log('════════════════════════════════════════');
+    
+    // 1. Current state analysis
+    const mainEditorContent = editor.getHTML();
+    const mainEditorText = editor.getText();
+    console.log('📊 CURRENT STATE:');
+    console.log('- Main editor content length:', mainEditorContent.length, 'chars');
+    console.log('- Main editor text length:', mainEditorText.length, 'chars'); 
+    console.log('- Height-based calculation says:', calculatedPages, 'pages needed');
     console.log('- Available page height:', availablePageHeight, 'px');
     console.log('- Total content height:', contentHeight, 'px');
+    console.log('- Current distributedPages state:', distributedPages.length, 'pages');
     
-    // Test what layout engine would create
+    // 2. Show a preview of main editor content
+    console.log('📄 MAIN EDITOR CONTENT PREVIEW:');
+    console.log('- HTML:', mainEditorContent.substring(0, 200) + '...');
+    console.log('- Text:', mainEditorText.substring(0, 200) + '...');
+    
+    // 3. Test what layout engine would create
+    console.log('🧪 LAYOUT ENGINE TEST:');
     try {
-      const layoutResult = LAYOUT_TEXT(editor.getHTML(), availablePageHeight, pageWidth - (padding * 2));
-      console.log('🚨 LAYOUT_TEXT would create:', layoutResult.length, 'pages');
-      console.log('🚨 Layout pages preview:', layoutResult.map((page, i) => `Page ${i + 1}: ${page.substring(0, 50)}...`));
+      const layoutResult = LAYOUT_TEXT(mainEditorContent, availablePageHeight, pageWidth - (padding * 2));
+      console.log('- LAYOUT_TEXT would create:', layoutResult.length, 'pages');
+      console.log('- Layout pages preview:');
+      layoutResult.forEach((page, i) => {
+        console.log(`  Page ${i + 1}: "${page.substring(0, 100)}..." (${page.length} chars)`);
+      });
     } catch (layoutError) {
-      console.log('❌ Layout engine error:', layoutError);
+      console.log('- Layout engine error:', layoutError);
     }
     
-    // Use simple approach instead - don't over-split content
-    console.log('📄 Using simple pagination - calculated pages:', calculatedPages);
+    // 4. Create simple pagination (current approach)
+    console.log('🎯 SIMPLE PAGINATION LOGIC:');
+    console.log('- Strategy: All content on page 1, empty placeholders for overflow pages');
     
-    // Just create visual pages but keep all content in first page
-    // This prevents over-splitting while maintaining visual pagination
-    const allContent = editor.getHTML();
+    const allContent = mainEditorContent;
     const pages: string[] = [allContent];
     
-    // Add empty visual pages for the calculated overflow
+    // Add placeholder pages for overflow
     for (let i = 1; i < calculatedPages; i++) {
-      pages.push('<p class="text-gray-400 text-center">Content continues from previous page...</p>');
+      const placeholderContent = `<p class="text-gray-400 text-center italic">Page ${i + 1} placeholder - Content continues from page 1...</p>`;
+      pages.push(placeholderContent);
     }
     
-    console.log('📚 Simple distribution - Created', pages.length, 'visual pages');
+    console.log('📚 CREATED PAGES:');
+    pages.forEach((page, i) => {
+      console.log(`- Page ${i + 1}: "${page.substring(0, 100)}..." (${page.length} chars)`);
+    });
+    
+    console.log('❓ KEY QUESTIONS:');
+    console.log('- Should main editor be hidden after pagination?', 'Currently:', 'visible');
+    console.log('- Should content be physically split between pages?', 'Currently:', 'no - all on page 1');
+    console.log('- Are we showing 1 real page + placeholders?', 'Currently:', 'yes');
+    console.log('════════════════════════════════════════');
+    
     setDistributedPages(pages);
     setPageCount(pages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
@@ -1645,7 +1673,12 @@ export default function DocumentWorkspace() {
               <div className="min-h-full p-8 flex flex-col items-center">
 
 
-                {/* Render unified document with visual page divisions */}
+                {/* DIAGNOSTIC: Show what content is in each page container */}
+                {console.log('🖼️ RENDERING PAGES:', distributedPages.length, 'pages')}
+                {distributedPages.forEach((content, i) => 
+                  console.log(`📄 Page ${i + 1} container content: "${content.substring(0, 100)}..." (${content.length} chars)`)
+                )}
+                
                 {/* Render all pages with distributed content */}
                 {distributedPages.map((pageContent, pageIndex) => (
                   <div
@@ -1667,6 +1700,13 @@ export default function DocumentWorkspace() {
                       Page {pageIndex + 1} of {pageCount}
                     </div>
                     
+                    {console.log(`🖼️ RENDERING PAGE ${pageIndex + 1}:`, {
+                      isFirstPage: pageIndex === 0,
+                      contentLength: pageContent.length,
+                      contentPreview: pageContent.substring(0, 100) + '...',
+                      renderingMode: pageIndex === 0 ? 'EditorContent' : 'dangerouslySetInnerHTML'
+                    })}
+                    
                     {pageIndex === 0 ? (
                       /* First page with editable Tiptap editor */
                       <div
@@ -1677,6 +1717,7 @@ export default function DocumentWorkspace() {
                           minHeight: `${pageHeight}px`,
                         }}
                       >
+                        {console.log('   ✅ Showing EditorContent component (main unified editor)')}
                         <EditorContent
                           editor={editor}
                           className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
@@ -1698,6 +1739,7 @@ export default function DocumentWorkspace() {
                           minHeight: `${pageHeight}px`,
                         }}
                       >
+                        {console.log('   📄 Showing distributed content HTML:', pageContent.substring(0, 200))}
                         <div 
                           className="w-full h-full prose prose-sm max-w-none"
                           style={{
