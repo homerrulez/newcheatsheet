@@ -16,8 +16,8 @@ const FontSize = TextStyle.extend({
     return {
       fontSize: {
         default: null,
-        parseHTML: element => element.style.fontSize?.replace('pt', ''),
-        renderHTML: attributes => {
+        parseHTML: (element: HTMLElement) => element.style.fontSize?.replace('pt', ''),
+        renderHTML: (attributes: any) => {
           if (!attributes.fontSize) return {}
           return { style: `font-size: ${attributes.fontSize}pt` }
         },
@@ -102,9 +102,7 @@ export default function DocumentWorkspace() {
         types: ['heading', 'paragraph'],
       }),
       Underline,
-      TextStyle.configure({
-        types: ['textStyle'],
-      }),
+      TextStyle,
       Color,
       FontFamily,
       FontSize,
