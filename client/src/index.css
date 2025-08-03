@@ -50,16 +50,15 @@
 
 /* StudyFlow gradient background - using uploaded background image */
 .studyflow-gradient {
-  background: url('/src/assets/background.jpg');
+  background: url('/src/assets/background.jpg') no-repeat center center;
   background-size: cover;
 }
 
 /* Global background for all pages - using uploaded background image */
 body {
-  background: url('/src/assets/background.jpg') !important;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background: url('/src/assets/background.jpg') no-repeat center center fixed !important;
+  background-size: cover !important;
+  min-height: 100vh;
   background-position: center center;
   min-height: 100vh;
 }
