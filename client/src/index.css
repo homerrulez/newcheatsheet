@@ -50,13 +50,13 @@
 
 /* StudyFlow gradient background - using uploaded background image */
 .studyflow-gradient {
-  background: url('./assets/background.jpg');
+  background: url('/src/assets/background.jpg');
   background-size: cover;
 }
 
 /* Global background for all pages - using uploaded background image */
 body {
-  background: url('./assets/background.jpg') !important;
+  background: url('/src/assets/background.jpg') !important;
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
