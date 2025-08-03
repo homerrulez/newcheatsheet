@@ -1105,30 +1105,35 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative">
-            {/* AI-enhanced Page status bar */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="flex items-center space-x-4">
-                <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-cyan-200 shadow-lg">
-                  <Brain className="w-3 h-3 mr-1 text-cyan-600" />
-                  AI Mode: On
-                </Badge>
-                <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 shadow-lg">
-                  📝 Page 1 / ∞
-                </Badge>
-                <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-purple-200 shadow-lg">
-                  ⏳ Auto-save
-                </Badge>
+            {/* Refined AI Status Bar */}
+            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
+              <div className="bg-white/20 backdrop-blur-md rounded-full px-6 py-2 border border-white/30 shadow-lg">
+                <div className="flex items-center space-x-6 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-lg shadow-cyan-400/50"></div>
+                    <span className="text-white/90 font-medium">AI Mode</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white/75 font-normal">Page 1 of ∞</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+                    <span className="text-white/75 font-normal">Auto-save</span>
+                  </div>
+                </div>
               </div>
             </div>
             
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
               <div className="min-h-full p-8 flex flex-col items-center">
-                {/* AI Starter Prompt */}
-                <div className="w-full max-w-4xl mb-6 text-center">
-                  <p className="text-sm text-gray-500 italic font-light tracking-wide" style={{ fontFamily: '"Inter", sans-serif' }}>
-                    ✨ Start typing and let StudyFlow enhance your words in real time...
-                  </p>
+                {/* Refined AI Starter Prompt */}
+                <div className="w-full max-w-4xl mb-8 text-center">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-4 border border-white/20 shadow-lg">
+                    <p className="text-white/80 text-sm font-light tracking-wide" style={{ fontFamily: '"Inter", sans-serif' }}>
+                      ✨ Start typing and let StudyFlow enhance your words in real time
+                    </p>
+                  </div>
                 </div>
 
                 {/* Render pages with AI glow and proper content distribution */}
@@ -1207,54 +1212,54 @@ export default function DocumentWorkspace() {
 
         {/* Right panel - Always-On ChatGPT Interface */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-          <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-l border-white/20 flex flex-col">
+          <div className="h-full bg-gradient-to-b from-white/30 via-white/20 to-white/10 backdrop-blur-md border-l border-white/30 flex flex-col">
             {/* ChatGPT Assistant - Always at top */}
-            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-lg border border-white/20 p-4 m-4 flex-shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-white" />
+            <div className="bg-gradient-to-br from-white/40 via-white/30 to-white/20 backdrop-blur-lg border border-white/30 shadow-xl p-6 m-4 rounded-2xl flex-shrink-0">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 via-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg">
+                    <Brain className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">ChatGPT Assistant</h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <h3 className="font-semibold text-white text-lg">ChatGPT Assistant</h3>
+                    <p className="text-xs text-white/70 font-light">
                       Always available • {pageCount} pages
                     </p>
                   </div>
                 </div>
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="AI Active"></div>
+                <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" title="AI Active"></div>
               </div>
               
               {/* Smart AI Suggestions */}
-              <div className="mb-4 space-y-2">
-                <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Smart Suggestions</h4>
+              <div className="mb-6 space-y-3">
+                <h4 className="text-xs font-medium text-white/80 uppercase tracking-wider">Smart Suggestions</h4>
                 <div className="space-y-2">
-                  <button className="w-full text-left p-2 text-xs bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg border border-blue-200/50 dark:border-blue-700/50 transition-all duration-200">
+                  <button className="w-full text-left p-3 text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl border border-white/30 hover:border-white/40 transition-all duration-300 text-white/90 hover:text-white">
                     💡 Need help rephrasing?
                   </button>
-                  <button className="w-full text-left p-2 text-xs bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200/50 dark:border-purple-700/50 transition-all duration-200">
+                  <button className="w-full text-left p-3 text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl border border-white/30 hover:border-white/40 transition-all duration-300 text-white/90 hover:text-white">
                     📝 Add summary to this section?
                   </button>
-                  <button className="w-full text-left p-2 text-xs bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200/50 dark:border-green-700/50 transition-all duration-200">
+                  <button className="w-full text-left p-3 text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl border border-white/30 hover:border-white/40 transition-all duration-300 text-white/90 hover:text-white">
                     🎯 Check for tone and clarity?
                   </button>
                 </div>
               </div>
               
               {/* Chat messages area - Proper height */}
-              <div className="mb-4">
-                <ScrollArea className="h-[45rem] border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+              <div className="mb-6">
+                <ScrollArea className="h-[45rem] border border-white/30 rounded-2xl p-4 bg-white/10 backdrop-blur-sm">
                   <div className="space-y-2">
                     {chatMessages.length === 0 && (
                       <div className="text-center py-8">
-                        <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                        <Sparkles className="w-12 h-12 text-white/60 mx-auto mb-4" />
+                        <h4 className="font-medium text-white mb-2">
                           Ready to Help!
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        <p className="text-sm text-white/70 mb-4">
                           Try natural language requests:
                         </p>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                        <div className="text-xs text-white/50 space-y-1">
                           <p>"create a title about Ali and make it adventurous"</p>
                           <p>"make the text bold"</p>
                           <p>"add a paragraph about nature"</p>
@@ -1314,35 +1319,30 @@ export default function DocumentWorkspace() {
         </ResizablePanel>
       </ResizablePanelGroup>
       
-      {/* AI Footer Bar - Intelligent Status Strip */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-slate-50 via-blue-50 to-purple-50 dark:from-slate-800 dark:via-blue-900/20 dark:to-purple-900/20 border-t border-gray-200 dark:border-gray-700 backdrop-blur-sm">
-        <div className="px-6 py-2 flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-6">
+      {/* Refined AI Status Footer */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white/20 backdrop-blur-lg border-t border-white/30">
+        <div className="px-6 py-3 flex items-center justify-between text-xs">
+          <div className="flex items-center space-x-8">
             <div className="flex items-center space-x-2">
-              <Clock className="w-3 h-3 text-blue-600" />
-              <span className="text-gray-700 dark:text-gray-300">Reading time: ~2 min</span>
+              <Clock className="w-3 h-3 text-white/70" />
+              <span className="text-white/80">Reading time: ~2 min</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Brain className="w-3 h-3 text-purple-600" />
-              <span className="text-gray-700 dark:text-gray-300">Writing level: Professional</span>
+              <Brain className="w-3 h-3 text-white/70" />
+              <span className="text-white/80">Professional tone</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Sparkles className="w-3 h-3 text-green-600" />
-              <span className="text-gray-700 dark:text-gray-300">Sentiment: Positive</span>
+              <Sparkles className="w-3 h-3 text-white/70" />
+              <span className="text-white/80">Clear writing</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-500 dark:text-gray-400">AI Confidence:</span>
-              <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                <div className="w-4/5 h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 border border-white/30">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+                <span className="text-white/80 font-medium">Auto-save Active</span>
               </div>
-              <span className="text-cyan-600 font-medium">85%</span>
             </div>
-            <Badge variant="outline" className="border-green-300 text-green-700 dark:border-green-600 dark:text-green-400">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></div>
-              Auto-save Active
-            </Badge>
           </div>
         </div>
       </div>
