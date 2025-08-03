@@ -75,13 +75,9 @@ export default function DocumentWorkspace() {
   const [pageOrientation, setPageOrientation] = useState('portrait');
   
   // Layout engine integration
-  const [layoutEngine, setLayoutEngine] = useState<LayoutEngine>(() => {
-    const engine = createLayoutEngine(pageSize, fontSize);
-    console.log('🔧 Layout engine created with:', { pageSize, fontSize });
-    console.log('🔧 Page config:', engine.getPageConfig());
-    console.log('🔧 Current metrics:', engine.getCurrentMetrics());
-    return engine;
-  });
+  const [layoutEngine, setLayoutEngine] = useState<LayoutEngine>(() => 
+    createLayoutEngine(pageSize, fontSize)
+  );
   const [documentInterface, setDocumentInterface] = useState<DocumentCommandInterface>(() => 
     createDocumentInterface('', pageSize, fontSize)
   );
@@ -94,24 +90,22 @@ export default function DocumentWorkspace() {
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Editor setup with extensive functionality - fixed duplicate extensions
+  // Editor setup with extensive functionality
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
-        // Disable underline in StarterKit since we're importing it separately
-        underline: false,
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      Underline, // Keep only this underline instance
-      // Removed TextStyle - FontSize extension already includes this functionality
+      Underline,
+      TextStyle,
       Color,
       FontFamily,
-      FontSize, // This already extends TextStyle, so no need for separate TextStyle
+      FontSize,
       Highlight.configure({
         multicolor: true,
       }),
@@ -130,7 +124,7 @@ export default function DocumentWorkspace() {
   });
 
   // Fetch document
-  const { data: documentData, isLoading: documentLoading } = useQuery<Document>({
+  const { data: document, isLoading: documentLoading } = useQuery<Document>({
     queryKey: ['document', id],
     queryFn: async () => {
       const response = await fetch(`/api/documents/${id}`);
@@ -405,14 +399,14 @@ export default function DocumentWorkspace() {
 
   // Initialize editor with document content
   useEffect(() => {
-    if (documentData && editor && documentData.content && !editor.getHTML().includes(documentData.content)) {
-      editor.commands.setContent(documentData.content || '<p></p>');
-      setPageSize((documentData.pageSize as keyof typeof PAGE_SIZES) || 'letter');
-      setFontSize(parseInt(documentData.fontSize || '12'));
-      setFontFamily(documentData.fontFamily || 'Times New Roman');
-      setTextColor(documentData.textColor || '#000000');
+    if (document && editor && document.content && !editor.getHTML().includes(document.content)) {
+      editor.commands.setContent(document.content || '<p></p>');
+      setPageSize((document.pageSize as keyof typeof PAGE_SIZES) || 'letter');
+      setFontSize(parseInt(document.fontSize || '12'));
+      setFontFamily(document.fontFamily || 'Times New Roman');
+      setTextColor(document.textColor || '#000000');
     }
-  }, [documentData, editor]);
+  }, [document, editor]);
 
   // Update editor props when formatting changes
   useEffect(() => {
@@ -440,372 +434,37 @@ export default function DocumentWorkspace() {
   const pageHeight = baseHeight * (zoomLevel / 100);
   const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
 
-  // Unified Document Approach - Single editor with visual page rendering
-  const [pageCount, setPageCount] = useState(1);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // True Content Distribution using Layout Engine
+  const [pageContent, setPageContent] = useState<Array<{ pageNumber: number; content: string; wordCount: number; characterCount: number; isFull: boolean }>>([
+    { pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }
+  ]);
+  const editorRef = useRef<HTMLDivElement>(null);
 
-  // State for distributed content across pages
-  const [distributedPages, setDistributedPages] = useState<string[]>(['<p></p>']);
-
-  // Distribute content across multiple pages
-  const distributeContent = useCallback(() => {
-    console.log('🔄 distributeContent called');
-    
-    if (!editor || !editorContainerRef.current) {
-      console.log('❌ No editor or container ref');
-      return;
-    }
-
-    const editorElement = editorContainerRef.current.querySelector('.ProseMirror');
-    if (!editorElement) {
-      console.log('❌ No ProseMirror element found');
-      return;
-    }
-
-    const contentHeight = editorElement.scrollHeight;
-    const availablePageHeight = pageHeight - (padding * 2);
-    const calculatedPages = Math.max(1, Math.ceil(contentHeight / availablePageHeight));
-    
-    console.log('📊 Content height:', contentHeight, 'Available per page:', availablePageHeight, 'Pages:', calculatedPages);
-    
-    if (calculatedPages === 1) {
-      // Single page - use all content
-      setDistributedPages([editor.getHTML()]);
-      setPageCount(1);
-      return;
-    }
-
-    // COMPREHENSIVE DIAGNOSTIC LOGGING
-    console.log('🔍 CONTENT DISTRIBUTION DIAGNOSTIC:');
-    console.log('════════════════════════════════════════');
-    
-    // 1. Current state analysis
-    const mainEditorContent = editor.getHTML();
-    const mainEditorText = editor.getText();
-    console.log('📊 CURRENT STATE:');
-    console.log('- Main editor content length:', mainEditorContent.length, 'chars');
-    console.log('- Main editor text length:', mainEditorText.length, 'chars'); 
-    console.log('- Height-based calculation says:', calculatedPages, 'pages needed');
-    console.log('- Available page height:', availablePageHeight, 'px');
-    console.log('- Total content height:', contentHeight, 'px');
-    console.log('- Current distributedPages state:', distributedPages.length, 'pages');
-    
-    // 2. Show a preview of main editor content
-    console.log('📄 MAIN EDITOR CONTENT PREVIEW:');
-    console.log('- HTML:', mainEditorContent.substring(0, 200) + '...');
-    console.log('- Text:', mainEditorText.substring(0, 200) + '...');
-    
-    // 3. Test what layout engine would create
-    console.log('🧪 LAYOUT ENGINE TEST:');
-    try {
-      // Layout engine test would go here if available
-      console.log('- Layout engine not configured yet');
-    } catch (layoutError) {
-      console.log('- Layout engine error:', layoutError);
-    }
-    
-    // 4. REAL CONTENT SPLITTING BY HEIGHT
-    console.log('🎯 IMPLEMENTING REAL CONTENT SPLITTING:');
-    
-    const splitContentByHeight = (htmlContent: string, maxPageHeight: number): string[] => {
-      const pages: string[] = [];
-      
-      try {
-        // Parse HTML into individual elements
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = htmlContent;
-        const elements = Array.from(tempDiv.children);
+  // Content distribution effect - splits content across real pages
+  useEffect(() => {
+    if (editor && layoutEngine) {
+      const distributeContent = () => {
+        const htmlContent = editor.getHTML();
         
-        console.log('📄 Splitting', elements.length, 'elements across pages');
+        // Use layout engine to split content into pages
+        const layoutResult = layoutEngine.LAYOUT_TEXT(htmlContent);
         
-        // Distribute elements across pages by measuring height
-        let currentPageElements: Element[] = [];
-        let currentPageHeight = 0;
-        
-        elements.forEach((element, index) => {
-          // Measure this element's height
-          const testDiv = document.createElement('div');
-          testDiv.style.cssText = `
-            position: absolute; 
-            top: -9999px; 
-            left: -9999px;
-            width: ${pageWidth - (padding * 2)}px; 
-            font-size: ${fontSize}pt; 
-            font-family: ${fontFamily}; 
-            line-height: 1.6;
-            color: ${textColor};
-            visibility: hidden;
-          `;
-          testDiv.appendChild(element.cloneNode(true));
-          document.body.appendChild(testDiv);
-          
-          const elementHeight = testDiv.offsetHeight;
-          document.body.removeChild(testDiv);
-          
-          console.log(`Element ${index + 1}: ${elementHeight}px height, total so far: ${currentPageHeight + elementHeight}px`);
-          
-          // Check if element fits on current page
-          if (currentPageHeight + elementHeight > maxPageHeight && currentPageElements.length > 0) {
-            // Save current page and start new one
-            const pageContent = currentPageElements.map(el => el.outerHTML).join('');
-            pages.push(pageContent);
-            console.log(`📄 Completed page ${pages.length}: ${currentPageHeight}px, ${currentPageElements.length} elements`);
-            
-            currentPageElements = [element];
-            currentPageHeight = elementHeight;
-          } else {
-            // Add to current page
-            currentPageElements.push(element);
-            currentPageHeight += elementHeight;
-          }
-        });
-        
-        // Add final page
-        if (currentPageElements.length > 0) {
-          const pageContent = currentPageElements.map(el => el.outerHTML).join('');
-          pages.push(pageContent);
-          console.log(`📄 Final page ${pages.length}: ${currentPageHeight}px, ${currentPageElements.length} elements`);
+        if (layoutResult.pages.length > 0) {
+          setPageContent(layoutResult.pages);
+        } else {
+          // Fallback: single empty page
+          setPageContent([{ pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }]);
         }
-        
-        return pages;
-        
-      } catch (error) {
-        console.error('❌ Content splitting error:', error);
-        // Fallback: return all content on first page
-        return [htmlContent];
-      }
-    };
-    
-    console.log('🔄 Splitting content by actual height measurements...');
-    const newDistributedPages = splitContentByHeight(mainEditorContent, availablePageHeight);
-    
-    console.log('📚 REAL CONTENT DISTRIBUTION COMPLETE:');
-    newDistributedPages.forEach((page, i) => {
-      console.log(`- Page ${i + 1}: ${page.length} chars - "${page.substring(0, 100)}..."`);
-    });
-    
-    console.log('✅ Now each page contains REAL content, not placeholders!');
-    console.log('════════════════════════════════════════');
-    
-    setDistributedPages(newDistributedPages);
-    setPageCount(newDistributedPages.length);
-  }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
-
-  // Fixed page count calculation using scrollHeight
-  const calculatePageCount = useCallback(() => {
-    if (!editor) return 1;
-    const contentNode = editor.view.dom.querySelector('.ProseMirror') || editor.view.dom;
-    const contentHeight = contentNode.scrollHeight; // Use scrollHeight for full content
-    const pages = Math.ceil(contentHeight / 928) || 1;
-    console.log(`📏 Content height: ${contentHeight}px, Pages: ${pages}`);
-    return pages;
-  }, [editor]);
-
-  // Update page count with proper event handling
-  useEffect(() => {
-    if (editor) {
-      const updatePageCount = () => {
-        const newPageCount = calculatePageCount();
-        setPageCount(newPageCount);
-        
-        // Log content flow details
-        const chars = editor.getText().length;
-        console.log(`📜 CONTENT FLOW UPDATE:`);
-        console.log(`   📊 Total chars: ${chars}`);
-        console.log(`   📄 Pages: ${newPageCount}`);
-        console.log(`   📏 Avg chars/page: ${Math.round(chars / newPageCount)}`);
-        console.log(`   ✅ Content flow: ${newPageCount > 1 ? 'Multi-page active' : 'Single page'}`);
       };
-      
-      editor.on('update', updatePageCount);
-      updatePageCount(); // Initial calculation
-      
-      return () => editor.off('update', updatePageCount);
+
+      // Distribute content when it changes
+      const timer = setTimeout(distributeContent, 100);
+      return () => clearTimeout(timer);
     }
-  }, [editor, calculatePageCount]);
+  }, [editor?.getHTML(), layoutEngine, pageHeight, padding, zoomLevel]);
 
-
-
-  // Click-to-position mapping for multi-page editing
-  const handlePageClick = useCallback((pageIndex: number, event: React.MouseEvent) => {
-    console.log('🖱️ Page click mapping - Page:', pageIndex);
-    
-    if (!editor || pageIndex === 0) {
-      // Page 1 already has direct editor, no mapping needed
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Add visual feedback on clicked page
-    const pageElement = event.currentTarget as HTMLElement;
-    const clickedContentDiv = pageElement.querySelector('.prose') as HTMLElement;
-    
-    if (clickedContentDiv) {
-      // Brief highlight effect
-      clickedContentDiv.style.transition = 'background-color 0.2s ease';
-      clickedContentDiv.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'; // blue highlight
-      
-      // Remove highlight after brief delay
-      setTimeout(() => {
-        clickedContentDiv.style.backgroundColor = 'transparent';
-      }, 300);
-    }
-
-    const rect = pageElement.getBoundingClientRect();
-    const clickY = event.clientY - rect.top - padding; // Relative Y position within page
-    
-    console.log('📍 Click position:', { clickY, padding });
-
-    // Calculate approximate document position based on page and Y coordinate
-    const availablePageHeight = pageHeight - (padding * 2);
-    const approximateDocumentY = (pageIndex * availablePageHeight) + Math.max(0, clickY);
-    
-    console.log('📊 Document position calculation:', {
-      pageIndex,
-      availablePageHeight,
-      approximateDocumentY
-    });
-
-    // Small delay to let user see the click feedback, then focus editor
-    setTimeout(() => {
-      editor.commands.focus();
-    }, 150);
-
-    // Use the layout engine to find the closest node position
-    try {
-      const editorElement = editorContainerRef.current?.querySelector('.ProseMirror');
-      if (editorElement) {
-        // Create a temporary measuring approach
-        const docHeight = editorElement.scrollHeight;
-        const documentRatio = approximateDocumentY / docHeight;
-        
-        // Get document content and find approximate text position
-        const fullText = editor.getText();
-        const approximateCharPosition = Math.floor(fullText.length * documentRatio);
-        
-        console.log('🎯 Positioning cursor:', {
-          docHeight,
-          documentRatio,
-          fullText: fullText.length,
-          approximateCharPosition
-        });
-
-        // Safer cursor positioning with validation
-        const doc = editor.state.doc;
-        const maxValidPos = doc.content.size;
-        
-        console.log('📏 Document info:', {
-          docSize: maxValidPos,
-          textLength: fullText.length,
-          approximateCharPosition
-        });
-        
-        // Use a much simpler approach - just position proportionally
-        const targetPos = Math.min(
-          Math.max(1, Math.floor((approximateCharPosition / fullText.length) * maxValidPos)),
-          maxValidPos - 1
-        );
-        
-        console.log('🎯 Calculated target position:', targetPos, 'of max:', maxValidPos);
-        
-        // Validate position before setting
-        try {
-          if (targetPos >= 1 && targetPos < maxValidPos) {
-            editor.commands.setTextSelection(targetPos);
-            console.log('✅ Cursor positioned at validated pos:', targetPos);
-          } else {
-            console.log('⚠️ Invalid position, using end of document');
-            editor.commands.setTextSelection(maxValidPos - 1);
-          }
-        } catch (positionError) {
-          console.error('❌ Position setting error:', positionError);
-          // Fallback to end of document
-          editor.commands.setTextSelection(maxValidPos - 1);
-        }
-
-        // Scroll the editor to approximate position for visual feedback
-        const scrollRatio = approximateDocumentY / docHeight;
-        editorElement.scrollTop = editorElement.scrollHeight * scrollRatio;
-      }
-    } catch (error) {
-      console.error('❌ Position mapping error:', error);
-      // Fallback: just focus the editor
-      editor.commands.focus();
-    }
-  }, [editor, pageHeight, padding]);
-
-  // Editor diagnostics and event handlers
-  useEffect(() => {
-    if (editor) {
-      console.log('=== EDITOR DIAGNOSTICS ===');
-      console.log('Editor exists:', !!editor);
-      console.log('Editor is editable:', editor?.isEditable);
-      console.log('Editor is focused:', editor?.isFocused);
-      console.log('Editor view DOM element:', editor?.view?.dom);
-      console.log('Editor view DOM is contentEditable:', editor?.view?.dom?.contentEditable);
-      console.log('Editor has selection:', !!editor?.state?.selection);
-
-      // Event listeners for editor events
-      const handleUpdate = () => {
-        const timestamp = Date.now();
-        console.log('EDITOR: content updated at', timestamp);
-      };
-
-      const handleSelectionUpdate = () => {
-        console.log('EDITOR: selection updated');
-      };
-
-      const handleFocus = () => {
-        console.log('EDITOR: gained focus');
-      };
-
-      const handleBlur = () => {
-        console.log('EDITOR: lost focus');
-      };
-
-      editor.on('update', handleUpdate);
-      editor.on('selectionUpdate', handleSelectionUpdate);
-      editor.on('focus', handleFocus);
-      editor.on('blur', handleBlur);
-
-      return () => {
-        editor.off('update', handleUpdate);
-        editor.off('selectionUpdate', handleSelectionUpdate);
-        editor.off('focus', handleFocus);
-        editor.off('blur', handleBlur);
-      };
-    }
-  }, [editor]);
-
-  // Global focus tracking
-  useEffect(() => {
-    const handleFocusIn = (e: FocusEvent) => {
-      console.log('FOCUS IN:', e.target, 'active element:', window.document.activeElement);
-    };
-
-    const handleFocusOut = (e: FocusEvent) => {
-      console.log('FOCUS OUT:', e.target);
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (window.document.activeElement === editor?.view?.dom || editor?.isFocused) {
-        console.log('KEY DOWN:', e.key, 'at timestamp:', Date.now());
-      }
-    };
-
-    window.document.addEventListener('focusin', handleFocusIn);
-    window.document.addEventListener('focusout', handleFocusOut);
-    window.document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.document.removeEventListener('focusin', handleFocusIn);
-      window.document.removeEventListener('focusout', handleFocusOut);
-      window.document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [editor]);
+  // Page count is now derived from distributed content
+  const pageCount = pageContent.length;
 
   // Handle send message
   const handleSendMessage = () => {
@@ -1740,7 +1399,7 @@ export default function DocumentWorkspace() {
                   <div className="flex items-center space-x-2">
                     <span className="text-gray-600 dark:text-gray-400">
                       {(() => {
-                        const text = documentData?.content || '';
+                        const text = document?.content || '';
                         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                         return `${wordCount} words`;
                       })()}
@@ -1750,7 +1409,7 @@ export default function DocumentWorkspace() {
                   <div className="flex items-center space-x-2">
                     <span className="text-gray-600 dark:text-gray-400">
                       {(() => {
-                        const text = documentData?.content || '';
+                        const text = document?.content || '';
                         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                         const readingTime = Math.max(1, Math.ceil(wordCount / 200)); // 200 words per minute
                         return `${readingTime} min read`;
@@ -1771,100 +1430,92 @@ export default function DocumentWorkspace() {
               <div className="min-h-full p-8 flex flex-col items-center">
 
 
-                {/* FIXED: Viewport Windowing for True Word-Like Editing */}
-                {console.log('🚀 FIXED VIEWPORT ARCHITECTURE: scrollHeight-based pagination')}
-                {console.log('📊 Current page count:', pageCount)}
-                {console.log('📏 Standard page height: 928px')}
-                
-                {/* SIMPLIFIED: Clean viewport windowing implementation */}
-                <div className="document-pages">
-                  {Array.from({ length: pageCount }).map((_, pageIndex) => (
+                {/* Render pages with real distributed content */}
+                {pageContent.map((page, pageIndex) => (
+                  <div
+                    key={page.pageNumber}
+                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+                    style={{
+                      width: `${pageWidth}px`,
+                      height: `${pageHeight}px`,
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
+                      minHeight: `${pageHeight}px`,
+                    }}
+                  >
+                    {/* Page number indicator with content info */}
+                    <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
+                      Page {page.pageNumber} • {page.wordCount} words
+                    </div>
+                    
+                    {/* Page content */}
                     <div
-                      key={pageIndex}
-                      className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group transition-all duration-500 cursor-text hover:shadow-cyan-300/20"
-                      style={{
-                        width: `${pageWidth}px`,
-                        height: `${pageHeight}px`,
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
+                      ref={pageIndex === 0 ? editorRef : undefined}
+                      className="w-full h-full relative"
+                      style={{ 
+                        padding: `${padding}px`,
+                        overflow: 'hidden'
                       }}
                     >
-                      {/* Page number indicator */}
-                      <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                        Page {pageIndex + 1} of {pageCount}
-                      </div>
-                      
-                      {/* Fixed viewport window with proper content flow */}
-                      <div
-                        ref={pageIndex === 0 ? editorContainerRef : undefined}
-                        className="viewport-window"
-                        style={{
-                          height: '1056px',
-                          maxHeight: '928px',
-                          overflow: 'hidden',
-                          position: 'relative',
-                          border: '1px solid rgba(0,150,255,0.3)',
-                        }}
-                      >
-                        {console.log(`🪟 Page ${pageIndex + 1} viewport: ${pageIndex * 928}-${(pageIndex + 1) * 928}px`)}
-                        
-                        {/* Strict content clipping wrapper */}
-                        <div style={{ 
-                          maxHeight: '928px', 
-                          overflow: 'hidden', 
-                          position: 'absolute', 
-                          width: '100%',
-                          top: 0,
-                          left: 0,
-                        }}>
+                      {pageIndex === 0 ? (
+                        // First page: Editable content
+                        <div 
+                          className="w-full h-full"
+                          style={{
+                            maxHeight: 'none',
+                            overflow: 'visible'
+                          }}
+                        >
                           <EditorContent
                             editor={editor}
-                            className="w-full focus:outline-none prose prose-sm max-w-none cursor-text"
-                            style={{ 
-                              transform: `translateY(-${pageIndex * 928}px)`, 
-                              height: 'auto',
-                              fontFamily: '"Times New Roman"',
-                              fontSize: '12pt',
-                              color: 'rgb(0, 0, 0)',
+                            className="w-full focus:outline-none prose prose-sm max-w-none"
+                            style={{
+                              fontFamily,
+                              fontSize: `${fontSize}pt`,
+                              color: textColor,
                               lineHeight: '1.6',
-                              padding: '64px',
+                              minHeight: `${pageHeight - (padding * 2)}px`,
                             }}
                           />
                         </div>
-                        
-                        {/* Enhanced click handler for true direct editing */}
-                        <div
-                          className="absolute inset-0 bg-transparent"
-                          style={{ cursor: 'text', zIndex: 5, pointerEvents: 'auto', padding: '64px' }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const clickY = e.clientY - rect.top;
-                            const documentY = pageIndex * 928 + clickY - 64;
-                            
-                            console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} clicked at Y=${clickY}, Document Y=${documentY}`);
-                            
-                            if (editor) {
-                              const targetPos = editor.view.posAtCoords({ left: e.clientX, top: documentY });
-                              if (targetPos) {
-                                editor.commands.focus();
-                                editor.commands.setTextSelection(targetPos.pos);
-                                console.log(`   ✅ Cursor positioned at pos ${targetPos.pos} on page ${pageIndex + 1}`);
-                              } else {
-                                // Fallback positioning
-                                editor.commands.focus();
-                                const docSize = editor.state.doc.content.size;
-                                const fallbackPos = Math.max(1, Math.min(Math.floor(docSize * (documentY / (pageCount * 928))), docSize - 1));
-                                editor.commands.setTextSelection(fallbackPos);
-                                console.log(`   ⚠️ Fallback cursor at pos ${fallbackPos} on page ${pageIndex + 1}`);
-                              }
-                            }
+                      ) : (
+                        // Subsequent pages: Distributed content (read-only for now)
+                        <div 
+                          className="w-full h-full"
+                          style={{
+                            fontFamily,
+                            fontSize: `${fontSize}pt`,
+                            color: textColor,
+                            lineHeight: '1.6',
+                            overflow: 'hidden'
                           }}
-                        />
-                      </div>
+                        >
+                          <div 
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: page.content }}
+                            style={{
+                              fontFamily,
+                              fontSize: `${fontSize}pt`,
+                              color: textColor,
+                              lineHeight: '1.6',
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                    
+                    {/* Page break indicator */}
+                    {pageIndex < pageCount - 1 && (
+                      <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
+                        ••• Page Break •••
+                      </div>
+                    )}
+                    
+                    {/* Page status indicator */}
+                    {page.isFull && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full" title="Page Full"></div>
+                    )}
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           </div>
@@ -1989,7 +1640,7 @@ export default function DocumentWorkspace() {
             {/* AI Grammar & Style Assistant */}
             <button
               onClick={async () => {
-                if (!documentData?.content || documentData.content.trim().length === 0) {
+                if (!document?.content || document.content.trim().length === 0) {
                   toast({
                     title: "No content to improve",
                     description: "Please add some text to your document first.",
@@ -2002,7 +1653,7 @@ export default function DocumentWorkspace() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                      content: documentData.content,
+                      content: document.content,
                       preserveEquations: true,
                       preserveNotations: true 
                     })
@@ -2037,7 +1688,7 @@ export default function DocumentWorkspace() {
                 <Type className="w-3 h-3 text-blue-600" />
                 <span className="text-xs text-blue-700 dark:text-blue-300">
                   {(() => {
-                    const text = documentData?.content || '';
+                    const text = document?.content || '';
                     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                     return `${wordCount} words`;
                   })()}
@@ -2048,7 +1699,7 @@ export default function DocumentWorkspace() {
                 <Clock className="w-3 h-3 text-blue-600" />
                 <span className="text-xs text-blue-700 dark:text-blue-300">
                   {(() => {
-                    const text = documentData?.content || '';
+                    const text = document?.content || '';
                     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
                     return `${readingTime} min`;
@@ -2060,7 +1711,7 @@ export default function DocumentWorkspace() {
             {/* AI Tone Adjustment */}
             <button
               onClick={async () => {
-                if (!documentData?.content || documentData.content.trim().length === 0) {
+                if (!document?.content || document.content.trim().length === 0) {
                   toast({
                     title: "No content to adjust",
                     description: "Please add some text to your document first.",
@@ -2073,7 +1724,7 @@ export default function DocumentWorkspace() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                      content: documentData.content,
+                      content: document.content,
                       targetTone: 'professional',
                       preserveEquations: true 
                     })
@@ -2108,7 +1759,7 @@ export default function DocumentWorkspace() {
             <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
               <FileText className="w-3 h-3 text-gray-600" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                Page {Math.max(1, Math.ceil((documentData?.content?.length || 0) / 3000))}
+                Page {Math.max(1, Math.ceil((document?.content?.length || 0) / 3000))}
               </span>
             </div>
 
