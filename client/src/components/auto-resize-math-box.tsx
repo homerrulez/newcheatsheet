@@ -364,7 +364,7 @@ export default function AutoResizeMathBox({
                 >
                   <div 
                     ref={contentRef}
-                    className="w-full h-full text-gray-900 dark:text-gray-100"
+                    className="w-full h-full text-white"
                     style={contentStyles}
                     onClick={(e) => e.stopPropagation()}
                     role="region"
@@ -434,7 +434,7 @@ export default function AutoResizeMathBox({
             >
               <div 
                 ref={contentRef}
-                className="w-full h-full text-gray-900 dark:text-gray-100"
+                className="w-full h-full text-white"
                 style={contentStyles}
                 role="region"
                 aria-label="Auto-fitting content"
