@@ -8,6 +8,7 @@ import Underline from '@tiptap/extension-underline';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
+import Highlight from '@tiptap/extension-highlight';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -89,6 +90,9 @@ export default function DocumentWorkspace() {
       TextStyle,
       FontFamily.configure({
         types: ['textStyle'],
+      }),
+      Highlight.configure({
+        multicolor: true,
       }),
     ],
     content: '',
@@ -719,9 +723,8 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply to selected text only - use proper formatting
-                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                      editor.chain().focus().deleteSelection().insertContent(`<span style="font-family: ${value};">${selectedText}</span>`).run();
+                      // Apply font family to selected text only using proper Tiptap commands
+                      editor.chain().focus().setFontFamily(value).run();
                       toast({ title: `Font changed to ${value} for selected text` });
                     } else {
                       toast({ title: "Please select text to change font" });
@@ -793,7 +796,7 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply size to selected text only
+                      // Apply size to selected text only using inline styles
                       const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
                       editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
                       toast({ title: `Font size increased to ${newSize}pt for selected text` });
@@ -816,7 +819,7 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply size to selected text only
+                      // Apply size to selected text only using inline styles
                       const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
                       editor.chain().focus().deleteSelection().insertContent(`<span style="font-size: ${newSize}pt;">${selectedText}</span>`).run();
                       toast({ title: `Font size decreased to ${newSize}pt for selected text` });
@@ -913,7 +916,7 @@ export default function DocumentWorkspace() {
                   const { selection } = editor.state;
                   
                   if (!selection.empty) {
-                    // Apply proper highlighting to selected text
+                    // Apply proper highlighting to selected text only
                     editor.chain().focus().toggleHighlight({ color: '#ffff00' }).run();
                     toast({ title: "Text highlighted" });
                   } else {
@@ -933,9 +936,8 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply color to selected text only using proper formatting
-                      const selectedText = editor.state.doc.textBetween(selection.from, selection.to, ' ');
-                      editor.chain().focus().deleteSelection().insertContent(`<span style="color: ${newColor};">${selectedText}</span>`).run();
+                      // Apply color to selected text only using proper Tiptap commands
+                      editor.chain().focus().setColor(newColor).run();
                       toast({ title: "Color changed for selected text" });
                     } else {
                       toast({ title: "Please select text to change color" });
