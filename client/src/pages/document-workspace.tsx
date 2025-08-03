@@ -1146,14 +1146,7 @@ export default function DocumentWorkspace() {
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
               <div className="min-h-full p-8 flex flex-col items-center">
-                {/* Refined AI Starter Prompt */}
-                <div className="w-full max-w-4xl mb-8 text-center">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-4 border border-white/20 shadow-lg">
-                    <p className="text-white/80 text-sm font-light tracking-wide" style={{ fontFamily: '"Inter", sans-serif' }}>
-                      ✨ Start typing and let StudyFlow enhance your words in real time
-                    </p>
-                  </div>
-                </div>
+
 
                 {/* Render pages with AI glow and proper content distribution */}
                 {Array.from({ length: pageCount }, (_, pageIndex) => (
