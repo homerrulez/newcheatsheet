@@ -464,47 +464,10 @@ export default function DocumentWorkspace() {
     }
   }, [editor?.getHTML(), pageHeight, padding, zoomLevel]);
 
-  // Handle clicks on visual pages to position cursor in unified editor
-  const handlePageClick = (pageIndex: number, event: React.MouseEvent) => {
-    console.log('=== PAGE CLICK DIAGNOSTICS ===');
-    console.log('Clicked element:', event.target);
-    console.log('Event prevented:', event.defaultPrevented);
-    console.log('Page container clicked:', event.currentTarget);
-    console.log('Mouse position:', event.clientX, event.clientY);
-    console.log('Page index:', pageIndex);
-    
-    if (!editor || !editorContainerRef.current) return;
-    
-    const availablePageHeight = pageHeight - (padding * 2);
-    const targetScrollPosition = pageIndex * availablePageHeight;
-    
-    // Calculate relative click position within the page
-    const pageElement = event.currentTarget;
-    const rect = pageElement.getBoundingClientRect();
-    const relativeY = event.clientY - rect.top - padding;
-    
-    console.log('Focus attempt - editor exists:', !!editor);
-    console.log('Focus attempt - editor is editable:', editor?.isEditable);
-    
-    // Focus editor and attempt to position cursor
-    editor.commands.focus();
-    
-    // Scroll the unified editor to approximate position
-    const editorElement = editorContainerRef.current.querySelector('.ProseMirror');
-    if (editorElement) {
-      const scrollTop = targetScrollPosition + relativeY;
-      editorElement.scrollTop = scrollTop;
-      console.log('Scrolled editor to:', scrollTop);
-    }
-    
-    // Check focus state after click
-    setTimeout(() => {
-      console.log('Post-click focus state:');
-      console.log('Editor is focused:', editor?.isFocused);
-      console.log('Active element:', window.document.activeElement);
-      console.log('Selection range count:', window.getSelection()?.rangeCount);
-      console.log('Selection is collapsed:', window.getSelection()?.isCollapsed);
-    }, 100);
+  // Simplified click handling - no longer needed with direct editor approach
+  const handleEditorClick = () => {
+    console.log('=== DIRECT EDITOR CLICK ===');
+    console.log('Editor clicked directly, focus should work naturally');
   };
 
   // Editor diagnostics and event handlers
@@ -1542,85 +1505,71 @@ export default function DocumentWorkspace() {
 
 
                 {/* Render unified document with visual page divisions */}
-                {/* Hidden unified editor container */}
-                <div 
-                  ref={editorContainerRef}
-                  className="fixed -top-full left-0 w-full"
-                  style={{ 
-                    width: `${pageWidth - (padding * 2)}px`,
-                    fontFamily,
-                    fontSize: `${fontSize}pt`,
-                    color: textColor,
-                    lineHeight: '1.6',
+                {/* Single page with directly editable Tiptap editor */}
+                <div
+                  className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+                  style={{
+                    width: `${pageWidth}px`,
+                    minHeight: `${pageHeight}px`,
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                   }}
                 >
-                  <EditorContent
-                    editor={editor}
-                    className="w-full focus:outline-none prose prose-sm max-w-none"
-                  />
-                </div>
-
-                {/* Visual page representations */}
-                {Array.from({ length: pageCount }, (_, pageIndex) => (
+                  {/* Page number indicator */}
+                  <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
+                    Page 1 of {pageCount}
+                  </div>
+                  
+                  {/* Direct Tiptap editor - fully clickable and interactive */}
                   <div
-                    key={pageIndex}
-                    ref={(el) => (pageRefs.current[pageIndex] = el)}
-                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500 cursor-text"
-                    style={{
-                      width: `${pageWidth}px`,
-                      height: `${pageHeight}px`,
-                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
+                    ref={editorContainerRef}
+                    className="w-full h-full relative"
+                    style={{ 
+                      padding: `${padding}px`,
                       minHeight: `${pageHeight}px`,
                     }}
-                    onClick={(e) => handlePageClick(pageIndex, e)}
+                  >
+                    <EditorContent
+                      editor={editor}
+                      className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
+                      style={{
+                        fontFamily,
+                        fontSize: `${fontSize}pt`,
+                        color: textColor,
+                        lineHeight: '1.6',
+                        minHeight: `${pageHeight - (padding * 2)}px`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Additional pages if content overflows */}
+                {pageCount > 1 && Array.from({ length: pageCount - 1 }, (_, pageIndex) => (
+                  <div
+                    key={pageIndex + 1}
+                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+                    style={{
+                      width: `${pageWidth}px`,
+                      minHeight: `${pageHeight}px`,
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
+                    }}
                   >
                     {/* Page number indicator */}
                     <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                      Page {pageIndex + 1}
+                      Page {pageIndex + 2} of {pageCount}
                     </div>
                     
-                    {/* Page content area */}
+                    {/* Overflow content area */}
                     <div
-                      className="w-full h-full relative overflow-hidden"
+                      className="w-full h-full relative"
                       style={{ 
                         padding: `${padding}px`,
+                        minHeight: `${pageHeight}px`,
                       }}
                     >
-                      {/* Content overflow window - shows portion of unified document */}
-                      <div 
-                        className="w-full h-full overflow-hidden"
-                        style={{
-                          transform: `translateY(${-pageIndex * (pageHeight - padding * 2)}px)`,
-                        }}
-                      >
-                        {pageIndex === 0 && (
-                          <div 
-                            className="w-full"
-                            style={{
-                              fontFamily,
-                              fontSize: `${fontSize}pt`,
-                              color: textColor,
-                              lineHeight: '1.6',
-                              minHeight: `${pageCount * (pageHeight - padding * 2)}px`,
-                            }}
-                          >
-                            {/* This will be synchronized with the hidden editor */}
-                            <div className="prose prose-sm max-w-none pointer-events-none">
-                              {editor?.getHTML() && (
-                                <div dangerouslySetInnerHTML={{ __html: editor.getHTML() }} />
-                              )}
-                            </div>
-                          </div>
-                        )}
+                      <div className="text-gray-400 text-center pt-8">
+                        Content continues from previous page...
                       </div>
                     </div>
-                    
-                    {/* Page break indicator */}
-                    {pageIndex < pageCount - 1 && (
-                      <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
-                        ••• Page Break •••
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
