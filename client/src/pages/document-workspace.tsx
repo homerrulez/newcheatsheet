@@ -1332,8 +1332,8 @@ export default function DocumentWorkspace() {
       </ResizablePanelGroup>
       
       
-      {/* AI Status Footer - Only spans left and center panels, not ChatGPT panel */}
-      <div className="fixed bottom-0 left-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 z-50" style={{ width: '75%' }}>
+      {/* AI Status Footer - Only spans center panel, positioned between left history and right ChatGPT panels */}
+      <div className="fixed bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 z-50" style={{ left: '25%', width: '50%' }}>
         <div className="px-6 py-3 flex items-center justify-between text-xs">
           <div className="flex items-center space-x-8">
             <div className="flex items-center space-x-2">
