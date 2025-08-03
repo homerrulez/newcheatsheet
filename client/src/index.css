@@ -48,30 +48,15 @@
   --radius: 0.5rem;
 }
 
-/* StudyFlow gradient background - horizontal pastel gradient */
+/* StudyFlow gradient background - using uploaded background image */
 .studyflow-gradient {
-  background: linear-gradient(90deg, 
-    #f5e4f9 0%,     /* soft-lilac */
-    #f8ccd6 14%,    /* dreamy-rose */
-    #e4e5f9 28%,    /* sky-blush */
-    #c6eaf8 42%,    /* icy-aqua */
-    #a2e4f5 57%,    /* cool-cyan */
-    #89d2f4 71%,    /* neon-blue */
-    #6ac4e4 100%    /* frosted-azure */
-  );
+  background: url('./assets/background.jpg');
+  background-size: cover;
 }
 
-/* Global background for all pages - horizontal pastel gradient */
+/* Global background for all pages - using uploaded background image */
 body {
-  background: linear-gradient(90deg, 
-    #f5e4f9 0%,     /* soft-lilac */
-    #f8ccd6 14%,    /* dreamy-rose */
-    #e4e5f9 28%,    /* sky-blush */
-    #c6eaf8 42%,    /* icy-aqua */
-    #a2e4f5 57%,    /* cool-cyan */
-    #89d2f4 71%,    /* neon-blue */
-    #6ac4e4 100%    /* frosted-azure */
-  ) !important;
+  background: url('./assets/background.jpg') !important;
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
