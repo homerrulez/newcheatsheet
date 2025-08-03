@@ -1105,24 +1105,41 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative">
-            {/* Page status bar */}
+            {/* AI-enhanced Page status bar */}
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-              <Badge variant="secondary" className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-                Page 1 of {pageCount} • {PAGE_SIZES[pageSize].name}
-              </Badge>
+              <div className="flex items-center space-x-4">
+                <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-cyan-200 shadow-lg">
+                  <Brain className="w-3 h-3 mr-1 text-cyan-600" />
+                  AI Mode: On
+                </Badge>
+                <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 shadow-lg">
+                  📝 Page 1 / ∞
+                </Badge>
+                <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-purple-200 shadow-lg">
+                  ⏳ Auto-save
+                </Badge>
+              </div>
             </div>
             
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
               <div className="min-h-full p-8 flex flex-col items-center">
-                {/* Render pages with proper content distribution */}
+                {/* AI Starter Prompt */}
+                <div className="w-full max-w-4xl mb-6 text-center">
+                  <p className="text-sm text-gray-500 italic font-light tracking-wide" style={{ fontFamily: '"Inter", sans-serif' }}>
+                    ✨ Start typing and let StudyFlow enhance your words in real time...
+                  </p>
+                </div>
+
+                {/* Render pages with AI glow and proper content distribution */}
                 {Array.from({ length: pageCount }, (_, pageIndex) => (
                   <div
                     key={pageIndex}
-                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative"
+                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
                     style={{
                       width: `${pageWidth}px`,
                       height: `${pageHeight}px`,
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                       minHeight: `${pageHeight}px`,
                     }}
                   >
@@ -1205,13 +1222,23 @@ export default function DocumentWorkspace() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="AI Active"></div>
+              </div>
+              
+              {/* Smart AI Suggestions */}
+              <div className="mb-4 space-y-2">
+                <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Smart Suggestions</h4>
+                <div className="space-y-2">
+                  <button className="w-full text-left p-2 text-xs bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg border border-blue-200/50 dark:border-blue-700/50 transition-all duration-200">
+                    💡 Need help rephrasing?
+                  </button>
+                  <button className="w-full text-left p-2 text-xs bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200/50 dark:border-purple-700/50 transition-all duration-200">
+                    📝 Add summary to this section?
+                  </button>
+                  <button className="w-full text-left p-2 text-xs bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200/50 dark:border-green-700/50 transition-all duration-200">
+                    🎯 Check for tone and clarity?
+                  </button>
+                </div>
               </div>
               
               {/* Chat messages area - Proper height */}
@@ -1286,6 +1313,39 @@ export default function DocumentWorkspace() {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      
+      {/* AI Footer Bar - Intelligent Status Strip */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-slate-50 via-blue-50 to-purple-50 dark:from-slate-800 dark:via-blue-900/20 dark:to-purple-900/20 border-t border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+        <div className="px-6 py-2 flex items-center justify-between text-xs">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <Clock className="w-3 h-3 text-blue-600" />
+              <span className="text-gray-700 dark:text-gray-300">Reading time: ~2 min</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Brain className="w-3 h-3 text-purple-600" />
+              <span className="text-gray-700 dark:text-gray-300">Writing level: Professional</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-3 h-3 text-green-600" />
+              <span className="text-gray-700 dark:text-gray-300">Sentiment: Positive</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 dark:text-gray-400">AI Confidence:</span>
+              <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                <div className="w-4/5 h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
+              </div>
+              <span className="text-cyan-600 font-medium">85%</span>
+            </div>
+            <Badge variant="outline" className="border-green-300 text-green-700 dark:border-green-600 dark:text-green-400">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></div>
+              Auto-save Active
+            </Badge>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
