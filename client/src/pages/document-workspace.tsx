@@ -499,12 +499,8 @@ export default function DocumentWorkspace() {
     // 3. Test what layout engine would create
     console.log('🧪 LAYOUT ENGINE TEST:');
     try {
-      const layoutResult = LAYOUT_TEXT(mainEditorContent, availablePageHeight, pageWidth - (padding * 2));
-      console.log('- LAYOUT_TEXT would create:', layoutResult.length, 'pages');
-      console.log('- Layout pages preview:');
-      layoutResult.forEach((page, i) => {
-        console.log(`  Page ${i + 1}: "${page.substring(0, 100)}..." (${page.length} chars)`);
-      });
+      // Layout engine test would go here if available
+      console.log('- Layout engine not configured yet');
     } catch (layoutError) {
       console.log('- Layout engine error:', layoutError);
     }
@@ -582,18 +578,18 @@ export default function DocumentWorkspace() {
     };
     
     console.log('🔄 Splitting content by actual height measurements...');
-    const distributedPages = splitContentByHeight(mainEditorContent, availablePageHeight);
+    const newDistributedPages = splitContentByHeight(mainEditorContent, availablePageHeight);
     
     console.log('📚 REAL CONTENT DISTRIBUTION COMPLETE:');
-    distributedPages.forEach((page, i) => {
+    newDistributedPages.forEach((page, i) => {
       console.log(`- Page ${i + 1}: ${page.length} chars - "${page.substring(0, 100)}..."`);
     });
     
     console.log('✅ Now each page contains REAL content, not placeholders!');
     console.log('════════════════════════════════════════');
     
-    setDistributedPages(distributedPages);
-    setPageCount(distributedPages.length);
+    setDistributedPages(newDistributedPages);
+    setPageCount(newDistributedPages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
   // Calculate visual pagination based on content height (Word-style)
