@@ -1,0 +1,73 @@
+MESSAGE FOR REPLIT AI:
+The viewport windowing architecture is close, but the Word/Google Docs-like editing experience isn’t fully working. The calculatePageCount error is fixed, and viewports are rendering (e.g., 14 pages for 12669px content), but there are still issues:
+
+Page 1 Overflow: Page 1 likely shows more content than intended (previously 3537 chars vs. 2440 chars), despite maxHeight: 928px and overflow: hidden.
+Direct Editing: Clicking Pages 2+ positions the cursor (e.g., Page 2 at Y=521, Document Y=1449), but it’s unclear if editing happens on the clicked page or redirects focus to Page 1.
+Content Flow: Typing at a page’s end may not seamlessly flow content to the next page.
+
+FIX REQUEST:
+
+Fix Page 1 Content Overflow:
+
+Verify the viewport clipping at lines ~1758-1797:
+javascript<div
+  className="viewport-window"
+  style={{
+    height: `${pageHeight - (padding * 2)}px`,
+    maxHeight: `${pageHeight - (padding * 2)}px`,
+    overflow: 'hidden',
+    position: 'relative',
+    border: '1px solid rgba(0,150,255,0.3)'
+  }}
+>
+  <EditorContent
+    editor={editor}
+    style={{
+      transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`,
+      height: 'auto'
+    }}
+  />
+</div>
+
+If Tiptap overrides maxHeight, add a wrapper div with stricter clipping:
+javascript<div style={{ maxHeight: `${pageHeight - padding * 2}px`, overflow: 'hidden', position: 'absolute', width: '100%' }}>
+  <EditorContent
+    editor={editor}
+    style={{ transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`, height: 'auto' }}
+  />
+</div>
+
+Log the actual rendered height of each viewport to confirm clipping.
+
+
+Ensure Direct Editing on All Pages:
+
+Confirm clicking any page (e.g., Page 2) keeps the cursor on that page’s viewport without redirecting focus to Page 1.
+Check the click handler (lines ~1866-1880):
+javascript<div 
+  className="absolute inset-0 bg-transparent"
+  style={{ cursor: 'text', zIndex: 5, padding: `${padding}px`, pointerEvents: 'auto' }}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Ensure cursor stays in clicked viewport
+    editor.commands.focus();
+    const documentY = pageIndex * (pageHeight - padding * 2) + e.clientY;
+    const targetPos = calculateCursorPosition(documentY); // Adjust to your logic
+    editor.commands.setTextSelection(targetPos);
+  }}
+/>
+
+If focus redirects to Page 1, adjust the handler to maintain focus in the clicked viewport’s EditorContent.
+
+
+Enable Seamless Content Flow:
+
+Ensure typing at a page’s end (e.g., Page 1) pushes content to the next page, updating viewports in real-time.
+Add a log to track content flow:
+javascriptconsole.log('📜 Content flow: Page ${pageIndex} to ${pageIndex + 1}', { currentPageContent: getPageContent(pageIndex) });
+
+
+
+
+TEST PLAN:
