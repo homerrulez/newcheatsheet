@@ -72,7 +72,6 @@ export default function CheatSheetWorkspace() {
         types: ['heading', 'paragraph'],
       }),
       Underline,
-      TextStyle,
       Color,
       FontFamily,
       FontSize,
@@ -1410,38 +1409,46 @@ export default function CheatSheetWorkspace() {
               </div>
             </div>
 
-            {/* Rich Text Editor Section */}
-            <div className="bg-white p-6 min-h-[600px]">
-              <div className="max-w-4xl mx-auto">
+            {/* Rich Text Editor Section - Word Document Style */}
+            <div className="bg-gray-100 p-6 min-h-[600px] flex justify-center">
+              {/* Single Page Container - Letter Size */}
+              <div className="bg-white shadow-lg" style={{ 
+                width: '8.5in', 
+                minHeight: '11in',
+                maxWidth: '816px',
+                padding: '1in',
+                margin: '20px 0',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.05)'
+              }}>
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Cheat Sheet Editor</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Cheat Sheet Content</h3>
                   <p className="text-sm text-gray-600">Use the toolbar above to format your content with fonts, colors, alignment, and more.</p>
                 </div>
                 
-                {/* Tiptap Editor */}
-                <div className="border border-gray-200 rounded-lg bg-white min-h-[500px]">
-                  <div className="p-4">
-                    <EditorContent
-                      editor={editor}
-                      className="prose prose-lg max-w-none focus:outline-none"
-                      style={{
-                        fontFamily,
-                        fontSize: `${fontSize}pt`,
-                        color: textColor,
-                        lineHeight: '1.6',
-                        minHeight: '460px',
-                      }}
-                    />
-                  </div>
+                {/* Tiptap Editor - Full page content */}
+                <div className="min-h-[9in]">
+                  <EditorContent
+                    editor={editor}
+                    className="prose prose-lg max-w-none focus:outline-none"
+                    style={{
+                      fontFamily,
+                      fontSize: `${fontSize}pt`,
+                      color: textColor,
+                      lineHeight: '1.6',
+                      minHeight: '9in',
+                      border: 'none',
+                      outline: 'none'
+                    }}
+                  />
                 </div>
 
-                {/* Editor Status */}
-                <div className="mt-4 flex justify-between items-center text-sm text-gray-500">
+                {/* Page Footer */}
+                <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center text-sm text-gray-500">
                   <div>
                     {editor ? `${editor.storage.characterCount?.characters() || 0} characters` : '0 characters'}
                   </div>
                   <div>
-                    Font: {fontFamily} | Size: {fontSize}pt
+                    Font: {fontFamily} | Size: {fontSize}pt | Page 1
                   </div>
                 </div>
               </div>
