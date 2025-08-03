@@ -427,6 +427,15 @@ export default function CheatSheetWorkspace() {
     }
   };
 
+  const saveCheatSheet = () => {
+    // Auto-save functionality - update the cheat sheet with current boxes
+    if (id && id !== 'new') {
+      updateCheatSheetMutation.mutate({
+        content: JSON.stringify(boxes),
+      });
+    }
+  };
+
   // Create cheat sheet mutation
   const createCheatSheetMutation = useMutation({
     mutationFn: async () => {
