@@ -130,7 +130,7 @@ export default function DocumentWorkspace() {
   });
 
   // Fetch document
-  const { data: document, isLoading: documentLoading } = useQuery<Document>({
+  const { data: documentData, isLoading: documentLoading } = useQuery<Document>({
     queryKey: ['document', id],
     queryFn: async () => {
       const response = await fetch(`/api/documents/${id}`);
@@ -405,14 +405,14 @@ export default function DocumentWorkspace() {
 
   // Initialize editor with document content
   useEffect(() => {
-    if (document && editor && document.content && !editor.getHTML().includes(document.content)) {
-      editor.commands.setContent(document.content || '<p></p>');
-      setPageSize((document.pageSize as keyof typeof PAGE_SIZES) || 'letter');
-      setFontSize(parseInt(document.fontSize || '12'));
-      setFontFamily(document.fontFamily || 'Times New Roman');
-      setTextColor(document.textColor || '#000000');
+    if (documentData && editor && documentData.content && !editor.getHTML().includes(documentData.content)) {
+      editor.commands.setContent(documentData.content || '<p></p>');
+      setPageSize((documentData.pageSize as keyof typeof PAGE_SIZES) || 'letter');
+      setFontSize(parseInt(documentData.fontSize || '12'));
+      setFontFamily(documentData.fontFamily || 'Times New Roman');
+      setTextColor(documentData.textColor || '#000000');
     }
-  }, [document, editor]);
+  }, [documentData, editor]);
 
   // Update editor props when formatting changes
   useEffect(() => {
@@ -501,7 +501,7 @@ export default function DocumentWorkspace() {
     setTimeout(() => {
       console.log('Post-click focus state:');
       console.log('Editor is focused:', editor?.isFocused);
-      console.log('Active element:', document.activeElement);
+      console.log('Active element:', window.document.activeElement);
       console.log('Selection range count:', window.getSelection()?.rangeCount);
       console.log('Selection is collapsed:', window.getSelection()?.isCollapsed);
     }, 100);
@@ -553,7 +553,7 @@ export default function DocumentWorkspace() {
   // Global focus tracking
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
-      console.log('FOCUS IN:', e.target, 'active element:', document.activeElement);
+      console.log('FOCUS IN:', e.target, 'active element:', window.document.activeElement);
     };
 
     const handleFocusOut = (e: FocusEvent) => {
@@ -561,19 +561,19 @@ export default function DocumentWorkspace() {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement === editor?.view?.dom || editor?.isFocused) {
+      if (window.document.activeElement === editor?.view?.dom || editor?.isFocused) {
         console.log('KEY DOWN:', e.key, 'at timestamp:', Date.now());
       }
     };
 
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-    document.addEventListener('keydown', handleKeyDown);
+    window.document.addEventListener('focusin', handleFocusIn);
+    window.document.addEventListener('focusout', handleFocusOut);
+    window.document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-      document.removeEventListener('keydown', handleKeyDown);
+      window.document.removeEventListener('focusin', handleFocusIn);
+      window.document.removeEventListener('focusout', handleFocusOut);
+      window.document.removeEventListener('keydown', handleKeyDown);
     };
   }, [editor]);
 
@@ -1510,7 +1510,7 @@ export default function DocumentWorkspace() {
                   <div className="flex items-center space-x-2">
                     <span className="text-gray-600 dark:text-gray-400">
                       {(() => {
-                        const text = document?.content || '';
+                        const text = documentData?.content || '';
                         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                         return `${wordCount} words`;
                       })()}
@@ -1520,7 +1520,7 @@ export default function DocumentWorkspace() {
                   <div className="flex items-center space-x-2">
                     <span className="text-gray-600 dark:text-gray-400">
                       {(() => {
-                        const text = document?.content || '';
+                        const text = documentData?.content || '';
                         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                         const readingTime = Math.max(1, Math.ceil(wordCount / 200)); // 200 words per minute
                         return `${readingTime} min read`;
@@ -1747,7 +1747,7 @@ export default function DocumentWorkspace() {
             {/* AI Grammar & Style Assistant */}
             <button
               onClick={async () => {
-                if (!document?.content || document.content.trim().length === 0) {
+                if (!documentData?.content || documentData.content.trim().length === 0) {
                   toast({
                     title: "No content to improve",
                     description: "Please add some text to your document first.",
@@ -1760,7 +1760,7 @@ export default function DocumentWorkspace() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                      content: document.content,
+                      content: documentData.content,
                       preserveEquations: true,
                       preserveNotations: true 
                     })
@@ -1795,7 +1795,7 @@ export default function DocumentWorkspace() {
                 <Type className="w-3 h-3 text-blue-600" />
                 <span className="text-xs text-blue-700 dark:text-blue-300">
                   {(() => {
-                    const text = document?.content || '';
+                    const text = documentData?.content || '';
                     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                     return `${wordCount} words`;
                   })()}
@@ -1806,7 +1806,7 @@ export default function DocumentWorkspace() {
                 <Clock className="w-3 h-3 text-blue-600" />
                 <span className="text-xs text-blue-700 dark:text-blue-300">
                   {(() => {
-                    const text = document?.content || '';
+                    const text = documentData?.content || '';
                     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
                     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
                     return `${readingTime} min`;
@@ -1818,7 +1818,7 @@ export default function DocumentWorkspace() {
             {/* AI Tone Adjustment */}
             <button
               onClick={async () => {
-                if (!document?.content || document.content.trim().length === 0) {
+                if (!documentData?.content || documentData.content.trim().length === 0) {
                   toast({
                     title: "No content to adjust",
                     description: "Please add some text to your document first.",
@@ -1831,7 +1831,7 @@ export default function DocumentWorkspace() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                      content: document.content,
+                      content: documentData.content,
                       targetTone: 'professional',
                       preserveEquations: true 
                     })
@@ -1866,7 +1866,7 @@ export default function DocumentWorkspace() {
             <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
               <FileText className="w-3 h-3 text-gray-600" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                Page {Math.max(1, Math.ceil((document?.content?.length || 0) / 3000))}
+                Page {Math.max(1, Math.ceil((documentData?.content?.length || 0) / 3000))}
               </span>
             </div>
 
