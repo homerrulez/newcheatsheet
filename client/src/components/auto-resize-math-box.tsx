@@ -233,10 +233,19 @@ export default function AutoResizeMathBox({
   }, []);
 
   const handleDragStop = useCallback((e: DraggableEvent, data: DraggableData) => {
+    // Constrain position to reasonable workspace boundaries
+    const PAGE_WIDTH = 816;
+    const PAGE_HEIGHT = 1056;
+    const MARGIN = 20;
+    
+    // Allow multiple pages horizontally, constrain vertically to page height
+    const constrainedX = Math.max(MARGIN, Math.min(data.x, PAGE_WIDTH * 5)); // Up to 5 pages wide
+    const constrainedY = Math.max(MARGIN, Math.min(data.y, PAGE_HEIGHT - boxSize.height - MARGIN));
+    
     setIsDragging(false);
-    onPositionChange({ x: data.x, y: data.y });
+    onPositionChange({ x: constrainedX, y: constrainedY });
     onSaveRequest();
-  }, [onPositionChange, onSaveRequest]);
+  }, [onPositionChange, onSaveRequest, boxSize.height]);
 
   const handleResize = useCallback((e: SyntheticEvent, { size }: ResizeCallbackData) => {
     setCurrentSize(size);

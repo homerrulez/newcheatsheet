@@ -528,10 +528,29 @@ export default function CheatSheetWorkspace() {
           const numToCreate = Math.min(requestedCount, mathFormulas.length);
           let createdCount = 0;
           
+          // Smart layout within page boundaries
+          const PAGE_WIDTH = 816;
+          const PAGE_HEIGHT = 1056;
+          const MARGIN = 72; // Page margins
+          const BOX_WIDTH = 200;
+          const BOX_HEIGHT = 150;
+          const SPACING = 20;
+          
+          // Calculate how many boxes fit per row within page margins
+          const usableWidth = PAGE_WIDTH - (2 * MARGIN);
+          const boxesPerRow = Math.floor(usableWidth / (BOX_WIDTH + SPACING));
+          
           for (let i = 0; i < numToCreate; i++) {
             const formula = mathFormulas[i];
-            const x = 100 + (i % 5) * 250; // 5 columns
-            const y = 100 + Math.floor(i / 5) * 180; // New row every 5 boxes
+            
+            // Calculate position within page boundaries
+            const row = Math.floor(i / boxesPerRow);
+            const col = i % boxesPerRow;
+            const page = Math.floor(row / Math.floor((PAGE_HEIGHT - 2 * MARGIN) / (BOX_HEIGHT + SPACING)));
+            
+            const x = MARGIN + col * (BOX_WIDTH + SPACING) + (page * (PAGE_WIDTH + 40));
+            const y = MARGIN + (row % Math.floor((PAGE_HEIGHT - 2 * MARGIN) / (BOX_HEIGHT + SPACING))) * (BOX_HEIGHT + SPACING) + (page * 40);
+            
             addBox(formula.title, formula.content, formula.color, x, y);
             createdCount++;
           }
@@ -1172,36 +1191,38 @@ export default function CheatSheetWorkspace() {
         {/* Middle panel - Box Layout Area */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full bg-gray-100 dark:bg-gray-800 relative overflow-auto">
-            {/* Page boundaries as visual guides */}
-            <div className="absolute inset-0">
-              {/* Letter size page outline */}
-              <div
-                className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg mx-auto"
-                style={{
-                  top: '20px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '816px',
-                  height: '1056px',
-                  zIndex: 0
-                }}
-              >
-                {/* Page header */}
-                <div className="absolute top-2 right-4 text-xs text-gray-400">
-                  Cheat Sheet • Page 1
-                </div>
-                
-                {/* Page margins guide */}
-                <div 
-                  className="absolute border border-blue-200 border-dashed"
+            {/* Dynamic page boundaries as visual guides */}
+            <div className="absolute inset-0" style={{ minWidth: '856px', minHeight: '1096px' }}>
+              {/* Render multiple pages based on box count */}
+              {Array.from({ length: Math.max(1, Math.ceil(boxes.length / 15)) }).map((_, pageIndex) => (
+                <div
+                  key={pageIndex}
+                  className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
                   style={{
-                    top: '72px',
-                    left: '72px',
-                    width: '672px',
-                    height: '912px'
+                    top: '20px',
+                    left: `${20 + pageIndex * 856}px`,
+                    width: '816px',
+                    height: '1056px',
+                    zIndex: 0
                   }}
-                />
-              </div>
+                >
+                  {/* Page header */}
+                  <div className="absolute top-2 right-4 text-xs text-gray-400">
+                    Cheat Sheet • Page {pageIndex + 1}
+                  </div>
+                  
+                  {/* Page margins guide */}
+                  <div 
+                    className="absolute border border-blue-200 border-dashed"
+                    style={{
+                      top: '72px',
+                      left: '72px',
+                      width: '672px',
+                      height: '912px'
+                    }}
+                  />
+                </div>
+              ))}
             </div>
             
             {/* Boxes container */}
