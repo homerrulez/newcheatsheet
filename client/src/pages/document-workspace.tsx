@@ -438,49 +438,52 @@ export default function DocumentWorkspace() {
   const pageHeight = baseHeight * (zoomLevel / 100);
   const padding = 64 * (zoomLevel / 100); // 64px padding scaled with zoom
 
-  // True Content Distribution using Layout Engine
-  const [pageContent, setPageContent] = useState<Array<{ pageNumber: number; content: string; wordCount: number; characterCount: number; isFull: boolean }>>([
-    { pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }
-  ]);
-  const editorRef = useRef<HTMLDivElement>(null);
+  // Unified Document Approach - Single editor with visual page rendering
+  const [pageCount, setPageCount] = useState(1);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Content distribution effect - splits content across real pages
+  // Calculate visual pagination based on content height (Word-style)
   useEffect(() => {
-    if (editor && layoutEngine) {
-      const distributeContent = () => {
-        console.log('🔄 distributeContent called');
-        const htmlContent = editor.getHTML();
-        console.log('📝 HTML content length:', htmlContent.length);
-        console.log('📄 HTML content preview:', htmlContent.substring(0, 200) + '...');
-        
-        // Use layout engine to split content into pages
-        const layoutResult = layoutEngine.LAYOUT_TEXT(htmlContent);
-        console.log('📊 Layout result pages:', layoutResult.pages.length);
-        console.log('📋 Layout metrics:', layoutResult.metrics);
-        
-        if (layoutResult.pages.length > 0) {
-          console.log('📑 First page content length:', layoutResult.pages[0]?.content.length);
-          console.log('📑 First page preview:', layoutResult.pages[0]?.content.substring(0, 100) + '...');
-          if (layoutResult.pages.length > 1) {
-            console.log('📑 Second page content length:', layoutResult.pages[1]?.content.length);
-            console.log('📑 Second page preview:', layoutResult.pages[1]?.content.substring(0, 100) + '...');
-          }
-          setPageContent(layoutResult.pages);
-        } else {
-          console.log('⚠️ No pages returned, using fallback');
-          // Fallback: single empty page
-          setPageContent([{ pageNumber: 1, content: '', wordCount: 0, characterCount: 0, isFull: false }]);
+    if (editor && editorContainerRef.current) {
+      const calculatePages = () => {
+        const editorElement = editorContainerRef.current?.querySelector('.ProseMirror');
+        if (editorElement) {
+          const contentHeight = editorElement.scrollHeight;
+          const availablePageHeight = pageHeight - (padding * 2);
+          const calculatedPages = Math.max(1, Math.ceil(contentHeight / availablePageHeight));
+          console.log('📄 Content height:', contentHeight, 'Available per page:', availablePageHeight, 'Pages:', calculatedPages);
+          setPageCount(calculatedPages);
         }
       };
 
-      // Distribute content when it changes
-      const timer = setTimeout(distributeContent, 100);
+      const timer = setTimeout(calculatePages, 100);
       return () => clearTimeout(timer);
     }
-  }, [editor?.getHTML(), layoutEngine, pageHeight, padding, zoomLevel]);
+  }, [editor?.getHTML(), pageHeight, padding, zoomLevel]);
 
-  // Page count is now derived from distributed content
-  const pageCount = pageContent.length;
+  // Handle clicks on visual pages to position cursor in unified editor
+  const handlePageClick = (pageIndex: number, event: React.MouseEvent) => {
+    if (!editor || !editorContainerRef.current) return;
+    
+    const availablePageHeight = pageHeight - (padding * 2);
+    const targetScrollPosition = pageIndex * availablePageHeight;
+    
+    // Calculate relative click position within the page
+    const pageElement = event.currentTarget;
+    const rect = pageElement.getBoundingClientRect();
+    const relativeY = event.clientY - rect.top - padding;
+    
+    // Focus editor and attempt to position cursor
+    editor.commands.focus();
+    
+    // Scroll the unified editor to approximate position
+    const editorElement = editorContainerRef.current.querySelector('.ProseMirror');
+    if (editorElement) {
+      const scrollTop = targetScrollPosition + relativeY;
+      editorElement.scrollTop = scrollTop;
+    }
+  };
 
   // Handle send message
   const handleSendMessage = () => {
@@ -1446,77 +1449,78 @@ export default function DocumentWorkspace() {
               <div className="min-h-full p-8 flex flex-col items-center">
 
 
-                {/* Render pages with real distributed content */}
-                {pageContent.map((page, pageIndex) => (
+                {/* Render unified document with visual page divisions */}
+                {/* Hidden unified editor container */}
+                <div 
+                  ref={editorContainerRef}
+                  className="fixed -top-full left-0 w-full"
+                  style={{ 
+                    width: `${pageWidth - (padding * 2)}px`,
+                    fontFamily,
+                    fontSize: `${fontSize}pt`,
+                    color: textColor,
+                    lineHeight: '1.6',
+                  }}
+                >
+                  <EditorContent
+                    editor={editor}
+                    className="w-full focus:outline-none prose prose-sm max-w-none"
+                  />
+                </div>
+
+                {/* Visual page representations */}
+                {Array.from({ length: pageCount }, (_, pageIndex) => (
                   <div
-                    key={page.pageNumber}
-                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+                    key={pageIndex}
+                    ref={(el) => (pageRefs.current[pageIndex] = el)}
+                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500 cursor-text"
                     style={{
                       width: `${pageWidth}px`,
                       height: `${pageHeight}px`,
                       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                       minHeight: `${pageHeight}px`,
                     }}
+                    onClick={(e) => handlePageClick(pageIndex, e)}
                   >
-                    {/* Page number indicator with content info */}
+                    {/* Page number indicator */}
                     <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                      Page {page.pageNumber} • {page.wordCount} words
+                      Page {pageIndex + 1}
                     </div>
                     
-                    {/* Page content */}
+                    {/* Page content area */}
                     <div
-                      ref={pageIndex === 0 ? editorRef : undefined}
-                      className="w-full h-full relative"
+                      className="w-full h-full relative overflow-hidden"
                       style={{ 
                         padding: `${padding}px`,
-                        overflow: 'hidden'
                       }}
                     >
-                      {pageIndex === 0 ? (
-                        // First page: Editable content
-                        <div 
-                          className="w-full h-full"
-                          style={{
-                            maxHeight: 'none',
-                            overflow: 'visible'
-                          }}
-                        >
-                          <EditorContent
-                            editor={editor}
-                            className="w-full focus:outline-none prose prose-sm max-w-none"
-                            style={{
-                              fontFamily,
-                              fontSize: `${fontSize}pt`,
-                              color: textColor,
-                              lineHeight: '1.6',
-                              minHeight: `${pageHeight - (padding * 2)}px`,
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        // Subsequent pages: Distributed content (read-only for now)
-                        <div 
-                          className="w-full h-full"
-                          style={{
-                            fontFamily,
-                            fontSize: `${fontSize}pt`,
-                            color: textColor,
-                            lineHeight: '1.6',
-                            overflow: 'hidden'
-                          }}
-                        >
+                      {/* Content overflow window - shows portion of unified document */}
+                      <div 
+                        className="w-full h-full overflow-hidden"
+                        style={{
+                          transform: `translateY(${-pageIndex * (pageHeight - padding * 2)}px)`,
+                        }}
+                      >
+                        {pageIndex === 0 && (
                           <div 
-                            className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: page.content }}
+                            className="w-full"
                             style={{
                               fontFamily,
                               fontSize: `${fontSize}pt`,
                               color: textColor,
                               lineHeight: '1.6',
+                              minHeight: `${pageCount * (pageHeight - padding * 2)}px`,
                             }}
-                          />
-                        </div>
-                      )}
+                          >
+                            {/* This will be synchronized with the hidden editor */}
+                            <div className="prose prose-sm max-w-none pointer-events-none">
+                              {editor?.getHTML() && (
+                                <div dangerouslySetInnerHTML={{ __html: editor.getHTML() }} />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Page break indicator */}
@@ -1524,11 +1528,6 @@ export default function DocumentWorkspace() {
                       <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
                         ••• Page Break •••
                       </div>
-                    )}
-                    
-                    {/* Page status indicator */}
-                    {page.isFull && (
-                      <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full" title="Page Full"></div>
                     )}
                   </div>
                 ))}
