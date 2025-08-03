@@ -216,11 +216,157 @@ export default function CheatSheetWorkspace() {
         toast({ title: `Created ${response.createBoxes.length} boxes` });
       }
       
-      // Parse response content for box creation patterns if no structured response
+      // Parse response content for box creation patterns and commands if no structured response
       if (response.content && !response.createBox && !response.createBoxes) {
         const content = response.content.toLowerCase();
+        const originalMessage = chatInput.toLowerCase();
         
-        // Check for box creation keywords and create sample boxes
+        // Box-specific commands using numbers
+        const deleteBoxMatch = originalMessage.match(/delete box (\d+)/);
+        if (deleteBoxMatch) {
+          const boxIndex = parseInt(deleteBoxMatch[1]) - 1;
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            deleteBox(targetBox.id);
+            toast({ title: `Deleted box ${deleteBoxMatch[1]}` });
+          } else {
+            toast({ title: `Box ${deleteBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        const editBoxMatch = originalMessage.match(/edit box (\d+) to (.+)/);
+        if (editBoxMatch) {
+          const boxIndex = parseInt(editBoxMatch[1]) - 1;
+          const newContent = editBoxMatch[2];
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            updateBox(targetBox.id, { content: `<p>${newContent}</p>` });
+            toast({ title: `Updated box ${editBoxMatch[1]}` });
+          } else {
+            toast({ title: `Box ${editBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        const highlightBoxMatch = originalMessage.match(/highlight (?:text in )?box (\d+)/);
+        if (highlightBoxMatch) {
+          const boxIndex = parseInt(highlightBoxMatch[1]) - 1;
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            setSelectedBox(targetBox.id);
+            // Add yellow highlight to the content
+            const highlightedContent = targetBox.content.replace(/<p>/g, '<p><mark>').replace(/<\/p>/g, '</mark></p>');
+            updateBox(targetBox.id, { content: highlightedContent });
+            toast({ title: `Highlighted box ${highlightBoxMatch[1]}` });
+          } else {
+            toast({ title: `Box ${highlightBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        const selectBoxMatch = originalMessage.match(/select box (\d+)/);
+        if (selectBoxMatch) {
+          const boxIndex = parseInt(selectBoxMatch[1]) - 1;
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            setSelectedBox(targetBox.id);
+            toast({ title: `Selected box ${selectBoxMatch[1]}` });
+          } else {
+            toast({ title: `Box ${selectBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        // Move box commands
+        const moveBoxMatch = originalMessage.match(/move box (\d+) to (.+)/);
+        if (moveBoxMatch) {
+          const boxIndex = parseInt(moveBoxMatch[1]) - 1;
+          const position = moveBoxMatch[2];
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            // Parse position (e.g., "top left", "center", "bottom right")
+            let x = targetBox.x, y = targetBox.y;
+            if (position.includes('left')) x = 100;
+            if (position.includes('right')) x = 600;
+            if (position.includes('center')) x = 400;
+            if (position.includes('top')) y = 100;
+            if (position.includes('bottom')) y = 500;
+            if (position.includes('middle')) y = 300;
+            
+            updateBox(targetBox.id, { x, y });
+            toast({ title: `Moved box ${moveBoxMatch[1]} to ${position}` });
+          } else {
+            toast({ title: `Box ${moveBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        // Change box color commands
+        const colorBoxMatch = originalMessage.match(/(?:change|make) box (\d+) (?:color |)(.+)/);
+        if (colorBoxMatch) {
+          const boxIndex = parseInt(colorBoxMatch[1]) - 1;
+          const colorName = colorBoxMatch[2];
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            // Map color names to Tailwind color classes
+            const colorMap: { [key: string]: string } = {
+              'blue': 'from-blue-100 to-blue-200',
+              'red': 'from-red-100 to-red-200',
+              'green': 'from-green-100 to-green-200',
+              'yellow': 'from-yellow-100 to-yellow-200',
+              'purple': 'from-purple-100 to-purple-200',
+              'pink': 'from-pink-100 to-pink-200',
+              'gray': 'from-gray-100 to-gray-200',
+              'orange': 'from-orange-100 to-orange-200'
+            };
+            
+            const newColor = colorMap[colorName] || 'from-blue-100 to-blue-200';
+            updateBox(targetBox.id, { color: newColor });
+            toast({ title: `Changed box ${colorBoxMatch[1]} to ${colorName}` });
+          } else {
+            toast({ title: `Box ${colorBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        // Resize box commands
+        const resizeBoxMatch = originalMessage.match(/(?:resize|make) box (\d+) (larger|smaller|big|small)/);
+        if (resizeBoxMatch) {
+          const boxIndex = parseInt(resizeBoxMatch[1]) - 1;
+          const sizeChange = resizeBoxMatch[2];
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            let newWidth = targetBox.width;
+            let newHeight = targetBox.height;
+            
+            if (sizeChange === 'larger' || sizeChange === 'big') {
+              newWidth = Math.min(600, targetBox.width + 50);
+              newHeight = Math.min(400, targetBox.height + 30);
+            } else if (sizeChange === 'smaller' || sizeChange === 'small') {
+              newWidth = Math.max(150, targetBox.width - 50);
+              newHeight = Math.max(100, targetBox.height - 30);
+            }
+            
+            updateBox(targetBox.id, { width: newWidth, height: newHeight });
+            toast({ title: `Resized box ${resizeBoxMatch[1]}` });
+          } else {
+            toast({ title: `Box ${resizeBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+        
+        // Help commands
+        if (originalMessage.includes('help') || originalMessage.includes('commands')) {
+          toast({
+            title: "Box Commands Available",
+            description: "delete box 3 • edit box 2 to New Text • highlight box 1 • select box 4 • move box 2 to top left • make box 3 red • resize box 1 larger",
+            duration: 8000
+          });
+          return;
+        }
+        
+        // Box creation keywords (existing functionality)
         if (content.includes('formula') || content.includes('equation')) {
           addBox('Math Formulas', '<p><strong>Quadratic Formula:</strong></p><p>x = (-b ± √(b² - 4ac)) / 2a</p><p><strong>Distance Formula:</strong></p><p>d = √((x₂-x₁)² + (y₂-y₁)²)</p>', '#e0f2fe', 150, 150);
           toast({ title: 'Created formula box' });
