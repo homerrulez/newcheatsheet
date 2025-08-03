@@ -1811,21 +1811,23 @@ export default function DocumentWorkspace() {
                         VIEWPORT {pageIndex + 1}: -{pageIndex * (pageHeight - padding * 2)}px
                       </div>
                       
-                      {/* Viewport container with clipped view of unified editor */}
+                      {/* Viewport container with strict clipping for true page boundaries */}
                       <div
                         className="viewport-window"
                         style={{
                           height: `${pageHeight - (padding * 2)}px`,
-                          overflow: 'hidden',
+                          maxHeight: `${pageHeight - (padding * 2)}px`, // Strict height constraint
+                          overflow: 'hidden', // Critical: clips content at page boundary
                           position: 'relative',
                           border: '1px solid rgba(0,150,255,0.3)', // DEBUG: viewport boundary
                         }}
                       >
-                        {/* Single unified editor - transformed to show different sections */}
+                        {/* Unified editor with viewport positioning - EDITABLE ON ALL PAGES */}
                         <div
                           style={{
                             transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`,
-                            transition: 'transform 0.1s ease', // Smooth viewport changes
+                            transition: 'transform 0.1s ease',
+                            pointerEvents: 'auto', // Ensure all viewports are interactive
                           }}
                         >
                           <EditorContent
@@ -1838,20 +1840,25 @@ export default function DocumentWorkspace() {
                               lineHeight: '1.6',
                               minHeight: `${pageCount * (pageHeight - padding * 2)}px`, // Full document height
                               width: '100%',
+                              pointerEvents: 'auto', // Enable direct editing
                             }}
                           />
                         </div>
                       </div>
                       
-                      {/* Direct click-to-edit handler */}
+                      {/* Enhanced click-to-edit with cursor positioning */}
                       <div 
                         className="absolute inset-0 bg-transparent"
                         style={{ 
                           cursor: 'text',
                           zIndex: 5,
                           padding: `${padding}px`,
+                          pointerEvents: 'auto', // Enable clicks
                         }}
                         onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
                           const rect = e.currentTarget.getBoundingClientRect();
                           const clickY = e.clientY - rect.top - padding;
                           const documentY = (pageIndex * (pageHeight - padding * 2)) + clickY;
@@ -1859,11 +1866,24 @@ export default function DocumentWorkspace() {
                           console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} at Y=${clickY}, Document Y=${documentY}`);
                           
                           if (editor) {
+                            // Focus editor first
                             editor.commands.focus();
-                            // TODO: Position cursor at documentY position
+                            
+                            // Position cursor proportionally in document
+                            try {
+                              const totalDocHeight = pageCount * (pageHeight - padding * 2);
+                              const scrollRatio = documentY / totalDocHeight;
+                              const docSize = editor.state.doc.content.size;
+                              const targetPos = Math.max(1, Math.min(Math.floor(docSize * scrollRatio), docSize - 1));
+                              
+                              editor.commands.setTextSelection(targetPos);
+                              console.log(`✅ Cursor positioned at ${targetPos} (${Math.round(scrollRatio * 100)}%)`);
+                            } catch (error) {
+                              console.log('❌ Cursor positioning failed:', error);
+                            }
                           }
                         }}
-                        title={`Edit page ${pageIndex + 1} directly`}
+                        title={`Edit page ${pageIndex + 1} directly - True multi-page editing`}
                       />
                     </div>
                   </div>
