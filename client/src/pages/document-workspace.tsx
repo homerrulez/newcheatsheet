@@ -1105,24 +1105,7 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative">
-            {/* Refined AI Status Bar */}
-            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="bg-white/20 backdrop-blur-md rounded-full px-6 py-2 border border-white/30 shadow-lg">
-                <div className="flex items-center space-x-6 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-lg shadow-cyan-400/50"></div>
-                    <span className="text-white/90 font-medium">AI Mode</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white/75 font-normal">Page 1 of ∞</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                    <span className="text-white/75 font-normal">Auto-save</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+
             
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
