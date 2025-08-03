@@ -314,15 +314,19 @@ export default function DocumentWorkspace() {
       case 'add_text':
         const { text: addText, position, pageNumber } = command.params;
         if (addText) {
+          // Check if the content is already HTML formatted
+          const isHTML = addText.includes('<') && addText.includes('>');
+          const contentToAdd = isHTML ? addText : `<p>${addText}</p>`;
+          
           if (position === 'end') {
             editor.commands.focus('end');
-            editor.commands.insertContent(`<p>${addText}</p>`);
+            editor.commands.insertContent(contentToAdd);
           } else if (position === 'start') {
             editor.commands.focus('start');
-            editor.commands.insertContent(`<p>${addText}</p>`);
+            editor.commands.insertContent(contentToAdd);
           } else {
             editor.commands.focus();
-            editor.commands.insertContent(`<p>${addText}</p>`);
+            editor.commands.insertContent(contentToAdd);
           }
           toast({ title: pageNumber ? `Added text to page ${pageNumber}` : "Text added to document" });
         }

@@ -166,10 +166,15 @@ You can help by:
 4. Providing writing assistance
 
 When the user asks about their document, refer to the content shown above. When they request changes, you can execute them using these commands:
-- [COMMAND:ADD_TEXT]new text[/COMMAND] to add content
-- [COMMAND:REPLACE_TEXT:old_text]new text[/COMMAND] to replace text
+- [COMMAND:ADD_TEXT]new content[/COMMAND] to add text or HTML content
+- [COMMAND:REPLACE_TEXT:old_text]new text[/COMMAND] to replace text  
 - [COMMAND:DELETE_TEXT]text to remove[/COMMAND] to delete content
 - [COMMAND:FORMAT_TEXT:text:BOLD/ITALIC/UNDERLINE][/COMMAND] to format text
+
+IMPORTANT: When user requests content to be added (like colored text, paragraphs, etc.), add it directly using commands:
+Example: [COMMAND:ADD_TEXT]<p style="color:red;">Red text here</p>[/COMMAND]
+
+Be proactive - when user asks for content to be added, add it immediately without asking for permission.
 
 Always be helpful and direct about working with their document.`;
 
@@ -188,10 +193,27 @@ Always be helpful and direct about working with their document.`;
       // Parse any document commands from the response
       const documentCommands = parseDocumentCommands(aiContent);
       
+      // Check if the response contains HTML content that should be added (fallback for when commands aren't properly formatted)
+      const containsHTMLContent = aiContent.includes('<p') && (aiContent.includes('style=') || aiContent.includes('color'));
+      
+      // If no commands were found but HTML content exists, treat it as ADD_TEXT
+      if (documentCommands.length === 0 && containsHTMLContent) {
+        // Extract HTML content from the response
+        const htmlMatch = aiContent.match(/<p[\s\S]*?<\/p>/g);
+        if (htmlMatch) {
+          const htmlContent = htmlMatch.join('\n');
+          documentCommands.push({
+            type: 'add_text',
+            params: { text: htmlContent, position: 'end' }
+          });
+        }
+      }
+      
       // Clean the response of command markers for display
       const cleanContent = aiContent
         .replace(/\[COMMAND:.*?\]/g, '')
         .replace(/\[\/COMMAND\]/g, '')
+        .replace(/<p[\s\S]*?<\/p>/g, '') // Remove HTML content that will be added to document
         .trim();
 
       // Save user message
