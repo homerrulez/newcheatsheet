@@ -466,6 +466,13 @@ export default function DocumentWorkspace() {
 
   // Handle clicks on visual pages to position cursor in unified editor
   const handlePageClick = (pageIndex: number, event: React.MouseEvent) => {
+    console.log('=== PAGE CLICK DIAGNOSTICS ===');
+    console.log('Clicked element:', event.target);
+    console.log('Event prevented:', event.defaultPrevented);
+    console.log('Page container clicked:', event.currentTarget);
+    console.log('Mouse position:', event.clientX, event.clientY);
+    console.log('Page index:', pageIndex);
+    
     if (!editor || !editorContainerRef.current) return;
     
     const availablePageHeight = pageHeight - (padding * 2);
@@ -476,6 +483,9 @@ export default function DocumentWorkspace() {
     const rect = pageElement.getBoundingClientRect();
     const relativeY = event.clientY - rect.top - padding;
     
+    console.log('Focus attempt - editor exists:', !!editor);
+    console.log('Focus attempt - editor is editable:', editor?.isEditable);
+    
     // Focus editor and attempt to position cursor
     editor.commands.focus();
     
@@ -484,8 +494,88 @@ export default function DocumentWorkspace() {
     if (editorElement) {
       const scrollTop = targetScrollPosition + relativeY;
       editorElement.scrollTop = scrollTop;
+      console.log('Scrolled editor to:', scrollTop);
     }
+    
+    // Check focus state after click
+    setTimeout(() => {
+      console.log('Post-click focus state:');
+      console.log('Editor is focused:', editor?.isFocused);
+      console.log('Active element:', document.activeElement);
+      console.log('Selection range count:', window.getSelection()?.rangeCount);
+      console.log('Selection is collapsed:', window.getSelection()?.isCollapsed);
+    }, 100);
   };
+
+  // Editor diagnostics and event handlers
+  useEffect(() => {
+    if (editor) {
+      console.log('=== EDITOR DIAGNOSTICS ===');
+      console.log('Editor exists:', !!editor);
+      console.log('Editor is editable:', editor?.isEditable);
+      console.log('Editor is focused:', editor?.isFocused);
+      console.log('Editor view DOM element:', editor?.view?.dom);
+      console.log('Editor view DOM is contentEditable:', editor?.view?.dom?.contentEditable);
+      console.log('Editor has selection:', !!editor?.state?.selection);
+
+      // Event listeners for editor events
+      const handleUpdate = () => {
+        const timestamp = Date.now();
+        console.log('EDITOR: content updated at', timestamp);
+      };
+
+      const handleSelectionUpdate = () => {
+        console.log('EDITOR: selection updated');
+      };
+
+      const handleFocus = () => {
+        console.log('EDITOR: gained focus');
+      };
+
+      const handleBlur = () => {
+        console.log('EDITOR: lost focus');
+      };
+
+      editor.on('update', handleUpdate);
+      editor.on('selectionUpdate', handleSelectionUpdate);
+      editor.on('focus', handleFocus);
+      editor.on('blur', handleBlur);
+
+      return () => {
+        editor.off('update', handleUpdate);
+        editor.off('selectionUpdate', handleSelectionUpdate);
+        editor.off('focus', handleFocus);
+        editor.off('blur', handleBlur);
+      };
+    }
+  }, [editor]);
+
+  // Global focus tracking
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      console.log('FOCUS IN:', e.target, 'active element:', document.activeElement);
+    };
+
+    const handleFocusOut = (e: FocusEvent) => {
+      console.log('FOCUS OUT:', e.target);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement === editor?.view?.dom || editor?.isFocused) {
+        console.log('KEY DOWN:', e.key, 'at timestamp:', Date.now());
+      }
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor]);
 
   // Handle send message
   const handleSendMessage = () => {
