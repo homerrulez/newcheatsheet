@@ -9,6 +9,22 @@ import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
+
+// Custom FontSize extension
+const FontSize = TextStyle.extend({
+  addAttributes() {
+    return {
+      fontSize: {
+        default: null,
+        parseHTML: element => element.style.fontSize?.replace('pt', ''),
+        renderHTML: attributes => {
+          if (!attributes.fontSize) return {}
+          return { style: `font-size: ${attributes.fontSize}pt` }
+        },
+      }
+    }
+  }
+});
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -86,11 +102,12 @@ export default function DocumentWorkspace() {
         types: ['heading', 'paragraph'],
       }),
       Underline,
-      Color,
-      TextStyle,
-      FontFamily.configure({
+      TextStyle.configure({
         types: ['textStyle'],
       }),
+      Color,
+      FontFamily,
+      FontSize,
       Highlight.configure({
         multicolor: true,
       }),
@@ -723,12 +740,12 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply font family to selected text only using TextStyle mark
-                      editor.chain().focus().setMark('textStyle', { fontFamily: value }).run();
+                      // Apply font family to selected text only
+                      editor.chain().focus().setFontFamily(value).run();
                       toast({ title: `Font changed to ${value} for selected text` });
                     } else {
                       // Set stored mark for next typed text
-                      editor.chain().focus().setStoredMark('textStyle', { fontFamily: value }).run();
+                      editor.chain().focus().setFontFamily(value).run();
                       toast({ title: "Font family set for next typed text" });
                     }
                   }
@@ -798,13 +815,13 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply size to selected text only using TextStyle mark
-                      editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
+                      // Apply size to selected text only using custom FontSize extension
+                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
                       toast({ title: `Font size increased to ${newSize}pt for selected text` });
                     } else {
                       // Set stored mark for next typed text
                       setFontSize(newSize);
-                      editor.chain().focus().setStoredMark('textStyle', { fontSize: `${newSize}pt` }).run();
+                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
                       toast({ title: "Font size set for next typed text" });
                     }
                   }
@@ -822,13 +839,13 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply size to selected text only using TextStyle mark
-                      editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
+                      // Apply size to selected text only using custom FontSize extension
+                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
                       toast({ title: `Font size decreased to ${newSize}pt for selected text` });
                     } else {
                       // Set stored mark for next typed text
                       setFontSize(newSize);
-                      editor.chain().focus().setStoredMark('textStyle', { fontSize: `${newSize}pt` }).run();
+                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
                       toast({ title: "Font size set for next typed text" });
                     }
                   }
@@ -940,12 +957,12 @@ export default function DocumentWorkspace() {
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
-                      // Apply color to selected text only using TextStyle mark
-                      editor.chain().focus().setMark('textStyle', { color: newColor }).run();
+                      // Apply color to selected text only
+                      editor.chain().focus().setColor(newColor).run();
                       toast({ title: "Color changed for selected text" });
                     } else {
                       // Set stored mark for next typed text
-                      editor.chain().focus().setStoredMark('textStyle', { color: newColor }).run();
+                      editor.chain().focus().setColor(newColor).run();
                       toast({ title: "Text color set for next typed text" });
                     }
                   }
