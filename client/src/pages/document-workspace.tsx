@@ -592,13 +592,13 @@ export default function DocumentWorkspace() {
     setPageCount(newDistributedPages.length);
   }, [editor, pageHeight, padding, pageWidth, fontFamily, fontSize, textColor]);
 
-  // Calculate visual pagination based on content height (Word-style)
+  // Calculate page count for viewport windowing (Word-style)
   useEffect(() => {
     if (editor && editorContainerRef.current) {
-      const timer = setTimeout(distributeContent, 100);
+      const timer = setTimeout(calculatePageCount, 100);
       return () => clearTimeout(timer);
     }
-  }, [distributeContent, editor?.getHTML(), pageHeight, padding, zoomLevel]);
+  }, [calculatePageCount, editor?.getHTML(), pageHeight, padding, zoomLevel]);
 
   // Click-to-position mapping for multi-page editing
   const handlePageClick = useCallback((pageIndex: number, event: React.MouseEvent) => {
@@ -1744,134 +1744,101 @@ export default function DocumentWorkspace() {
               <div className="min-h-full p-8 flex flex-col items-center">
 
 
-                {/* DIAGNOSTIC: Show what content is in each page container */}
-                {console.log('🖼️ RENDERING PAGES:', distributedPages.length, 'pages')}
-                {distributedPages.forEach((content, i) => 
-                  console.log(`📄 Page ${i + 1} container content: "${content.substring(0, 100)}..." (${content.length} chars)`)
-                )}
+                {/* NEW ARCHITECTURE: Viewport Windowing for True Multi-Page Editing */}
+                {console.log('🚀 VIEWPORT WINDOWING ARCHITECTURE')}
+                {console.log('📊 Total pages needed:', pageCount)}
+                {console.log('📏 Page height:', pageHeight, 'Padding:', padding)}
+                {console.log('📖 Available content height per page:', pageHeight - (padding * 2))}
                 
-                {/* Render all pages with distributed content */}
-                {distributedPages.map((pageContent, pageIndex) => (
+                {/* Render viewport windows - each shows different section of same editor */}
+                {Array.from({ length: pageCount }, (_, pageIndex) => (
                   <div
                     key={pageIndex}
-                    className={`bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group transition-all duration-500 cursor-text ${
-                      pageIndex === 0 
-                        ? 'hover:shadow-cyan-300/20' 
-                        : 'hover:shadow-purple-300/20 hover:ring-1 hover:ring-purple-200'
-                    }`}
+                    className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group transition-all duration-500 cursor-text hover:shadow-cyan-300/20"
                     style={{
                       width: `${pageWidth}px`,
-                      minHeight: `${pageHeight}px`,
+                      height: `${pageHeight}px`,
                       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                     }}
-                    onClick={(e) => handlePageClick(pageIndex, e)}
                   >
                     {/* Page number indicator */}
                     <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
                       Page {pageIndex + 1} of {pageCount}
                     </div>
                     
-                    {console.log(`🖼️ RENDERING PAGE ${pageIndex + 1}:`, {
-                      isFirstPage: pageIndex === 0,
-                      contentLength: pageContent.length,
-                      contentPreview: pageContent.substring(0, 100) + '...',
-                      renderingMode: pageIndex === 0 ? 'EditorContent' : 'dangerouslySetInnerHTML'
-                    })}
+                    {console.log(`🪟 VIEWPORT ${pageIndex + 1}: Window offset ${pageIndex * (pageHeight - padding * 2)}px`)}
                     
-                    {pageIndex === 0 ? (
-                      /* First page - FIXED: Show distributed content like other pages, with hidden editor overlay */
+                    {/* Viewport Window: Each page shows different section of unified editor */}
+                    <div
+                      ref={pageIndex === 0 ? editorContainerRef : undefined}
+                      className="w-full h-full relative"
+                      style={{ 
+                        padding: `${padding}px`,
+                      }}
+                    >
+                      {/* DEBUG: Viewport information */}
+                      <div 
+                        className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-1"
+                        style={{ zIndex: 1000 }}
+                      >
+                        VIEWPORT {pageIndex + 1}: -{pageIndex * (pageHeight - padding * 2)}px
+                      </div>
+                      
+                      {/* Viewport container with clipped view of unified editor */}
                       <div
-                        ref={editorContainerRef}
-                        className="w-full h-full relative"
-                        style={{ 
-                          padding: `${padding}px`,
-                          minHeight: `${pageHeight}px`,
+                        className="viewport-window"
+                        style={{
+                          height: `${pageHeight - (padding * 2)}px`,
+                          overflow: 'hidden',
+                          position: 'relative',
+                          border: '1px solid rgba(0,150,255,0.3)', // DEBUG: viewport boundary
                         }}
                       >
-                        {console.log('   ✅ FIXED: Page 1 now shows distributed content only')}
-                        {console.log('   📏 Page 1 distributed content:', distributedPages[0]?.length || 0, 'chars')}
-                        
-                        {/* Show Page 1's distributed content (same as other pages) */}
-                        <div 
-                          className="w-full h-full prose prose-sm max-w-none"
-                          style={{
-                            fontFamily,
-                            fontSize: `${fontSize}pt`,
-                            color: textColor,
-                            lineHeight: '1.6',
-                            height: `${pageHeight - (padding * 2)}px`,
-                            maxHeight: `${pageHeight - (padding * 2)}px`,
-                            overflow: 'hidden',
-                            border: '2px solid green', // DEBUG: Fixed boundary
-                          }}
-                          dangerouslySetInnerHTML={{ __html: distributedPages[0] || '<p>Loading page 1...</p>' }}
-                        />
-                        
-                        {/* Hidden editor overlay for editing - positioned absolutely but invisible */}
+                        {/* Single unified editor - transformed to show different sections */}
                         <div
-                          className="absolute inset-0"
                           style={{
-                            padding: `${padding}px`,
-                            opacity: 0.01, // Nearly invisible but still functional
-                            pointerEvents: 'auto',
-                            zIndex: 10,
+                            transform: `translateY(-${pageIndex * (pageHeight - padding * 2)}px)`,
+                            transition: 'transform 0.1s ease', // Smooth viewport changes
                           }}
                         >
                           <EditorContent
                             editor={editor}
-                            className="w-full h-full focus:outline-none prose prose-sm max-w-none cursor-text"
+                            className="w-full focus:outline-none prose prose-sm max-w-none cursor-text"
                             style={{
                               fontFamily,
                               fontSize: `${fontSize}pt`,
                               color: textColor,
                               lineHeight: '1.6',
-                              height: `${pageHeight - (padding * 2)}px`,
-                              overflow: 'hidden',
+                              minHeight: `${pageCount * (pageHeight - padding * 2)}px`, // Full document height
+                              width: '100%',
                             }}
                           />
                         </div>
-                        
-                        {/* DEBUG: Show fix confirmation */}
-                        <div 
-                          className="absolute top-0 right-0 bg-green-500 text-white text-xs px-1"
-                          style={{ zIndex: 1000 }}
-                        >
-                          FIXED: Page 1 = {distributedPages[0]?.length || 0}ch (distributed)
-                        </div>
                       </div>
-                    ) : (
-                      /* Subsequent pages with clickable content - maps to unified editor */
-                      <div
-                        className="w-full h-full relative pointer-events-none"
+                      
+                      {/* Direct click-to-edit handler */}
+                      <div 
+                        className="absolute inset-0 bg-transparent"
                         style={{ 
+                          cursor: 'text',
+                          zIndex: 5,
                           padding: `${padding}px`,
-                          minHeight: `${pageHeight}px`,
                         }}
-                      >
-                        {console.log('   📄 Showing distributed content HTML:', pageContent.substring(0, 200))}
-                        <div 
-                          className="w-full h-full prose prose-sm max-w-none"
-                          style={{
-                            fontFamily,
-                            fontSize: `${fontSize}pt`,
-                            color: textColor,
-                            lineHeight: '1.6',
-                            minHeight: `${pageHeight - (padding * 2)}px`,
-                            overflow: 'hidden',
-                          }}
-                          dangerouslySetInnerHTML={{ __html: pageContent }}
-                        />
-                        
-                        {/* Invisible overlay for click detection */}
-                        <div 
-                          className="absolute inset-0 bg-transparent pointer-events-auto"
-                          style={{ 
-                            cursor: 'text',
-                          }}
-                          title={`Click to edit page ${pageIndex + 1}`}
-                        />
-                      </div>
-                    )}
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const clickY = e.clientY - rect.top - padding;
+                          const documentY = (pageIndex * (pageHeight - padding * 2)) + clickY;
+                          
+                          console.log(`📍 DIRECT EDIT: Page ${pageIndex + 1} at Y=${clickY}, Document Y=${documentY}`);
+                          
+                          if (editor) {
+                            editor.commands.focus();
+                            // TODO: Position cursor at documentY position
+                          }
+                        }}
+                        title={`Edit page ${pageIndex + 1} directly`}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
