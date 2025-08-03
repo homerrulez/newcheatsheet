@@ -355,13 +355,113 @@ export default function CheatSheetWorkspace() {
           }
           return;
         }
+
+        // Copy box commands
+        const copyBoxMatch = originalMessage.match(/copy box (\d+)/);
+        if (copyBoxMatch) {
+          const boxIndex = parseInt(copyBoxMatch[1]) - 1;
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            const newBox: Box = {
+              ...targetBox,
+              id: Date.now().toString(),
+              x: targetBox.x + 20,
+              y: targetBox.y + 20,
+              title: `${targetBox.title} (Copy)`
+            };
+            setBoxes(prev => [...prev, newBox]);
+            toast({ title: `Copied box ${copyBoxMatch[1]}` });
+          } else {
+            toast({ title: `Box ${copyBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+
+        // Change box title commands
+        const titleBoxMatch = originalMessage.match(/(?:change|rename) box (\d+) title to (.+)/);
+        if (titleBoxMatch) {
+          const boxIndex = parseInt(titleBoxMatch[1]) - 1;
+          const newTitle = titleBoxMatch[2];
+          const targetBox = boxes[boxIndex];
+          if (targetBox) {
+            updateBox(targetBox.id, { title: newTitle });
+            toast({ title: `Changed box ${titleBoxMatch[1]} title` });
+          } else {
+            toast({ title: `Box ${titleBoxMatch[1]} not found`, variant: 'destructive' });
+          }
+          return;
+        }
+
+        // Clear all boxes command
+        if (originalMessage.includes('clear all boxes') || originalMessage.includes('delete all boxes')) {
+          setBoxes([]);
+          setSelectedBox(null);
+          toast({ title: 'Cleared all boxes' });
+          return;
+        }
+
+        // Count boxes command
+        if (originalMessage.includes('how many boxes') || originalMessage.includes('count boxes')) {
+          const count = boxes.length;
+          const countMessage = {
+            role: 'assistant' as const,
+            content: `There are currently **${count}** boxes in your cheat sheet.`,
+            timestamp: new Date().toISOString()
+          };
+          setMessages(prev => [...prev, countMessage]);
+          toast({ title: `${count} boxes total` });
+          return;
+        }
         
         // Help commands
         if (originalMessage.includes('help') || originalMessage.includes('commands')) {
+          // Add a detailed help message directly to chat
+          const helpMessage = {
+            role: 'assistant' as const,
+            content: `**Complete ChatGPT Box Command System:**
+
+📦 **Creation Commands:**
+• "create formulas" - Add math formula boxes
+• "add definitions" - Add definition boxes  
+• "make a summary" - Add summary boxes
+
+🎯 **Box Manipulation:**
+• "delete box 3" - Remove specific box
+• "edit box 2 to New Content" - Change box content
+• "highlight box 1" - Add yellow highlighting
+• "select box 4" - Focus on specific box
+• "copy box 2" - Duplicate a box with slight offset
+
+📝 **Content & Title Management:**
+• "change box 3 title to New Title" - Rename box title
+• "rename box 1 title to Math Rules" - Alternative rename syntax
+
+🎨 **Styling Commands:**
+• "make box 3 red" - Change colors (red, blue, green, yellow, purple, pink, gray, orange)
+• "resize box 1 larger" - Make bigger/smaller (big, small alternatives)
+• "move box 2 to top left" - Reposition (top/bottom/center + left/right/center)
+
+🧹 **Bulk Operations:**
+• "clear all boxes" - Remove all boxes from workspace
+• "delete all boxes" - Alternative clear command
+• "how many boxes" - Count total boxes
+• "count boxes" - Alternative count command
+
+💡 **Pro Tips:**
+• Boxes are automatically numbered starting from 1
+• Commands execute instantly without page refresh
+• Use natural language - the system understands variations
+• Type "help commands" anytime for this reference`,
+            timestamp: new Date().toISOString()
+          };
+          
+          // Add to current messages
+          setMessages(prev => [...prev, helpMessage]);
+          
           toast({
             title: "Box Commands Available",
-            description: "delete box 3 • edit box 2 to New Text • highlight box 1 • select box 4 • move box 2 to top left • make box 3 red • resize box 1 larger",
-            duration: 8000
+            description: "Complete command list added to chat",
+            duration: 3000
           });
           return;
         }
@@ -425,6 +525,12 @@ export default function CheatSheetWorkspace() {
     if (selectedBox === id) {
       setSelectedBox(null);
     }
+  };
+
+  // Get box number for ChatGPT commands
+  const getBoxNumber = (boxId: string): number => {
+    const boxIndex = boxes.findIndex(box => box.id === boxId);
+    return boxIndex + 1; // 1-based numbering for user-friendly commands
   };
 
   const saveCheatSheet = () => {
