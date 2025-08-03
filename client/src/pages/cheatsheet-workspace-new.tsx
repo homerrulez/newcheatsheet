@@ -8,6 +8,8 @@ import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
+import Draggable from 'react-draggable';
+import { ResizableBox } from 'react-resizable';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,6 +35,18 @@ import { CheatSheet, ChatSession, ChatMessage } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+// Box interface
+interface Box {
+  id: string;
+  title: string;
+  content: string;
+  color: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 // Custom FontSize extension
 const FontSize = TextStyle.extend({
   addAttributes() {
@@ -53,6 +67,10 @@ export default function CheatSheetWorkspace() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Box state
+  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [selectedBox, setSelectedBox] = useState<string | null>(null);
   
   // Document state
   const [fontSize, setFontSize] = useState(12);
@@ -180,15 +198,22 @@ export default function CheatSheetWorkspace() {
       refetchMessages();
       setChatInput('');
       
-      // Insert text response into cheat sheet if it's content
-      if (response.insertText && editor) {
-        if (response.insertAtEnd) {
-          editor.commands.focus('end');
-          editor.commands.insertContent(response.insertText);
-        } else {
-          editor.commands.focus();
-          editor.commands.insertContent(response.insertText);
-        }
+      // Handle box creation from ChatGPT
+      if (response.createBox) {
+        const { title, content, color = '#f0f9ff', x = 150, y = 150 } = response.createBox;
+        addBox(title, content, color, x, y);
+        toast({ title: `Created box: ${title}` });
+      }
+      
+      // Handle multiple boxes creation
+      if (response.createBoxes && Array.isArray(response.createBoxes)) {
+        response.createBoxes.forEach((boxData: any, index: number) => {
+          const { title, content, color = '#f0f9ff' } = boxData;
+          const x = 150 + (index * 220); // Stagger boxes horizontally
+          const y = 150 + (index * 50); // Slightly offset vertically
+          addBox(title, content, color, x, y);
+        });
+        toast({ title: `Created ${response.createBoxes.length} boxes` });
       }
     },
   });
@@ -205,6 +230,35 @@ export default function CheatSheetWorkspace() {
       setDefaultSessionId(chatSessions[0].id);
     }
   }, [cheatSheet, chatSessions, defaultSessionId]);
+
+  // Box management functions
+  const addBox = (title: string, content: string, color: string = '#fff', x: number = 100, y: number = 100) => {
+    const newBox: Box = {
+      id: Date.now().toString(),
+      title,
+      content,
+      color,
+      x,
+      y,
+      width: 200,
+      height: 150
+    };
+    setBoxes(prev => [...prev, newBox]);
+    return newBox.id;
+  };
+
+  const updateBox = (id: string, updates: Partial<Box>) => {
+    setBoxes(prev => prev.map(box => 
+      box.id === id ? { ...box, ...updates } : box
+    ));
+  };
+
+  const deleteBox = (id: string) => {
+    setBoxes(prev => prev.filter(box => box.id !== id));
+    if (selectedBox === id) {
+      setSelectedBox(null);
+    }
+  };
 
   // Create cheat sheet mutation
   const createCheatSheetMutation = useMutation({
@@ -756,49 +810,145 @@ export default function CheatSheetWorkspace() {
 
         <ResizableHandle />
 
-        {/* Middle panel - Document Editor */}
+        {/* Middle panel - Box Layout Area */}
         <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="h-full bg-gray-100 dark:bg-gray-800">
-            <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
-              <div className="min-h-full p-8 flex flex-col items-center">
-                {/* Single Page Container - Letter Size */}
-                <div
-                  className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+          <div className="h-full bg-gray-100 dark:bg-gray-800 relative overflow-auto">
+            {/* Page boundaries as visual guides */}
+            <div className="absolute inset-0">
+              {/* Letter size page outline */}
+              <div
+                className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg mx-auto"
+                style={{
+                  top: '20px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '816px',
+                  height: '1056px',
+                  zIndex: 0
+                }}
+              >
+                {/* Page header */}
+                <div className="absolute top-2 right-4 text-xs text-gray-400">
+                  Cheat Sheet • Page 1
+                </div>
+                
+                {/* Page margins guide */}
+                <div 
+                  className="absolute border border-blue-200 border-dashed"
                   style={{
-                    width: '816px',
-                    height: '1056px',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
-                    minHeight: '1056px',
+                    top: '72px',
+                    left: '72px',
+                    width: '672px',
+                    height: '912px'
                   }}
+                />
+              </div>
+            </div>
+            
+            {/* Boxes container */}
+            <div className="absolute inset-0 z-10">
+              {/* Render boxes */}
+              {boxes.map(box => (
+                <Draggable
+                  key={box.id}
+                  position={{ x: box.x, y: box.y }}
+                  onDrag={(e, data) => {
+                    updateBox(box.id, { x: data.x, y: data.y });
+                  }}
+                  handle=".box-handle"
+                  bounds="parent"
                 >
-                  {/* Page number indicator */}
-                  <div className="absolute -top-6 left-0 text-xs text-gray-500 dark:text-gray-400">
-                    Cheat Sheet • Page 1
-                  </div>
-                  
-                  {/* Page content */}
-                  <div
-                    className="w-full h-full relative"
-                    style={{ 
-                      padding: '72px',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <EditorContent
-                      editor={editor}
-                      className="w-full focus:outline-none prose prose-sm max-w-none"
-                      style={{
-                        fontFamily,
-                        fontSize: `${fontSize}pt`,
-                        color: textColor,
-                        lineHeight: '1.6',
-                        minHeight: '912px',
+                  <div className="absolute">
+                    <ResizableBox
+                      width={box.width}
+                      height={box.height}
+                      onResize={(e, data) => {
+                        updateBox(box.id, { width: data.size.width, height: data.size.height });
                       }}
-                    />
+                      minConstraints={[120, 80]}
+                      maxConstraints={[600, 400]}
+                      resizeHandles={['se']}
+                      className={`relative ${selectedBox === box.id ? 'ring-2 ring-blue-500' : ''}`}
+                    >
+                      <div
+                        className="w-full h-full border-2 border-gray-300 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl group"
+                        style={{ backgroundColor: box.color }}
+                        onClick={() => setSelectedBox(box.id)}
+                      >
+                        {/* Box header with handle */}
+                        <div className="box-handle flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white/80 rounded-t-lg cursor-move">
+                          <h4 className="font-medium text-sm text-gray-900 truncate">{box.title}</h4>
+                          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Edit box functionality
+                                const newTitle = prompt('Edit title:', box.title);
+                                if (newTitle) updateBox(box.id, { title: newTitle });
+                              }}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteBox(box.id);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Box content */}
+                        <div className="p-3 h-full overflow-auto">
+                          <div
+                            className="text-sm text-gray-800 leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: box.content }}
+                          />
+                        </div>
+                      </div>
+                    </ResizableBox>
+                  </div>
+                </Draggable>
+              ))}
+
+              {/* Empty state when no boxes */}
+              {boxes.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center py-16 max-w-md">
+                    <Grid3X3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No boxes yet</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">Ask the ChatGPT assistant to create content boxes for your cheat sheet</p>
+                    <div className="space-y-2 text-sm text-gray-500 dark:text-gray-500">
+                      <p>"create a formula box"</p>
+                      <p>"add key definitions"</p>
+                      <p>"make a summary section"</p>
+                    </div>
+                    
+                    {/* Quick add button for testing */}
+                    <Button
+                      onClick={() => addBox(
+                        'Sample Box', 
+                        '<p><strong>Sample Content</strong></p><p>This is a draggable and resizable box!</p>',
+                        '#f0f9ff'
+                      )}
+                      className="mt-4"
+                      variant="outline"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Sample Box
+                    </Button>
                   </div>
                 </div>
-              </div>
-            </ScrollArea>
+              )}
+            </div>
           </div>
         </ResizablePanel>
 
@@ -828,14 +978,23 @@ export default function CheatSheetWorkspace() {
               <div className="space-y-2">
                 <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Quick Actions</h4>
                 <div className="grid grid-cols-1 gap-1">
-                  <button className="w-full text-left p-2 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
-                    💡 Organize content
+                  <button 
+                    onClick={() => setChatInput('create a formula box')}
+                    className="w-full text-left p-2 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700 transition-all duration-300 text-gray-700 dark:text-gray-300"
+                  >
+                    📊 Create formula box
                   </button>
-                  <button className="w-full text-left p-2 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
-                    📝 Add key points
+                  <button 
+                    onClick={() => setChatInput('add key definitions box')}
+                    className="w-full text-left p-2 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700 transition-all duration-300 text-gray-700 dark:text-gray-300"
+                  >
+                    📝 Add definitions box
                   </button>
-                  <button className="w-full text-left p-2 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700 transition-all duration-300 text-gray-700 dark:text-gray-300">
-                    🎯 Create sections
+                  <button 
+                    onClick={() => setChatInput('create summary section')}
+                    className="w-full text-left p-2 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700 transition-all duration-300 text-gray-700 dark:text-gray-300"
+                  >
+                    🎯 Create summary box
                   </button>
                 </div>
               </div>

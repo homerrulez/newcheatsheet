@@ -74,6 +74,29 @@ body {
   min-height: 100vh;
 }
 
+/* React Resizable Styles */
+.react-resizable {
+  position: relative;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNiIgaGVpZ2h0PSI2IiB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGZpbGw9IiM5OTkiIGZpbGwtb3BhY2l0eT0iLjgiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PHBhdGggZD0ibTUgNWgtNGwtMi0yaDRsLTItMmgtNGwtMi0yaDRsLTItMmgtNGwtMi0yaDB2NHoiLz48L2c+PC9zdmc+');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+}
+
+.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+
 /* AI-themed enhancements */
 .ai-text-glow:hover {
   text-shadow: 0 0 8px rgba(6, 182, 212, 0.3), 0 0 16px rgba(6, 182, 212, 0.1);
