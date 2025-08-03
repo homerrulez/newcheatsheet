@@ -219,8 +219,13 @@ export default function DocumentWorkspace() {
       refetchMessages();
       setChatInput('');
       
-      // Execute document commands if any
-      if (response.documentCommand) {
+      // Execute document commands if any (now supporting multiple commands)
+      if (response.documentCommands && Array.isArray(response.documentCommands)) {
+        response.documentCommands.forEach((command: DocumentCommand) => {
+          executeDocumentCommand(command);
+        });
+      } else if (response.documentCommand) {
+        // Backwards compatibility for single command
         executeDocumentCommand(response.documentCommand);
       }
       
@@ -330,6 +335,16 @@ export default function DocumentWorkspace() {
           const updatedContent = content.replace(new RegExp(targetText, 'gi'), newText);
           editor.commands.setContent(updatedContent);
           toast({ title: `Replaced "${targetText}" with "${newText}"` });
+        }
+        break;
+        
+      case 'delete_text':
+        const { text: deleteText } = command.params;
+        if (deleteText) {
+          const content = editor.getHTML();
+          const updatedContent = content.replace(new RegExp(deleteText, 'gi'), '');
+          editor.commands.setContent(updatedContent);
+          toast({ title: `Deleted text: "${deleteText}"` });
         }
         break;
     }

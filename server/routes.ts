@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import OpenAI from "openai";
 import aiRoutes from "./ai-routes";
+import chatgptRoutes from "./chatgpt-routes";
 import { 
   insertDocumentSchema, 
   insertCheatSheetSchema, 
@@ -21,6 +22,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI Writing Assistant Routes
   app.use("/api/ai", aiRoutes);
+  
+  // Real ChatGPT-like Routes
+  app.use("/api", chatgptRoutes);
   
   // Documents API
   app.get("/api/documents", async (req, res) => {
