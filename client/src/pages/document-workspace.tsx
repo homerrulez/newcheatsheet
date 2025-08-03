@@ -1793,6 +1793,10 @@ export default function DocumentWorkspace() {
                         {console.log('   📏 padding:', padding)}
                         {console.log('   📏 calculatedMaxHeight:', pageHeight - (padding * 2))}
                         {console.log('   📏 constraint height:', `${pageHeight - (padding * 2)}px`)}
+                        {console.log('   🔍 CONTENT MISMATCH ANALYSIS:')}
+                        {console.log('   - Page 1 (unified editor) content:', editor?.getHTML()?.length || 0, 'chars')}
+                        {console.log('   - Page 1 (distributed) content:', distributedPages[0]?.length || 0, 'chars')}
+                        {console.log('   - Pages 2+ show distributed content only')}
                         <div
                           className="editor-constraint-wrapper"
                           style={{
@@ -1825,13 +1829,23 @@ export default function DocumentWorkspace() {
                               overflow: 'visible',
                             }}
                           />
-                          {/* DEBUG: Show constraint info */}
+                          {/* DEBUG: Show content mismatch info */}
                           <div 
                             className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1"
                             style={{ zIndex: 1000 }}
                           >
-                            LIMIT: {pageHeight - (padding * 2)}px (H:{pageHeight} P:{padding})
+                            UNIFIED: {editor?.getHTML()?.length || 0}ch | DISTRIBUTED: {distributedPages[0]?.length || 0}ch
                           </div>
+                          
+                          {/* DEBUG: Visual comparison - show what distributed page 1 would look like */}
+                          {distributedPages[0] && (
+                            <div 
+                              className="absolute bottom-0 left-0 bg-blue-500 text-white text-xs px-1 max-w-xs"
+                              style={{ zIndex: 999 }}
+                            >
+                              P1 distributed preview: "{distributedPages[0].substring(0, 50)}..."
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
