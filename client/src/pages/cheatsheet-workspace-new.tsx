@@ -181,14 +181,15 @@ export default function CheatSheetWorkspace() {
         await createNewChatSession();
       }
       
-      const cheatSheetContent = editor?.getHTML() || '';
+      const cheatSheetContent = JSON.stringify({ boxes }); // Send current boxes state
       const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           content: message, 
           cheatSheetContent,
-          cheatSheetId: id 
+          cheatSheetId: id,
+          workspaceType: 'cheatsheet' // Specify this is a cheat sheet workspace
         }),
       });
       if (!response.ok) throw new Error('Failed to send message');
@@ -214,6 +215,27 @@ export default function CheatSheetWorkspace() {
           addBox(title, content, color, x, y);
         });
         toast({ title: `Created ${response.createBoxes.length} boxes` });
+      }
+      
+      // Parse response content for box creation patterns if no structured response
+      if (response.content && !response.createBox && !response.createBoxes) {
+        const content = response.content.toLowerCase();
+        
+        // Check for box creation keywords and create sample boxes
+        if (content.includes('formula') || content.includes('equation')) {
+          addBox('Math Formulas', '<p><strong>Quadratic Formula:</strong></p><p>x = (-b ± √(b² - 4ac)) / 2a</p><p><strong>Distance Formula:</strong></p><p>d = √((x₂-x₁)² + (y₂-y₁)²)</p>', '#e0f2fe', 150, 150);
+          toast({ title: 'Created formula box' });
+        }
+        
+        if (content.includes('definition') || content.includes('key terms')) {
+          addBox('Key Definitions', '<p><strong>Algorithm:</strong> A step-by-step procedure for solving a problem</p><p><strong>Variable:</strong> A storage location with an associated name</p>', '#f3e5f5', 380, 150);
+          toast({ title: 'Created definitions box' });
+        }
+        
+        if (content.includes('summary') || content.includes('overview')) {
+          addBox('Summary', '<p><strong>Main Points:</strong></p><ul><li>Key concept 1</li><li>Key concept 2</li><li>Key concept 3</li></ul>', '#e8f5e8', 150, 320);
+          toast({ title: 'Created summary box' });
+        }
       }
     },
   });
@@ -276,7 +298,7 @@ export default function CheatSheetWorkspace() {
     },
     onSuccess: (newCheatSheet) => {
       refetchCheatSheets();
-      window.location.href = `/cheatsheet/${newCheatSheet.id}`;
+      window.location.href = `/cheatsheet-new/${newCheatSheet.id}`;
     },
   });
 
@@ -506,15 +528,18 @@ export default function CheatSheetWorkspace() {
             <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
               <Button
                 size="sm"
-                variant={editor?.isActive('bold') ? 'default' : 'outline'}
+                variant="outline"
                 onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().toggleBold().run();
-                    toast({ title: "Bold formatting applied to selected text" });
+                  if (selectedBox) {
+                    const box = boxes.find(b => b.id === selectedBox);
+                    if (box) {
+                      const content = box.content.replace(/<[^>]*>/g, ''); // Strip existing HTML
+                      const newContent = `<p><strong>${content}</strong></p>`;
+                      updateBox(selectedBox, { content: newContent });
+                      toast({ title: "Bold formatting applied to selected box" });
+                    }
                   } else {
-                    toast({ title: "Please select text to format" });
+                    toast({ title: "Please select a box to format" });
                   }
                 }}
               >
@@ -770,7 +795,7 @@ export default function CheatSheetWorkspace() {
                           ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
                           : 'bg-white/50 dark:bg-slate-700/50 border-white/30 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                       }`}
-                      onClick={() => window.location.href = `/cheatsheet/${sheet.id}`}
+                      onClick={() => window.location.href = `/cheatsheet-new/${sheet.id}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 flex-1">
@@ -908,10 +933,29 @@ export default function CheatSheetWorkspace() {
                         
                         {/* Box content */}
                         <div className="p-3 h-full overflow-auto">
-                          <div
-                            className="text-sm text-gray-800 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: box.content }}
-                          />
+                          {selectedBox === box.id ? (
+                            <Textarea
+                              value={box.content.replace(/<[^>]*>/g, '')} // Strip HTML for editing
+                              onChange={(e) => {
+                                const newContent = e.target.value;
+                                // Convert to basic HTML
+                                const htmlContent = newContent
+                                  .split('\n')
+                                  .map(line => `<p>${line || '&nbsp;'}</p>`)
+                                  .join('');
+                                updateBox(box.id, { content: htmlContent });
+                              }}
+                              className="w-full h-full resize-none border-none focus:ring-0 text-sm bg-transparent"
+                              placeholder="Enter box content..."
+                              style={{ minHeight: 'calc(100% - 20px)' }}
+                            />
+                          ) : (
+                            <div
+                              className="text-sm text-gray-800 leading-relaxed cursor-text"
+                              dangerouslySetInnerHTML={{ __html: box.content }}
+                              onClick={() => setSelectedBox(box.id)}
+                            />
+                          )}
                         </div>
                       </div>
                     </ResizableBox>
