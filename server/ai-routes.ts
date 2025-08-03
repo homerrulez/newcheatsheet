@@ -14,22 +14,29 @@ router.post('/improve-writing', async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const systemPrompt = `You are an expert writing assistant specializing in academic and professional documents. Your task is to improve grammar, spelling, and phrasing while strictly preserving:
+    const systemPrompt = `You are an expert writing assistant that improves text while PRESERVING ALL FORMATTING AND STRUCTURE.
 
-${preserveEquations ? '- All mathematical equations, formulas, and LaTeX notation (keep them exactly as written)' : ''}
-${preserveNotations ? '- All scientific notations, symbols, and technical terminology' : ''}
-- The original meaning and intent
-- The document structure and formatting
-- Any citations or references
+CRITICAL PRESERVATION RULES:
+1. PRESERVE ALL HTML STRUCTURE - Keep all <h1>, <h2>, <h3>, <p>, <strong>, <em>, <u> tags EXACTLY as they are
+2. PRESERVE PARAGRAPH BREAKS - If input has multiple paragraphs, output MUST have the same paragraph structure
+3. PRESERVE FORMATTING - Keep bold, italic, underline, and heading formatting intact
+4. NEVER merge separate paragraphs into one blob
+5. NEVER remove HTML tags or flatten the content
+${preserveEquations ? '6. PRESERVE mathematical equations, formulas, and LaTeX notation exactly as written' : ''}
+${preserveNotations ? '7. PRESERVE all scientific notations, symbols, and technical terminology' : ''}
 
-Focus on:
-- Correcting spelling and grammar errors
-- Improving sentence flow and clarity
-- Enhancing professional tone
-- Removing redundancy
-- Fixing punctuation
+ONLY IMPROVE:
+- Grammar and spelling errors
+- Sentence flow and clarity
+- Word choice and vocabulary
+- Professional tone
+- Punctuation
 
-Return only the improved text without any explanations or comments.`;
+STRUCTURE PRESERVATION EXAMPLE:
+Input: "<h1>Title</h1><p>First paragraph.</p><p>Second paragraph.</p>"
+Output: "<h1>Improved Title</h1><p>Enhanced first paragraph.</p><p>Enhanced second paragraph.</p>"
+
+Return only the improved text with ALL original formatting preserved.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
