@@ -1789,28 +1789,30 @@ export default function DocumentWorkspace() {
                         }}
                       >
                         {console.log('   ✅ Showing EditorContent component (main unified editor)')}
-                        {(() => {
-                          const debugInfo = {
-                            pageHeight: pageHeight,
-                            padding: padding,
-                            calculatedMaxHeight: pageHeight - (padding * 2),
-                            actualStyleMaxHeight: `${pageHeight - (padding * 2)}px`,
-                            containerHeight: `${pageHeight}px`,
-                            availableContentHeight: pageHeight - (padding * 2)
-                          };
-                          console.log('   📏 HEIGHT DEBUG VALUES:', debugInfo);
-                          return null;
-                        })()}
+                        {console.log('   📏 pageHeight:', pageHeight)}
+                        {console.log('   📏 padding:', padding)}
+                        {console.log('   📏 calculatedMaxHeight:', pageHeight - (padding * 2))}
+                        {console.log('   📏 constraint height:', `${pageHeight - (padding * 2)}px`)}
                         <div
                           className="editor-constraint-wrapper"
                           style={{
                             height: `${pageHeight - (padding * 2)}px`,
                             maxHeight: `${pageHeight - (padding * 2)}px`,
                             overflow: 'hidden',
-                            border: '2px solid red', // DEBUG: Constraint boundary
+                            border: '3px solid red', // DEBUG: Constraint boundary
                             position: 'relative',
+                            display: 'block',
                           }}
                         >
+                          <style>
+                            {`
+                              .editor-constraint-wrapper .ProseMirror {
+                                height: auto !important;
+                                max-height: none !important;
+                                overflow: visible !important;
+                              }
+                            `}
+                          </style>
                           <EditorContent
                             editor={editor}
                             className="w-full focus:outline-none prose prose-sm max-w-none cursor-text"
@@ -1819,7 +1821,8 @@ export default function DocumentWorkspace() {
                               fontSize: `${fontSize}pt`,
                               color: textColor,
                               lineHeight: '1.6',
-                              // Remove height constraints from EditorContent, let wrapper handle it
+                              height: 'auto',
+                              overflow: 'visible',
                             }}
                           />
                           {/* DEBUG: Show constraint info */}
@@ -1827,7 +1830,7 @@ export default function DocumentWorkspace() {
                             className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1"
                             style={{ zIndex: 1000 }}
                           >
-                            LIMIT: {pageHeight - (padding * 2)}px
+                            LIMIT: {pageHeight - (padding * 2)}px (H:{pageHeight} P:{padding})
                           </div>
                         </div>
                       </div>
