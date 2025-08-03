@@ -1105,7 +1105,43 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative">
-
+            {/* Functional AI Writing Assistant Indicator */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+              <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg rounded-xl px-4 py-2 border border-gray-200 dark:border-gray-600 shadow-lg">
+                <div className="flex items-center space-x-4 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">AI Assistant Active</span>
+                  </div>
+                  <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {(() => {
+                        const text = document?.content || '';
+                        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                        return `${wordCount} words`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {(() => {
+                        const text = document?.content || '';
+                        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                        const readingTime = Math.max(1, Math.ceil(wordCount / 200)); // 200 words per minute
+                        return `${readingTime} min read`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-green-600 dark:text-green-400 font-medium">Auto-save</span>
+                  </div>
+                </div>
+              </div>
+            </div>
             
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
