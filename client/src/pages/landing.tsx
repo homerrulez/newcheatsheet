@@ -76,7 +76,7 @@ export default function Landing() {
           {/* Template Workspace */}
           <div className="space-y-6">
             <Link href="/template">
-              <div className="bg-emerald-50 rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
+              <div className="rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center" style={{ backgroundColor: '#c8f0dc' }}>
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
                     <Layout className="text-white text-2xl" />
@@ -103,7 +103,7 @@ export default function Landing() {
           {/* Cheat Sheet Workspace */}
           <div className="space-y-6">
             <Link href="/cheatsheet">
-              <div className="bg-orange-50 rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
+              <div className="rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center" style={{ backgroundColor: '#f5e6d3' }}>
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
                     <Brain className="text-white text-2xl" />
@@ -130,7 +130,7 @@ export default function Landing() {
           {/* Document Workspace */}
           <div className="space-y-6">
             <Link href="/document/test-doc-1">
-              <div className="bg-emerald-50 rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center">
+              <div className="rounded-3xl p-8 hover:scale-[1.02] transition-all duration-300 cursor-pointer group aspect-square flex flex-col justify-center items-center" style={{ backgroundColor: '#c8f0dc' }}>
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-black rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
                     <PenTool className="text-white text-2xl" />
