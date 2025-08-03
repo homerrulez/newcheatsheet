@@ -364,7 +364,7 @@ export default function AutoResizeMathBox({
                 >
                   <div 
                     ref={contentRef}
-                    className="w-full h-full text-gray-900 dark:text-gray-100"
+                    className="w-full h-full"
                     style={contentStyles}
                     onClick={(e) => e.stopPropagation()}
                     role="region"
@@ -382,8 +382,7 @@ export default function AutoResizeMathBox({
                         overflow: 'hidden',
                         display: 'block',
                         width: '100%',
-                        height: '100%',
-                        color: 'inherit'
+                        height: '100%'
                       }}
                     />
                   </div>
@@ -392,7 +391,7 @@ export default function AutoResizeMathBox({
             </div>
           </ResizableBox>
         ) : (
-          // Grid mode - auto-fit only
+          // Grid mode - auto-sizing only
           <div 
             className={`w-full h-full bg-gradient-to-br ${color} rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative`}
             style={{ border: `3px solid ${borderColor}` }}
@@ -410,20 +409,12 @@ export default function AutoResizeMathBox({
                   {title}
                 </h4>
               </div>
-              <div className="flex items-center space-x-1">
-                <div className="text-xs text-slate-600 bg-white/20 px-2 py-1 rounded">
-                  {Math.round(optimalFontSize)}px
-                </div>
-                <div 
-                  className="w-3 h-3 opacity-60 pointer-events-none"
-                  aria-label="Auto-fit mode"
-                >
-                  <div className="w-full h-full bg-blue-400 rounded-tl-lg transform rotate-45 scale-75"></div>
-                </div>
+              <div className="text-xs text-slate-600 bg-white/20 px-2 py-1 rounded">
+                Auto-fit
               </div>
             </div>
             
-            {/* Content Container - Auto-fitting */}
+            {/* Content Container */}
             <div 
               className="relative"
               style={{ 
@@ -434,7 +425,7 @@ export default function AutoResizeMathBox({
             >
               <div 
                 ref={contentRef}
-                className="w-full h-full text-gray-900 dark:text-gray-100"
+                className="w-full h-full"
                 style={contentStyles}
                 role="region"
                 aria-label="Auto-fitting content"
@@ -451,11 +442,18 @@ export default function AutoResizeMathBox({
                     overflow: 'hidden',
                     display: 'block',
                     width: '100%',
-                    height: '100%',
-                    color: 'inherit'
+                    height: '100%'
                   }}
                 />
               </div>
+            </div>
+            
+            {/* Auto-fit indicator */}
+            <div 
+              className="absolute bottom-1 right-1 w-3 h-3 opacity-60 pointer-events-none"
+              aria-label="Auto-fit mode"
+            >
+              <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
             </div>
           </div>
         )}
@@ -463,3 +461,5 @@ export default function AutoResizeMathBox({
     </Draggable>
   );
 }
+
+export { AutoResizeMathBox };
