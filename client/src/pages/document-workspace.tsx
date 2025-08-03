@@ -734,7 +734,6 @@ export default function DocumentWorkspace() {
               <Select 
                 value={fontFamily} 
                 onValueChange={(value) => {
-                  setFontFamily(value);
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
@@ -742,9 +741,7 @@ export default function DocumentWorkspace() {
                       editor.chain().focus().setFontFamily(value).run();
                       toast({ title: `Font changed to ${value} for selected text` });
                     } else {
-                      // Set stored mark for next typed text
-                      editor.chain().focus().setFontFamily(value).run();
-                      toast({ title: "Font family set for next typed text" });
+                      toast({ title: "Please select text to change font family" });
                     }
                   }
                 }}
@@ -817,10 +814,7 @@ export default function DocumentWorkspace() {
                       editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
                       toast({ title: `Font size increased to ${newSize}pt for selected text` });
                     } else {
-                      // Set stored mark for next typed text
-                      setFontSize(newSize);
-                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
-                      toast({ title: "Font size set for next typed text" });
+                      toast({ title: "Please select text to change font size" });
                     }
                   }
                 }}
@@ -841,10 +835,7 @@ export default function DocumentWorkspace() {
                       editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
                       toast({ title: `Font size decreased to ${newSize}pt for selected text` });
                     } else {
-                      // Set stored mark for next typed text
-                      setFontSize(newSize);
-                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
-                      toast({ title: "Font size set for next typed text" });
+                      toast({ title: "Please select text to change font size" });
                     }
                   }
                 }}
@@ -951,7 +942,6 @@ export default function DocumentWorkspace() {
                 value={textColor}
                 onChange={(e) => {
                   const newColor = e.target.value;
-                  setTextColor(newColor);
                   if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
@@ -959,9 +949,7 @@ export default function DocumentWorkspace() {
                       editor.chain().focus().setColor(newColor).run();
                       toast({ title: "Color changed for selected text" });
                     } else {
-                      // Set stored mark for next typed text
-                      editor.chain().focus().setColor(newColor).run();
-                      toast({ title: "Text color set for next typed text" });
+                      toast({ title: "Please select text to change color" });
                     }
                   }
                 }}
