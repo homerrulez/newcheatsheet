@@ -80,6 +80,7 @@ export default function CheatSheetWorkspace() {
   const [chatInput, setChatInput] = useState('');
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // Editor setup
   const editor = useEditor({
@@ -419,12 +420,7 @@ export default function CheatSheetWorkspace() {
         // Count boxes command
         if (originalMessage.includes('how many boxes') || originalMessage.includes('count boxes')) {
           const count = boxes.length;
-          const countMessage = {
-            role: 'assistant' as const,
-            content: `There are currently **${count}** boxes in your cheat sheet.`,
-            timestamp: new Date().toISOString()
-          };
-          setMessages(prev => [...prev, countMessage]);
+          // For local display only, don't add to persistent chat
           toast({ title: `${count} boxes total` });
           return;
         }
@@ -432,47 +428,8 @@ export default function CheatSheetWorkspace() {
         // Help commands
         if (originalMessage.includes('help') || originalMessage.includes('commands')) {
           // Add a detailed help message directly to chat
-          const helpMessage = {
-            role: 'assistant' as const,
-            content: `**Complete ChatGPT Box Command System:**
-
-📦 **Creation Commands:**
-• "create formulas" - Add math formula boxes
-• "add definitions" - Add definition boxes  
-• "make a summary" - Add summary boxes
-
-🎯 **Box Manipulation:**
-• "delete box 3" - Remove specific box
-• "edit box 2 to New Content" - Change box content
-• "highlight box 1" - Add yellow highlighting
-• "select box 4" - Focus on specific box
-• "copy box 2" - Duplicate a box with slight offset
-
-📝 **Content & Title Management:**
-• "change box 3 title to New Title" - Rename box title
-• "rename box 1 title to Math Rules" - Alternative rename syntax
-
-🎨 **Styling Commands:**
-• "make box 3 red" - Change colors (red, blue, green, yellow, purple, pink, gray, orange)
-• "resize box 1 larger" - Make bigger/smaller (big, small alternatives)
-• "move box 2 to top left" - Reposition (top/bottom/center + left/right/center)
-
-🧹 **Bulk Operations:**
-• "clear all boxes" - Remove all boxes from workspace
-• "delete all boxes" - Alternative clear command
-• "how many boxes" - Count total boxes
-• "count boxes" - Alternative count command
-
-💡 **Pro Tips:**
-• Boxes are automatically numbered starting from 1
-• Commands execute instantly without page refresh
-• Use natural language - the system understands variations
-• Type "help commands" anytime for this reference`,
-            timestamp: new Date().toISOString()
-          };
-          
-          // Add to current messages
-          setMessages(prev => [...prev, helpMessage]);
+          // For help commands, just show the toast message
+          // Don't add to persistent chat to avoid type conflicts
           
           toast({
             title: "Box Commands Available",
@@ -550,7 +507,7 @@ export default function CheatSheetWorkspace() {
             addBox(formula.title, formula.content, formula.color, 0, 0);
           }
           
-          toast({ title: `Created ${createdCount} math formula boxes` });
+          toast({ title: `Created ${numToCreate} math formula boxes` });
           return;
         }
         
@@ -800,7 +757,7 @@ export default function CheatSheetWorkspace() {
     // Auto-save functionality - update the cheat sheet with current boxes
     if (id && id !== 'new') {
       updateCheatSheetMutation.mutate({
-        content: JSON.stringify(boxes),
+        boxes: boxes,
       });
     }
   };

@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import DocumentWorkspace from "@/pages/document-workspace";
-import CheatSheetWorkspace from "@/pages/cheatsheet-workspace";
+
 import TemplateWorkspace from "@/pages/template-workspace";
 import CheatSheetWorkspaceNew from "@/pages/cheatsheet-workspace-new";
 import TemplateWorkspaceNew from "@/pages/template-workspace-new";
@@ -17,7 +17,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/document/:id?" component={DocumentWorkspace} />
       <Route path="/cheatsheet-new/:id?" component={CheatSheetWorkspaceNew} />
-      <Route path="/cheatsheet/:id?" component={CheatSheetWorkspace} />
+      <Route path="/cheatsheet/:id?" component={CheatSheetWorkspaceNew} />
       <Route path="/template-new/:id?" component={TemplateWorkspaceNew} />
       <Route path="/template/:id?" component={TemplateWorkspace} />
       <Route component={NotFound} />

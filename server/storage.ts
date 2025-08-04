@@ -222,22 +222,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getDocumentHistory(documentId: string): Promise<DocumentHistory[]> {
-    return Array.from(this.documentHistory.values()).filter(
-      history => history.documentId === documentId
-    );
-  }
 
-  async createDocumentHistory(insertHistory: InsertDocumentHistory): Promise<DocumentHistory> {
-    const id = randomUUID();
-    const history: DocumentHistory = {
-      ...insertHistory,
-      id,
-      createdAt: new Date()
-    };
-    this.documentHistory.set(id, history);
-    return history;
-  }
 
   async getChatSessions(documentId: string): Promise<ChatSession[]> {
     return Array.from(this.chatSessions.values()).filter(
@@ -317,6 +302,7 @@ export class MemStorage implements IStorage {
       ...history,
       pages: history.pages || [],
       changeDescription: history.changeDescription || null,
+      documentId: history.documentId,
       id, 
       createdAt: now 
     };
