@@ -752,8 +752,43 @@ export default function DocumentWorkspace() {
             {/* AI Features - First section */}
             <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
               <Button 
-                onClick={() => aiImproveMutation.mutate()}
-                disabled={isAiImproving || !editor}
+                onClick={async () => {
+                  if (!document?.content || document.content.trim().length === 0) {
+                    toast({
+                      title: "No content to improve",
+                      description: "Please add some text to your document first.",
+                    });
+                    return;
+                  }
+                  
+                  try {
+                    setIsAiImproving(true);
+                    const response = await fetch('/api/ai/improve-writing', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ content: document.content })
+                    });
+                    
+                    if (!response.ok) throw new Error('AI service unavailable');
+                    
+                    const { improvedContent } = await response.json();
+                    await updateDocumentMutation.mutateAsync({ content: improvedContent });
+                    
+                    toast({
+                      title: "Content improved!",
+                      description: "Your document has been enhanced for clarity and readability.",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "AI improve failed",
+                      description: "Please try again or check your connection.",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setIsAiImproving(false);
+                  }
+                }}
+                disabled={isAiImproving || !document?.content}
                 size="sm" 
                 variant="outline" 
                 className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
@@ -778,6 +813,43 @@ export default function DocumentWorkspace() {
                 <span>{documentStats.readTime} min</span>
               </Button>
               <Button 
+                onClick={async () => {
+                  if (!document?.content || document.content.trim().length === 0) {
+                    toast({
+                      title: "No content to adjust",
+                      description: "Please add some text to your document first.",
+                    });
+                    return;
+                  }
+                  
+                  try {
+                    const response = await fetch('/api/ai/adjust-tone', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        content: document.content,
+                        targetTone: 'professional',
+                        preserveEquations: true 
+                      })
+                    });
+                    
+                    if (!response.ok) throw new Error('AI service unavailable');
+                    
+                    const { adjustedContent } = await response.json();
+                    await updateDocumentMutation.mutateAsync({ content: adjustedContent });
+                    
+                    toast({
+                      title: "Tone adjusted!",
+                      description: "Your writing tone has been made more professional while preserving technical content.",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Tone adjustment failed",
+                      description: "Please try again or check your connection.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
                 size="sm" 
                 variant="outline" 
                 className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
