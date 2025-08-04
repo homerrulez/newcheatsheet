@@ -680,7 +680,9 @@ export default function CheatSheetWorkspace() {
   const requiredPages = calculateRequiredPages();
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col" style={{
+      background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
+    }}>
       {/* Enhanced Microsoft Word-Style Toolbar */}
       <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20 flex-shrink-0">
         {/* Document title bar */}
@@ -850,7 +852,9 @@ export default function CheatSheetWorkspace() {
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left sidebar - Cheat sheets list */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full bg-gray-50 dark:bg-slate-900 border-r border-gray-200 dark:border-gray-700">
+            <div className="h-full shadow-lg border-r border-gray-200 dark:border-gray-700" style={{
+              background: 'white'
+            }}>
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Cheat Sheets</h2>
@@ -911,7 +915,9 @@ export default function CheatSheetWorkspace() {
 
           {/* Middle panel - Cheat sheet workspace with FIXED multi-page rendering */}
           <ResizablePanel defaultSize={60} minSize={40}>
-            <div className="h-full bg-gray-100 dark:bg-slate-800 relative overflow-auto">
+            <div className="h-full relative overflow-auto" style={{
+              background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
+            }}>
               <div className="absolute inset-0">
                 {/* CRITICAL FIX: Multi-page container with proper constraints */}
                 <div className="min-h-full p-8">
@@ -1044,7 +1050,9 @@ export default function CheatSheetWorkspace() {
 
           {/* Right panel - ChatGPT integration */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <div className="h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className="h-full shadow-lg border-l border-gray-200 dark:border-gray-700 flex flex-col" style={{
+              background: 'white'
+            }}>
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-2 mb-3">
                   <Sparkles className="w-5 h-5 text-purple-600" />

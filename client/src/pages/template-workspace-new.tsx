@@ -238,7 +238,9 @@ export default function TemplateWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col" style={{
+      background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
+    }}>
       {/* Enhanced Microsoft Word-Style Toolbar */}
       <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20 flex-shrink-0">
         {/* Document title bar */}
@@ -683,7 +685,9 @@ export default function TemplateWorkspace() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Left panel - Template History */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-          <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-r border-white/20">
+          <div className="h-full shadow-lg border-r border-white/20" style={{
+            background: 'white'
+          }}>
             <div className="p-4 border-b border-white/20">
               <div className="flex items-center justify-between">
                 <div>
@@ -758,8 +762,12 @@ export default function TemplateWorkspace() {
 
         {/* Middle panel - Document Editor */}
         <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="h-full bg-gray-100 dark:bg-gray-800">
-            <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
+          <div className="h-full" style={{
+            background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
+          }}>
+            <ScrollArea className="h-full" style={{
+              background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
+            }}>
               <div className="min-h-full p-8 flex flex-col items-center">
                 {/* Single Page Container - Letter Size */}
                 <div
@@ -806,9 +814,13 @@ export default function TemplateWorkspace() {
 
         {/* Right panel - Always-On ChatGPT Interface */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-          <div className="h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="h-full shadow-lg border-l border-gray-200 dark:border-gray-700 flex flex-col" style={{
+            background: 'white'
+          }}>
             {/* ChatGPT Assistant Header - Fixed at top */}
-            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4" style={{
+              background: 'white'
+            }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
