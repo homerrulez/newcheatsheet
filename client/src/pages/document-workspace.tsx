@@ -699,7 +699,7 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)' }}>
+    <div className="h-screen flex flex-col" style={{ background: '#e8eaed' }}>
       
       {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
       <div className="border-b border-pink-200/30 flex-shrink-0" style={{ 
@@ -1579,13 +1579,13 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative" style={{
-            background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+            background: '#e8eaed'
           }}>
 
             
             {/* Microsoft Word-Style Floating Horizontal Ruler */}
             <div className="relative h-12 flex justify-center" style={{
-              background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+              background: '#e8eaed'
             }}>
               <div 
                 className="relative bg-gradient-to-b from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
@@ -1691,7 +1691,7 @@ export default function DocumentWorkspace() {
             <div className="flex-1 flex">
               {/* Microsoft Word-style Floating Vertical Ruler */}
               <div className="relative w-12 flex justify-center" style={{
-                background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+                background: '#e8eaed'
               }}>
                 <div 
                   className="bg-gradient-to-r from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
@@ -1766,7 +1766,7 @@ export default function DocumentWorkspace() {
               
               {/* Document content area */}
               <div className="flex-1 relative overflow-auto" style={{
-                background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+                background: '#e8eaed'
               }}>
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
