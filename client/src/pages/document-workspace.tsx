@@ -699,11 +699,11 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(to bottom, #fcf2f7 0%, #f9f1f8 25%, #f8f4fc 50%, #f5f9ff 75%, #eef8fd 100%)' }}>
+    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(to bottom, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)' }}>
       
       {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
       <div className="border-b border-pink-200/30 flex-shrink-0" style={{ 
-        background: 'linear-gradient(to right, #fcf2f7 0%, #f9f1f8 25%, #f8f4fc 50%, #f5f9ff 75%, #eef8fd 100%)',
+        background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)',
         boxShadow: '0 4px 16px rgba(255, 255, 255, 0.6) inset, 0 2px 8px rgba(0, 0, 0, 0.05)'
       }}>
 
@@ -1587,13 +1587,13 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative" style={{
-            background: 'linear-gradient(to bottom, #fcf2f7 0%, #f9f1f8 25%, #f8f4fc 50%, #f5f9ff 75%, #eef8fd 100%)'
+            background: 'linear-gradient(to bottom, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
           }}>
 
             
             {/* Microsoft Word-Style Floating Horizontal Ruler */}
             <div className="relative h-12 flex justify-center" style={{
-              background: 'linear-gradient(to bottom, #fcf2f7 0%, #f9f1f8 25%, #f8f4fc 50%, #f5f9ff 75%, #eef8fd 100%)'
+              background: 'linear-gradient(to bottom, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
             }}>
               <div 
                 className="relative bg-gradient-to-b from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
@@ -1699,7 +1699,7 @@ export default function DocumentWorkspace() {
             <div className="flex-1 flex">
               {/* Microsoft Word-style Floating Vertical Ruler */}
               <div className="relative w-12 flex justify-center" style={{
-                background: 'linear-gradient(to bottom, #fcf2f7 0%, #f9f1f8 25%, #f8f4fc 50%, #f5f9ff 75%, #eef8fd 100%)'
+                background: 'linear-gradient(to bottom, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
               }}>
                 <div 
                   className="bg-gradient-to-r from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
@@ -1774,7 +1774,7 @@ export default function DocumentWorkspace() {
               
               {/* Document content area */}
               <div className="flex-1 relative overflow-auto" style={{
-                background: 'linear-gradient(to bottom, #fcf2f7 0%, #f9f1f8 25%, #f8f4fc 50%, #f5f9ff 75%, #eef8fd 100%)'
+                background: 'linear-gradient(to bottom, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
               }}>
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
