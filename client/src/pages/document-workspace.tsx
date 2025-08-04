@@ -1758,24 +1758,25 @@ export default function DocumentWorkspace() {
               
               {/* Document content area */}
               <div className="flex-1 relative overflow-auto" style={{
-                background: '#f8f9fa',
-                boxShadow: '0 4px 16px rgba(255, 255, 255, 0.7) inset, 0 2px 8px rgba(0, 0, 0, 0.04)'
+                background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
               }}>
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
                 }}>
-                  <div className="flex justify-center py-8 px-4 min-h-full">
+                  <div className="flex justify-center py-8 px-4 min-h-full" style={{
+                    background: 'transparent'
+                  }}>
                     {/* Document pages content */}
                     <div className="relative">
                       {/* Render pages with real distributed content */}
                       {pageContent.map((page, pageIndex) => (
                         <div
                           key={page.pageNumber}
-                          className="bg-white dark:bg-slate-100 shadow-2xl mb-8 relative group hover:shadow-cyan-300/20 transition-all duration-500"
+                          className="bg-white dark:bg-slate-100 mb-8 relative group transition-all duration-500"
                           style={{
                             width: `${pageWidth}px`,
                             height: `${pageHeight}px`,
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
+                            boxShadow: '0 2px 16px rgba(0, 0, 0, 0.06)',
                             minHeight: `${pageHeight}px`,
                             paddingLeft: `${leftMargin}px`,
                             paddingRight: `${rightMargin}px`,
