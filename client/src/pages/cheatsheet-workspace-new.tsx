@@ -588,12 +588,17 @@ export default function CheatSheetWorkspace() {
 
   // Correct Tetris-style placement: Fill horizontal space first, then move down
   const findOptimalPosition = (newBoxWidth: number, newBoxHeight: number, existingBoxes: Box[]) => {
+    console.log(`🔍 findOptimalPosition called for box ${existingBoxes.length + 1}:`);
+    console.log(`   - New box size: ${newBoxWidth}x${newBoxHeight}`);
+    console.log(`   - Existing boxes count: ${existingBoxes.length}`);
+    
     const PAGE_WIDTH = 816;
     const MARGIN = 40;
     const SPACING = 8;
     const usableWidth = PAGE_WIDTH - (2 * MARGIN);
     
     if (existingBoxes.length === 0) {
+      console.log(`   ✅ First box placed at: (${MARGIN}, ${MARGIN})`);
       return { x: MARGIN, y: MARGIN };
     }
     
@@ -609,20 +614,24 @@ export default function CheatSheetWorkspace() {
     
     // Find rows by identifying Y positions with boxes
     const usedYPositions = [...new Set(existingBoxes.map(box => box.y))].sort((a, b) => a - b);
+    console.log(`   - Used Y positions: [${usedYPositions.join(', ')}]`);
     
     // Try to fit in existing rows first (fill horizontal space)
     for (const rowY of usedYPositions) {
       const rowBoxes = existingBoxes.filter(box => box.y === rowY);
       const rowHeight = Math.max(...rowBoxes.map(box => box.height));
+      console.log(`   - Testing row at Y=${rowY}, boxes: ${rowBoxes.length}, height: ${rowHeight}`);
       
       // Check if new box can fit in height of this row
       if (newBoxHeight <= rowHeight + SPACING) {
         // Find rightmost box in this row
         const rightmostX = Math.max(...rowBoxes.map(box => box.x + box.width));
         const testX = rightmostX + SPACING;
+        console.log(`     - Rightmost X: ${rightmostX}, Test X: ${testX}`);
         
         // Check if it fits horizontally
         if (testX + newBoxWidth <= MARGIN + usableWidth) {
+          console.log(`     - Fits horizontally! Testing conflicts...`);
           // Verify no conflicts
           const hasConflict = existingBoxes.some(box => {
             return !(testX + newBoxWidth <= box.x || 
@@ -632,9 +641,16 @@ export default function CheatSheetWorkspace() {
           });
           
           if (!hasConflict) {
+            console.log(`   ✅ Box placed in existing row at: (${testX}, ${rowY})`);
             return { x: testX, y: rowY };
+          } else {
+            console.log(`     - Conflict detected, trying next row...`);
           }
+        } else {
+          console.log(`     - Doesn't fit horizontally (${testX + newBoxWidth} > ${MARGIN + usableWidth})`);
         }
+      } else {
+        console.log(`     - Doesn't fit in row height (${newBoxHeight} > ${rowHeight + SPACING})`);
       }
     }
     
@@ -643,6 +659,7 @@ export default function CheatSheetWorkspace() {
       ? Math.max(...existingBoxes.map(box => box.y + box.height))
       : MARGIN;
     
+    console.log(`   ✅ New row created at: (${MARGIN}, ${maxY + SPACING})`);
     return { x: MARGIN, y: maxY + SPACING };
   };
 
@@ -726,12 +743,16 @@ export default function CheatSheetWorkspace() {
 
   // Box management functions with intelligent placement
   const addBox = (title: string, content: string, color: string = 'from-blue-50 to-blue-100', x?: number, y?: number) => {
+    console.log(`📦 Creating box: "${title}"`);
     const { width, height } = calculateContentSize(title, content);
+    console.log(`   - Calculated size: ${width}x${height}`);
     
     // Use provided coordinates or find optimal position
     const position = (x !== undefined && y !== undefined) 
       ? { x, y } 
       : findOptimalPosition(width, height, boxes);
+    
+    console.log(`   - Final position: (${position.x}, ${position.y})`);
     
     const newBox: Box = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -744,7 +765,11 @@ export default function CheatSheetWorkspace() {
       height
     };
     
-    setBoxes(prev => [...prev, newBox]);
+    console.log(`   - Box created with ID: ${newBox.id}`);
+    setBoxes(prev => {
+      console.log(`   - Previous boxes count: ${prev.length}, New count: ${prev.length + 1}`);
+      return [...prev, newBox];
+    });
     
     // Auto-relayout after adding new box for optimal arrangement
     setTimeout(() => relayoutAllBoxes(), 100);
