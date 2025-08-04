@@ -237,15 +237,16 @@ export default function AutoResizeMathBox({
     const PAGE_WIDTH = 816;
     const PAGE_HEIGHT = 1056;
     const MARGIN = 20;
+    const ESTIMATED_BOX_HEIGHT = 150; // Use a safe estimate instead of boxSize.height
     
     // Allow multiple pages horizontally, constrain vertically to page height
     const constrainedX = Math.max(MARGIN, Math.min(data.x, PAGE_WIDTH * 5)); // Up to 5 pages wide
-    const constrainedY = Math.max(MARGIN, Math.min(data.y, PAGE_HEIGHT - boxSize.height - MARGIN));
+    const constrainedY = Math.max(MARGIN, Math.min(data.y, PAGE_HEIGHT - ESTIMATED_BOX_HEIGHT - MARGIN));
     
     setIsDragging(false);
     onPositionChange({ x: constrainedX, y: constrainedY });
     onSaveRequest();
-  }, [onPositionChange, onSaveRequest, boxSize.height]);
+  }, [onPositionChange, onSaveRequest]);
 
   const handleResize = useCallback((e: SyntheticEvent, { size }: ResizeCallbackData) => {
     setCurrentSize(size);
