@@ -1,0 +1,30 @@
+Apply the following corrections to the document workspace immediately:
+
+1. **Remove the floating status bar above the document**
+   - Delete the bar that says: “AI Assistant Active • 9 words • 1 min read • Auto-save”
+   - The page should begin directly below the toolbar with no floating metadata.
+
+2. **Restore the original toolbar background**
+   - The current toolbar background is incorrect — it shows a pale or pinkish-white tone.
+   - It should be a soft blue, identical to the blue used in the chat session box on the left panel.
+   - Use that same blue consistently across the entire toolbar region.
+
+3. **Unify button styles across the toolbar**
+   - Every button in the toolbar must use the same grey style — the same grey that is already applied to most buttons.
+   - No button (like the color picker or formatting buttons) should be highlighted yellow, white, or look visually different unless actively hovered or pressed.
+   - Keep all buttons consistent in padding, border radius, and font weight.
+
+4. **Clean the upper-right UI**
+   - Remove all floating elements in the upper-right margin: status dots, auto-save badges, assistant tags, etc.
+   - That area should be completely blank, matching the top edge of the document space.
+
+5. **Add a horizontal ruler**
+   - Insert a standard ruler (like in Microsoft Word) directly above the document page but below the toolbar.
+   - It should display measurement markers (inches or centimeters) and stay flush with the top edge of the white document canvas.
+   - This ruler is critical for alignment and layout guidance.
+
+6. **Fix overall color consistency**
+   - The background above the toolbar and around it must also be that same soft blue — not white, not pink.
+   - No part of the top interface should use white or pink by default.
+
+Do not introduce unapproved visual changes, and do not hide these changes behind assistive logic or themes. Apply them universally to all document pages unless otherwise specified.

@@ -689,50 +689,10 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-blue-200 dark:bg-blue-800">
       
-      {/* Status Bar at top of document */}
-      <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 px-6 py-2">
-        <div className="flex items-center space-x-6 text-sm">
-          {/* AI Assistant Status */}
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-            <span className="text-purple-700 dark:text-purple-300 font-medium">AI Assistant Active</span>
-          </div>
-          
-          {/* Word Count */}
-          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-            <span className="font-medium">{documentStats.words} words</span>
-          </div>
-          
-          {/* Reading Time */}
-          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-            <span className="font-medium">{documentStats.readTime} min read</span>
-          </div>
-          
-          {/* Page Count */}
-          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Page {Math.min(currentPage || 1, derivedPageCount)} of {derivedPageCount}</span>
-          </div>
-          
-          {/* Auto-save Status */}
-          <div className="flex items-center space-x-2">
-            {autoSaveStatus === 'saving' ? (
-              <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
-            ) : autoSaveStatus === 'saved' ? (
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            ) : (
-              <div className="w-2 h-2 bg-red-400 rounded-full" />
-            )}
-            <span className="text-green-600 dark:text-green-400 font-medium">
-              {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Auto-save' : 'Error'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Microsoft Word-Style Toolbar */}
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-200/50 flex-shrink-0 pt-1">
+      {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
+      <div className="bg-blue-200 dark:bg-blue-800 border-b border-blue-300/50 flex-shrink-0">
 
 
 
@@ -1222,7 +1182,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('bulletList') ? 'default' : 'outline'}
-                className={editor?.isActive('bulletList') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive('bulletList') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().toggleBulletList().run()}
               >
                 <List className="w-4 h-4" />
@@ -1230,7 +1190,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('orderedList') ? 'default' : 'outline'}
-                className={editor?.isActive('orderedList') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive('orderedList') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               >
                 <ListOrdered className="w-4 h-4" />
@@ -1238,7 +1198,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 title="Increase Indent"
                 onClick={() => {
                   if (editor?.isActive('listItem')) {
@@ -1252,7 +1212,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 title="Decrease Indent"
                 onClick={() => {
                   if (editor?.isActive('listItem')) {
@@ -1495,6 +1455,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
               >
                 <Minus className="w-4 h-4" />
@@ -1503,12 +1464,13 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
               >
                 <Plus className="w-4 h-4" />
               </Button>
               <Select value={zoomLevel.toString()} onValueChange={(value) => setZoomLevel(parseInt(value))}>
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-20 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1660,44 +1622,36 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative">
-            {/* Functional AI Writing Assistant Indicator */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg rounded-xl px-4 py-2 border border-gray-200 dark:border-gray-600 shadow-lg">
-                <div className="flex items-center space-x-4 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">AI Assistant Active</span>
-                  </div>
-                  <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {(() => {
-                        const text = document?.content || '';
-                        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-                        return `${wordCount} words`;
-                      })()}
-                    </span>
-                  </div>
-                  <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {(() => {
-                        const text = document?.content || '';
-                        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-                        const readingTime = Math.max(1, Math.ceil(wordCount / 200)); // 200 words per minute
-                        return `${readingTime} min read`;
-                      })()}
-                    </span>
-                  </div>
-                  <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-green-600 dark:text-green-400 font-medium">Auto-save</span>
+
+            
+            {/* Horizontal Ruler */}
+            <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex justify-center">
+                <div style={{ width: `${pageWidth}px` }} className="relative h-6 bg-gray-50 dark:bg-slate-800 border-x border-gray-300 dark:border-gray-600">
+                  {/* Ruler markings */}
+                  <div className="absolute inset-0 flex">
+                    {Array.from({ length: Math.ceil(pageWidth / 48) + 1 }, (_, i) => (
+                      <div key={i} className="relative" style={{ width: '48px' }}>
+                        {/* Major tick mark every inch (48px = 1 inch at 96 DPI) */}
+                        <div className="absolute left-0 top-0 w-px h-4 bg-gray-400 dark:bg-gray-500"></div>
+                        <div className="absolute left-0 top-4 text-xs text-gray-500 dark:text-gray-400 text-center w-12 transform -translate-x-1/2">
+                          {i}
+                        </div>
+                        {/* Minor tick marks */}
+                        {Array.from({ length: 4 }, (_, j) => (
+                          <div 
+                            key={j} 
+                            className="absolute top-0 w-px h-2 bg-gray-300 dark:bg-gray-600"
+                            style={{ left: `${(j + 1) * 12}px` }}
+                          ></div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Document container */}
             <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
               <div className="min-h-full p-8 flex flex-col items-center">
