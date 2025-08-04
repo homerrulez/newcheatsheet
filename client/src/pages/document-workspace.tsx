@@ -757,23 +757,15 @@ export default function DocumentWorkspace() {
                 <Sparkles className="w-4 h-4" />
                 <span>{isAiImproving ? 'Improving...' : 'AI Improve'}</span>
               </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100 flex items-center space-x-1"
-              >
-                <Type className="w-4 h-4" />
-                <span>{documentStats.words} words</span>
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100 flex items-center space-x-1"
-              >
-                <Clock className="w-4 h-4" />
-                <span>{documentStats.readTime} min</span>
-              </Button>
-              <Button 
+              <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
+                <Type className="w-4 h-4 text-blue-600" />
+                <span className="text-xs">{documentStats.words} words</span>
+              </button>
+              <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
+                <Clock className="w-4 h-4 text-green-600" />
+                <span className="text-xs">{documentStats.readTime} min</span>
+              </button>
+              <button 
                 onClick={async () => {
                   if (!document?.content || document.content.trim().length === 0) {
                     toast({
@@ -811,21 +803,17 @@ export default function DocumentWorkspace() {
                     });
                   }
                 }}
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100 flex items-center space-x-1"
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
               >
                 <span className="w-4 h-4 text-center">🎭</span>
-                <span>Tone</span>
-              </Button>
+                <span className="text-xs">Tone</span>
+              </button>
             </div>
 
             {/* File operations */}
             <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -840,13 +828,11 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <Copy className="w-4 h-4 mr-1" />
-                Copy
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Copy className="w-4 h-4 text-orange-500" />
+                <span className="text-xs">Copy</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -867,13 +853,11 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <Scissors className="w-4 h-4 mr-1" />
-                Cut
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Scissors className="w-4 h-4 text-red-500" />
+                <span className="text-xs">Cut</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={async () => {
                   try {
                     const text = await navigator.clipboard.readText();
@@ -884,29 +868,25 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <ClipboardPaste className="w-4 h-4 mr-1" />
-                Paste
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <ClipboardPaste className="w-4 h-4 text-green-500" />
+                <span className="text-xs">Paste</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => editor?.chain().focus().undo().run()}
                 disabled={!editor?.can().undo()}
               >
-                <Undo2 className="w-4 h-4 mr-1" />
-                Undo
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Undo2 className="w-4 h-4 text-blue-500" />
+                <span className="text-xs">Undo</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => editor?.chain().focus().redo().run()}
                 disabled={!editor?.can().redo()}
               >
-                <Redo2 className="w-4 h-4 mr-1" />
-                Redo
-              </Button>
+                <Redo2 className="w-4 h-4 text-blue-500" />
+                <span className="text-xs">Redo</span>
+              </button>
             </div>
 
             {/* Font controls */}
@@ -984,10 +964,8 @@ export default function DocumentWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => {
                   const newSize = Math.min(72, fontSize + 2);
                   
@@ -1004,12 +982,10 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={fontSize >= 72}
               >
-                <Plus className="w-3 h-3" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100" 
+                <Plus className="w-3 h-3 text-blue-600" />
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => {
                   const newSize = Math.max(8, fontSize - 2);
                   
@@ -1026,48 +1002,54 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={fontSize <= 8}
               >
-                <Minus className="w-3 h-3" />
-              </Button>
+                <Minus className="w-3 h-3 text-blue-600" />
+              </button>
             </div>
 
             {/* Text formatting */}
             <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
-              <Button
-                size="sm"
-                variant={editor?.isActive('bold') ? 'default' : 'outline'}
-                className={editor?.isActive('bold') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('bold') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleBold().run()}
               >
-                <Bold className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('italic') ? 'default' : 'outline'}
-                className={editor?.isActive('italic') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <Bold className="w-4 h-4 text-blue-600 font-bold" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('italic') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
-                <Italic className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('underline') ? 'default' : 'outline'}
-                className={editor?.isActive('underline') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <Italic className="w-4 h-4 text-blue-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('underline') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
-                <UnderlineIcon className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('strike') ? 'default' : 'outline'}
-                className={editor?.isActive('strike') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <UnderlineIcon className="w-4 h-4 text-blue-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('strike') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleStrike().run()}
               >
-                <Strikethrough className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Strikethrough className="w-4 h-4 text-red-600" />
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 title="Subscript"
                 onClick={() => {
                   if (!editor) return;
@@ -1084,12 +1066,10 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <span className="text-xs">X₂</span>
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <span className="text-xs text-blue-600">X₂</span>
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 title="Superscript"
                 onClick={() => {
                   if (!editor) return;
@@ -1106,12 +1086,10 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <span className="text-xs">X²</span>
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <span className="text-xs text-blue-600">X²</span>
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 title="Highlight"
                 onClick={() => {
                   if (!editor) return;
@@ -1127,8 +1105,8 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <div className="w-4 h-4 bg-yellow-300 border rounded" />
-              </Button>
+                <div className="w-4 h-4 bg-yellow-400 border rounded" />
+              </button>
               <input
                 type="color"
                 value={textColor}
@@ -1153,62 +1131,72 @@ export default function DocumentWorkspace() {
 
             {/* Text alignment */}
             <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'left' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'left' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               >
-                <AlignLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'center' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <AlignLeft className="w-4 h-4 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'center' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               >
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'right' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <AlignCenter className="w-4 h-4 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'right' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               >
-                <AlignRight className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'justify' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <AlignRight className="w-4 h-4 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'justify' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               >
-                <AlignJustify className="w-4 h-4" />
-              </Button>
+                <AlignJustify className="w-4 h-4 text-green-600" />
+              </button>
             </div>
 
             {/* Lists and indentation */}
             <div className="flex items-center space-x-1">
-              <Button
-                size="sm"
-                variant={editor?.isActive('bulletList') ? 'default' : 'outline'}
-                className={editor?.isActive('bulletList') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('bulletList') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleBulletList().run()}
               >
-                <List className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('orderedList') ? 'default' : 'outline'}
-                className={editor?.isActive('orderedList') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
+                <List className="w-4 h-4 text-purple-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('orderedList') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               >
-                <ListOrdered className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <ListOrdered className="w-4 h-4 text-purple-600" />
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 title="Increase Indent"
                 onClick={() => {
                   if (editor?.isActive('listItem')) {
@@ -1217,12 +1205,10 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor?.isActive('listItem')}
               >
-                <Indent className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Indent className="w-4 h-4 text-orange-600" />
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 title="Decrease Indent"
                 onClick={() => {
                   if (editor?.isActive('listItem')) {
@@ -1231,8 +1217,8 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor?.isActive('listItem')}
               >
-                <Outdent className="w-4 h-4" />
-              </Button>
+                <Outdent className="w-4 h-4 text-orange-600" />
+              </button>
             </div>
           </div>
 
