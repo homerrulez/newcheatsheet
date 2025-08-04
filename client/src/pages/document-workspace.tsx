@@ -1648,7 +1648,7 @@ export default function DocumentWorkspace() {
 
             
             {/* Microsoft Word-Style Floating Horizontal Ruler */}
-            <div className="relative h-12 flex justify-center bg-transparent">
+            <div className="relative h-12 flex justify-center bg-white">
               <div 
                 className="relative bg-gradient-to-b from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
                 style={{ 
@@ -1752,7 +1752,7 @@ export default function DocumentWorkspace() {
             {/* Document area with vertical ruler */}
             <div className="flex-1 flex">
               {/* Microsoft Word-style Floating Vertical Ruler */}
-              <div className="relative w-12 bg-transparent flex justify-center">
+              <div className="relative w-12 bg-white flex justify-center">
                 <div 
                   className="bg-gradient-to-r from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
                   style={{ 
