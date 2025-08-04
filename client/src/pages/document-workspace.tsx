@@ -42,7 +42,7 @@ import {
   Edit3, Share, Trash2, Copy, Download, Eye, MoreVertical,
   Brain, Sparkles, Command, ChevronDown, ChevronRight,
   Strikethrough, Scissors, ClipboardPaste, Minus,
-  Indent, Outdent, Layout, Image, Table, Link, Settings, X
+  Indent, Outdent, Layout, Image, Table, Link, Settings, X, Wand2
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/schema';
@@ -73,6 +73,12 @@ export default function DocumentWorkspace() {
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
   const [pageOrientation, setPageOrientation] = useState('portrait');
+  
+  // AI Improve state
+  const [isAiImproving, setIsAiImproving] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saving' | 'saved' | 'error'
+  const [documentStats, setDocumentStats] = useState({ words: 0, readTime: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Layout engine integration
   const [layoutEngine, setLayoutEngine] = useState<LayoutEngine>(() => 
@@ -464,7 +470,7 @@ export default function DocumentWorkspace() {
   }, [editor?.getHTML(), layoutEngine, pageHeight, padding, zoomLevel]);
 
   // Page count is now derived from distributed content
-  const pageCount = pageContent.length;
+  const derivedPageCount = pageContent.length;
 
   // Handle send message
   const handleSendMessage = () => {
@@ -616,6 +622,61 @@ export default function DocumentWorkspace() {
     setExpandedSessions(newExpanded);
   };
 
+  // AI Improve functionality
+  const aiImproveMutation = useMutation({
+    mutationFn: async () => {
+      if (!editor || !id) throw new Error('Editor or document ID not available');
+      
+      const content = editor.getHTML();
+      if (!content.trim()) throw new Error('No content to improve');
+
+      const response = await apiRequest('/api/ai/improve-content', {
+        method: 'POST',
+        body: JSON.stringify({
+          content,
+          documentId: id,
+          instruction: 'Improve this content while maintaining its structure and meaning. Focus on clarity, grammar, and readability.'
+        }),
+      });
+      return response;
+    },
+    onMutate: () => {
+      setIsAiImproving(true);
+    },
+    onSuccess: (response: any) => {
+      if (response.improvedContent && editor) {
+        editor.commands.setContent(response.improvedContent);
+        toast({ title: "Content improved by AI", description: "Your document has been enhanced for clarity and readability." });
+      }
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "AI Improve failed", 
+        description: error.message || "Please try again later.", 
+        variant: "destructive" 
+      });
+    },
+    onSettled: () => {
+      setIsAiImproving(false);
+    },
+  });
+
+  // Calculate document statistics
+  useEffect(() => {
+    if (!editor) return;
+    
+    const updateStats = () => {
+      const text = editor.getText();
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const readTime = Math.max(1, Math.ceil(words / 200)); // 200 words per minute
+      setDocumentStats({ words, readTime });
+    };
+
+    updateStats();
+    const interval = setInterval(updateStats, 2000); // Update every 2 seconds
+    return () => clearInterval(interval);
+  }, [editor]);
+
   if (documentLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -633,7 +694,7 @@ export default function DocumentWorkspace() {
       <div className="bg-blue-50/95 dark:bg-blue-950/95 backdrop-blur-sm border-b border-blue-200/30 flex-shrink-0">
         {/* Document title bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-blue-200 dark:border-blue-700">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
             <div className="w-8 h-8 flex items-center justify-center">
               <img 
                 src="/src/assets/studyflow-logo-new.svg" 
@@ -642,11 +703,53 @@ export default function DocumentWorkspace() {
               />
             </div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
+            
+            {/* AI Improve Button - Prominent position */}
+            <Button 
+              onClick={() => aiImproveMutation.mutate()}
+              disabled={isAiImproving || !editor}
+              className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 animate-pulse"
+              size="sm"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {isAiImproving ? 'Improving...' : 'AI Improve'}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700">
-            <Save className="w-4 h-4 mr-2" />
-            Save
-          </Button>
+          
+          <div className="flex items-center space-x-4">
+            {/* Document Stats */}
+            <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex items-center space-x-1">
+                <Type className="w-3 h-3" />
+                <span>{documentStats.words} words</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Clock className="w-3 h-3" />
+                <span>{documentStats.readTime} min</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Eye className="w-3 h-3" />
+                <span>Page {Math.min(currentPage || 1, derivedPageCount)} of {derivedPageCount}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {autoSaveStatus === 'saving' ? (
+                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                ) : autoSaveStatus === 'saved' ? (
+                  <div className="w-2 h-2 bg-green-400 rounded-full" />
+                ) : (
+                  <div className="w-2 h-2 bg-red-400 rounded-full" />
+                )}
+                <span className="text-xs">
+                  {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Auto-save' : 'Error'}
+                </span>
+              </div>
+            </div>
+            
+            <Button variant="outline" size="sm" className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700">
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+          </div>
         </div>
 
 
@@ -987,10 +1090,11 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Text alignment */}
-            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+            <div className="flex items-center space-x-1 border-r border-blue-300 dark:border-blue-700 pr-4">
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'outline'}
+                className={editor?.isActive({ textAlign: 'left' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               >
                 <AlignLeft className="w-4 h-4" />
@@ -998,6 +1102,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'outline'}
+                className={editor?.isActive({ textAlign: 'center' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               >
                 <AlignCenter className="w-4 h-4" />
@@ -1005,6 +1110,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'outline'}
+                className={editor?.isActive({ textAlign: 'right' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               >
                 <AlignRight className="w-4 h-4" />
@@ -1012,6 +1118,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'outline'}
+                className={editor?.isActive({ textAlign: 'justify' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               >
                 <AlignJustify className="w-4 h-4" />
@@ -1023,6 +1130,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('bulletList') ? 'default' : 'outline'}
+                className={editor?.isActive('bulletList') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().toggleBulletList().run()}
               >
                 <List className="w-4 h-4" />
@@ -1030,6 +1138,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('orderedList') ? 'default' : 'outline'}
+                className={editor?.isActive('orderedList') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               >
                 <ListOrdered className="w-4 h-4" />
@@ -1037,6 +1146,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 title="Increase Indent"
                 onClick={() => {
                   if (editor?.isActive('listItem')) {
@@ -1050,6 +1160,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 title="Decrease Indent"
                 onClick={() => {
                   if (editor?.isActive('listItem')) {
@@ -1518,7 +1629,7 @@ export default function DocumentWorkspace() {
                     </div>
                     
                     {/* Page break indicator */}
-                    {pageIndex < pageCount - 1 && (
+                    {pageIndex < derivedPageCount - 1 && (
                       <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-400">
                         ••• Page Break •••
                       </div>
@@ -1550,7 +1661,7 @@ export default function DocumentWorkspace() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white text-sm">ChatGPT Assistant</h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400 font-light">
-                      Always available • {pageCount} pages
+                      Always available • {derivedPageCount} pages
                     </p>
                   </div>
                 </div>
