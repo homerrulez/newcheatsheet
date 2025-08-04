@@ -1511,8 +1511,8 @@ export default function DocumentWorkspace() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Left panel - Document History */}
         <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
-          <div className="h-full bg-gradient-to-b from-blue-50 via-cyan-50 to-cyan-100 dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 border-r border-gray-200 dark:border-gray-700">
-            <div className="p-4 border-b border-blue-200 dark:border-slate-600">
+          <div className="h-full border-r border-gray-200 dark:border-gray-700" style={{ background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)' }}>
+            <div className="p-4 border-b border-pink-200/30 dark:border-slate-600" style={{ background: 'linear-gradient(to right, #fbe8f0 0%, #f5e1f6 50%, #f3f2fb 100%)' }}>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
@@ -1981,9 +1981,9 @@ export default function DocumentWorkspace() {
 
         {/* Right panel - Always-On ChatGPT Interface (increased by 30%) */}
         <ResizablePanel defaultSize={33} minSize={25} maxSize={45}>
-          <div className="h-full bg-gradient-to-b from-blue-50 via-cyan-50 to-cyan-100 dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="h-full border-l border-gray-200 dark:border-gray-700 flex flex-col" style={{ background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)' }}>
             {/* ChatGPT Assistant Header - Fixed at top */}
-            <div className="flex-shrink-0 bg-gradient-to-r from-blue-50 to-blue-100 dark:bg-gradient-to-r dark:from-slate-700 dark:to-slate-600 border-b border-blue-200 dark:border-slate-600 p-4">
+            <div className="flex-shrink-0 border-b border-pink-200/30 dark:border-slate-600 p-4" style={{ background: 'linear-gradient(to right, #fbe8f0 0%, #f5e1f6 50%, #f3f2fb 100%)' }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -2056,7 +2056,7 @@ export default function DocumentWorkspace() {
             </div>
             
             {/* Chat input - Fixed at bottom */}
-            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex-shrink-0 border-t border-pink-200/30 dark:border-gray-700 p-4" style={{ background: 'linear-gradient(to right, #d7f1fb 0%, #c9eaf4 50%, #f0f8ff 100%)' }}>
               <div className="space-y-2">
                 <div className="flex space-x-2">
                   <Textarea
