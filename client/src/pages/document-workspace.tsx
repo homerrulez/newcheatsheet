@@ -1511,7 +1511,7 @@ export default function DocumentWorkspace() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Left panel - Document History */}
         <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
-          <div className="h-full bg-gradient-to-b from-gray-50 via-blue-50 to-blue-100 dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 border-r border-gray-200 dark:border-gray-700">
+          <div className="h-full bg-gradient-to-b from-blue-50 via-cyan-50 to-cyan-100 dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 border-r border-gray-200 dark:border-gray-700">
             <div className="p-4 border-b border-blue-200 dark:border-slate-600">
               <div className="flex items-center justify-between">
                 <div>
@@ -1981,7 +1981,7 @@ export default function DocumentWorkspace() {
 
         {/* Right panel - Always-On ChatGPT Interface (increased by 30%) */}
         <ResizablePanel defaultSize={33} minSize={25} maxSize={45}>
-          <div className="h-full bg-gradient-to-b from-gray-50 via-blue-50 to-blue-100 dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="h-full bg-gradient-to-b from-blue-50 via-cyan-50 to-cyan-100 dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-600 border-l border-gray-200 dark:border-gray-700 flex flex-col">
             {/* ChatGPT Assistant Header - Fixed at top */}
             <div className="flex-shrink-0 bg-gradient-to-r from-blue-50 to-blue-100 dark:bg-gradient-to-r dark:from-slate-700 dark:to-slate-600 border-b border-blue-200 dark:border-slate-600 p-4">
               <div className="flex items-center justify-between mb-4">
