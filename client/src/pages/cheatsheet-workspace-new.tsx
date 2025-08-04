@@ -109,27 +109,43 @@ export default function CheatSheetWorkspace() {
   // Fetch cheat sheet data
   const { data: cheatSheet, isLoading: cheatSheetLoading, refetch: refetchCheatSheet } = useQuery({
     queryKey: ['cheatsheet', id],
-    queryFn: () => apiRequest(`/api/cheatsheets/${id}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/cheatsheets/${id}`);
+      if (!response.ok) throw new Error('Failed to fetch cheat sheet');
+      return response.json();
+    },
     enabled: !!id && id !== 'new',
   });
 
   // Fetch all cheat sheets for left panel
   const { data: cheatSheets, refetch: refetchCheatSheets } = useQuery({
     queryKey: ['cheatsheets'],
-    queryFn: () => apiRequest('/api/cheatsheets'),
+    queryFn: async () => {
+      const response = await fetch('/api/cheatsheets');
+      if (!response.ok) throw new Error('Failed to fetch cheat sheets');
+      return response.json();
+    },
   });
 
   // Fetch chat sessions
   const { data: chatSessions = [], refetch: refetchSessions } = useQuery({
     queryKey: ['cheatsheet-chat-sessions', id],
-    queryFn: () => apiRequest(`/api/cheatsheets/${id}/chat-sessions`),
+    queryFn: async () => {
+      const response = await fetch(`/api/cheatsheets/${id}/chat-sessions`);
+      if (!response.ok) throw new Error('Failed to fetch chat sessions');
+      return response.json();
+    },
     enabled: !!id && id !== 'new',
   });
 
   // Fetch chat messages
   const { data: chatMessages = [], refetch: refetchMessages } = useQuery({
     queryKey: ['chat-messages', defaultSessionId],
-    queryFn: () => apiRequest(`/api/chat-sessions/${defaultSessionId}/messages`),
+    queryFn: async () => {
+      const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`);
+      if (!response.ok) throw new Error('Failed to fetch chat messages');
+      return response.json();
+    },
     enabled: !!defaultSessionId,
   });
 
