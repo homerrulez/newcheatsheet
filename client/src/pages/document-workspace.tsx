@@ -715,51 +715,6 @@ export default function DocumentWorkspace() {
           <div className="flex items-center justify-center space-x-3 overflow-x-auto px-4">
             {/* AI Features - First section */}
             <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
-              <Button 
-                onClick={async () => {
-                  if (!document?.content || document.content.trim().length === 0) {
-                    toast({
-                      title: "No content to improve",
-                      description: "Please add some text to your document first.",
-                    });
-                    return;
-                  }
-                  
-                  try {
-                    setIsAiImproving(true);
-                    const response = await fetch('/api/ai/improve-writing', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ content: document.content })
-                    });
-                    
-                    if (!response.ok) throw new Error('AI service unavailable');
-                    
-                    const { improvedContent } = await response.json();
-                    await updateDocumentMutation.mutateAsync({ content: improvedContent });
-                    
-                    toast({
-                      title: "Content improved!",
-                      description: "Your document has been enhanced for clarity and readability.",
-                    });
-                  } catch (error) {
-                    toast({
-                      title: "AI improve failed",
-                      description: "Please try again or check your connection.",
-                      variant: "destructive"
-                    });
-                  } finally {
-                    setIsAiImproving(false);
-                  }
-                }}
-                disabled={isAiImproving || !document?.content}
-                size="sm" 
-                variant="outline" 
-                className="bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 border-purple-300 text-purple-700 shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-1"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>{isAiImproving ? 'Improving...' : 'AI Improve'}</span>
-              </Button>
               <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
                 <Type className="w-4 h-4 text-blue-600" />
                 <span className="text-xs">{documentStats.words} words</span>
@@ -1802,8 +1757,19 @@ export default function DocumentWorkspace() {
               </div>
               
               {/* Document content area */}
-              <div className="flex-1 relative bg-gray-50 dark:bg-gray-900 overflow-auto">
-                <ScrollArea className="h-full bg-gray-300 dark:bg-gray-700">
+              <div className="flex-1 relative overflow-auto" style={{
+                background: 'linear-gradient(135deg, #f8f9fb 0%, #e8f0f5 25%, #f8f9fb 50%, #e8f0f5 75%, #f8f9fb 100%)',
+                backgroundSize: '60px 60px',
+                backgroundImage: `
+                  linear-gradient(45deg, rgba(255,255,255,0.6) 25%, transparent 25%),
+                  linear-gradient(-45deg, rgba(255,255,255,0.6) 25%, transparent 25%),
+                  linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.6) 75%),
+                  linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.6) 75%)
+                `
+              }}>
+                <ScrollArea className="h-full" style={{
+                  background: 'transparent'
+                }}>
                   <div className="flex justify-center py-8 px-4 min-h-full">
                     {/* Document pages content */}
                     <div className="relative">
