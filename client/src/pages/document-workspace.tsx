@@ -629,10 +629,10 @@ export default function DocumentWorkspace() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Enhanced Microsoft Word-Style Toolbar */}
-      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20 flex-shrink-0">
+      {/* Enhanced Microsoft Word-Style Toolbar - Updated with Pastel Blue Background */}
+      <div className="bg-blue-50/95 dark:bg-blue-950/95 backdrop-blur-sm border-b border-blue-200/30 flex-shrink-0">
         {/* Document title bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-blue-200 dark:border-blue-700">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 flex items-center justify-center">
               <img 
@@ -643,7 +643,7 @@ export default function DocumentWorkspace() {
             </div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700">
             <Save className="w-4 h-4 mr-2" />
             Save
           </Button>
@@ -652,14 +652,15 @@ export default function DocumentWorkspace() {
 
 
         {/* Main toolbar content - 2 lines */}
-        <div className="p-3 space-y-3">
+        <div className="p-3 space-y-3 bg-blue-50 dark:bg-blue-950">
           {/* First toolbar line */}
           <div className="flex items-center space-x-4 overflow-x-auto">
             {/* File operations */}
-            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+            <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -680,6 +681,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -706,6 +708,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 onClick={async () => {
                   try {
                     const text = await navigator.clipboard.readText();
@@ -722,6 +725,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 onClick={() => editor?.chain().focus().undo().run()}
                 disabled={!editor?.can().undo()}
               >
@@ -731,6 +735,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 onClick={() => editor?.chain().focus().redo().run()}
                 disabled={!editor?.can().redo()}
               >
@@ -740,7 +745,7 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Font controls */}
-            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+            <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
               <Select 
                 value={fontFamily} 
                 onValueChange={(value) => {
@@ -756,7 +761,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-36 bg-gray-50 border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -791,7 +796,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <SelectTrigger className="w-16">
+                <SelectTrigger className="w-16 bg-gray-50 border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -817,6 +822,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 onClick={() => {
                   const newSize = Math.min(72, fontSize + 2);
                   
@@ -837,7 +843,8 @@ export default function DocumentWorkspace() {
               </Button>
               <Button 
                 size="sm" 
-                variant="outline" 
+                variant="outline"
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700" 
                 onClick={() => {
                   const newSize = Math.max(8, fontSize - 2);
                   
@@ -859,10 +866,11 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Text formatting */}
-            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
+            <div className="flex items-center space-x-1 border-r border-blue-300 dark:border-blue-700 pr-4">
               <Button
                 size="sm"
                 variant={editor?.isActive('bold') ? 'default' : 'outline'}
+                className={editor?.isActive('bold') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().toggleBold().run()}
               >
                 <Bold className="w-4 h-4" />
@@ -870,6 +878,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('italic') ? 'default' : 'outline'}
+                className={editor?.isActive('italic') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
                 <Italic className="w-4 h-4" />
@@ -877,6 +886,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('underline') ? 'default' : 'outline'}
+                className={editor?.isActive('underline') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
                 <UnderlineIcon className="w-4 h-4" />
@@ -884,6 +894,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('strike') ? 'default' : 'outline'}
+                className={editor?.isActive('strike') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
                 onClick={() => editor?.chain().focus().toggleStrike().run()}
               >
                 <Strikethrough className="w-4 h-4" />
@@ -891,6 +902,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 title="Subscript"
                 onClick={() => {
                   if (!editor) return;
@@ -912,6 +924,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 title="Superscript"
                 onClick={() => {
                   if (!editor) return;
@@ -933,6 +946,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
                 title="Highlight"
                 onClick={() => {
                   if (!editor) return;
