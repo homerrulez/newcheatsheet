@@ -238,37 +238,44 @@ export default function TemplateWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col" style={{
-      background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
-    }}>
-      {/* Enhanced Microsoft Word-Style Toolbar */}
-      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20 flex-shrink-0">
-        {/* Document title bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <FileSpreadsheet className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{template?.title || 'Template'}</h1>
-          </div>
-          <Button variant="outline" size="sm">
-            <Save className="w-4 h-4 mr-2" />
-            Save
-          </Button>
-        </div>
+    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)' }}>
+      {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
+      <div className="border-b border-pink-200/30 flex-shrink-0" style={{ 
+        background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)',
+        boxShadow: '0 4px 16px rgba(255, 255, 255, 0.6) inset, 0 2px 8px rgba(0, 0, 0, 0.05)'
+      }}>
+
 
         {/* Main toolbar content - 2 lines */}
         <div className="p-3 space-y-3">
           {/* First toolbar line */}
-          <div className="flex items-center space-x-4 overflow-x-auto">
+          <div className="flex items-center justify-center space-x-3 overflow-x-auto px-4">
+            {/* Template Features - First section */}
+            <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
+                <FileSpreadsheet className="w-6 h-6 text-blue-600" />
+                <span className="text-xs">Template</span>
+              </button>
+              <button 
+                onClick={saveTemplate}
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
+              >
+                <Save className="w-5 h-5 text-purple-600" />
+                <span className="text-xs">Save Template</span>
+              </button>
+              <button 
+                onClick={() => createTemplateMutation.mutate()}
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
+              >
+                <Plus className="w-5 h-5 text-purple-600" />
+                <span className="text-xs">New Template</span>
+              </button>
+            </div>
+
             {/* File operations */}
-            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
+            <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -283,23 +290,20 @@ export default function TemplateWorkspace() {
                   }
                 }}
               >
-                <Copy className="w-4 h-4 mr-1" />
-                Copy
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
+                <Copy className="w-6 h-6 text-orange-500" />
+                <span className="text-xs">Copy</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
                     return;
                   }
                   try {
-                    // If no selection, select all
                     if (editor.state.selection.empty) {
                       editor.chain().focus().selectAll().run();
                     }
-                    
                     const content = editor.getHTML() || '';
                     navigator.clipboard.writeText(content);
                     editor.chain().focus().deleteSelection().run();
@@ -309,12 +313,11 @@ export default function TemplateWorkspace() {
                   }
                 }}
               >
-                <Scissors className="w-4 h-4 mr-1" />
-                Cut
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
+                <Scissors className="w-6 h-6 text-red-500" />
+                <span className="text-xs">Cut</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={async () => {
                   try {
                     const text = await navigator.clipboard.readText();
@@ -325,33 +328,31 @@ export default function TemplateWorkspace() {
                   }
                 }}
               >
-                <ClipboardPaste className="w-4 h-4 mr-1" />
-                Paste
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
+                <ClipboardPaste className="w-6 h-6 text-green-500" />
+                <span className="text-xs">Paste</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => editor?.chain().focus().undo().run()}
                 disabled={!editor?.can().undo()}
               >
-                <Undo2 className="w-4 h-4 mr-1" />
-                Undo
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
+                <Undo2 className="w-4 h-4 text-blue-500" />
+                <span className="text-xs">Undo</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => editor?.chain().focus().redo().run()}
                 disabled={!editor?.can().redo()}
               >
-                <Redo2 className="w-4 h-4 mr-1" />
-                Redo
-              </Button>
+                <Redo2 className="w-4 h-4 text-blue-500" />
+                <span className="text-xs">Redo</span>
+              </button>
             </div>
 
-            {/* Font selection and size controls */}
-            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+            {/* Font controls */}
+            <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
               <Select value={fontFamily} onValueChange={setFontFamily}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-36 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -362,28 +363,14 @@ export default function TemplateWorkspace() {
                   <SelectItem value="Verdana">Verdana</SelectItem>
                   <SelectItem value="Helvetica">Helvetica</SelectItem>
                   <SelectItem value="Courier New">Courier New</SelectItem>
+                  <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
+                  <SelectItem value="Impact">Impact</SelectItem>
+                  <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
                 </SelectContent>
               </Select>
               
-              <Select 
-                value={fontSize.toString()} 
-                onValueChange={(value) => {
-                  const newSize = parseInt(value);
-                  if (!isNaN(newSize) && newSize >= 8 && newSize <= 72) {
-                    if (editor) {
-                      const { selection } = editor.state;
-                      if (!selection.empty) {
-                        // Apply size to selected text only using custom FontSize extension
-                        editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
-                        toast({ title: `Font size changed to ${newSize}pt for selected text` });
-                      } else {
-                        toast({ title: "Please select text to change font size" });
-                      }
-                    }
-                  }
-                }}
-              >
-                <SelectTrigger className="w-16">
+              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+                <SelectTrigger className="w-16 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -406,149 +393,60 @@ export default function TemplateWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  const newSize = Math.min(72, fontSize + 2);
-                  
-                  if (editor) {
-                    const { selection } = editor.state;
-                    if (!selection.empty) {
-                      // Apply size to selected text only using custom FontSize extension
-                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
-                      toast({ title: `Font size increased to ${newSize}pt for selected text` });
-                    } else {
-                      toast({ title: "Please select text to change font size" });
-                    }
-                  }
-                }}
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => setFontSize(Math.min(72, fontSize + 2))}
                 disabled={fontSize >= 72}
               >
-                <Plus className="w-3 h-3" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  const newSize = Math.max(8, fontSize - 2);
-                  
-                  if (editor) {
-                    const { selection } = editor.state;
-                    if (!selection.empty) {
-                      // Apply size to selected text only using custom FontSize extension
-                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
-                      toast({ title: `Font size decreased to ${newSize}pt for selected text` });
-                    } else {
-                      toast({ title: "Please select text to change font size" });
-                    }
-                  }
-                }}
+                <Plus className="w-5 h-5 text-blue-600" />
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => setFontSize(Math.max(8, fontSize - 2))}
                 disabled={fontSize <= 8}
               >
-                <Minus className="w-3 h-3" />
-              </Button>
+                <Minus className="w-5 h-5 text-blue-600" />
+              </button>
             </div>
 
             {/* Text formatting */}
-            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
-              <Button
-                size="sm"
-                variant={editor?.isActive('bold') ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().toggleBold().run();
-                    toast({ title: "Bold formatting applied to selected text" });
-                  } else {
-                    toast({ title: "Please select text to format" });
-                  }
-                }}
+            <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('bold') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleBold().run()}
               >
-                <Bold className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('italic') ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().toggleItalic().run();
-                    toast({ title: "Italic formatting applied to selected text" });
-                  } else {
-                    toast({ title: "Please select text to format" });
-                  }
-                }}
+                <Bold className="w-6 h-6 text-blue-600 font-bold" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('italic') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
-                <Italic className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('underline') ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().toggleUnderline().run();
-                    toast({ title: "Underline formatting applied to selected text" });
-                  } else {
-                    toast({ title: "Please select text to format" });
-                  }
-                }}
+                <Italic className="w-6 h-6 text-blue-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('underline') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
-                <UnderlineIcon className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('strike') ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().toggleStrike().run();
-                    toast({ title: "Strikethrough formatting applied to selected text" });
-                  } else {
-                    toast({ title: "Please select text to format" });
-                  }
-                }}
-              >
-                <Strikethrough className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                title="Highlight"
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  
-                  if (!selection.empty) {
-                    editor.chain().focus().toggleHighlight({ color: '#ffff00' }).run();
-                    toast({ title: "Text highlighted" });
-                  } else {
-                    toast({ title: "Please select text to highlight" });
-                  }
-                }}
-                disabled={!editor}
-              >
-                <div className="w-4 h-4 bg-yellow-300 border rounded" />
-              </Button>
+                <UnderlineIcon className="w-6 h-6 text-blue-600" />
+              </button>
               <input
                 type="color"
                 value={textColor}
                 onChange={(e) => {
-                  const newColor = e.target.value;
-                  if (editor) {
-                    const { selection } = editor.state;
-                    if (!selection.empty) {
-                      editor.chain().focus().setColor(newColor).run();
-                      toast({ title: "Color changed for selected text" });
-                    } else {
-                      toast({ title: "Please select text to change color" });
-                    }
-                  }
+                  setTextColor(e.target.value);
+                  editor?.chain().focus().setColor(e.target.value).run();
                 }}
                 className="w-8 h-6 border rounded cursor-pointer"
                 title="Font Color"
@@ -557,125 +455,79 @@ export default function TemplateWorkspace() {
             </div>
 
             {/* Text alignment */}
-            <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().setTextAlign('left').run();
-                    toast({ title: "Text aligned left" });
-                  } else {
-                    toast({ title: "Please select text to align" });
-                  }
-                }}
+            <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'left' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               >
-                <AlignLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().setTextAlign('center').run();
-                    toast({ title: "Text aligned center" });
-                  } else {
-                    toast({ title: "Please select text to align" });
-                  }
-                }}
+                <AlignLeft className="w-6 h-6 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'center' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               >
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().setTextAlign('right').run();
-                    toast({ title: "Text aligned right" });
-                  } else {
-                    toast({ title: "Please select text to align" });
-                  }
-                }}
+                <AlignCenter className="w-6 h-6 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'right' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               >
-                <AlignRight className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  const { selection } = editor.state;
-                  if (!selection.empty) {
-                    editor.chain().focus().setTextAlign('justify').run();
-                    toast({ title: "Text justified" });
-                  } else {
-                    toast({ title: "Please select text to justify" });
-                  }
-                }}
+                <AlignRight className="w-6 h-6 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'justify' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               >
-                <AlignJustify className="w-4 h-4" />
-              </Button>
+                <AlignJustify className="w-6 h-6 text-green-600" />
+              </button>
             </div>
 
             {/* Lists and indentation */}
             <div className="flex items-center space-x-1">
-              <Button
-                size="sm"
-                variant={editor?.isActive('bulletList') ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  editor.chain().focus().toggleBulletList().run();
-                  toast({ title: "Bullet list toggled" });
-                }}
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('bulletList') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
               >
-                <List className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={editor?.isActive('orderedList') ? 'default' : 'outline'}
-                onClick={() => {
-                  if (!editor) return;
-                  editor.chain().focus().toggleOrderedList().run();
-                  toast({ title: "Numbered list toggled" });
-                }}
+                <List className="w-6 h-6 text-purple-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('orderedList') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               >
-                <ListOrdered className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (!editor) return;
-                  // Add indentation
-                  editor.chain().focus().insertContent('&nbsp;&nbsp;&nbsp;&nbsp;').run();
-                  toast({ title: "Indentation added" });
-                }}
-              >
-                <Indent className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (!editor) return;
-                  // Remove indentation (simplified)
-                  const { selection } = editor.state;
-                  const text = editor.state.doc.textBetween(selection.from - 4, selection.from, ' ');
-                  if (text === '    ') {
-                    editor.chain().focus().deleteRange({ from: selection.from - 4, to: selection.from }).run();
-                    toast({ title: "Indentation removed" });
-                  }
-                }}
-              >
-                <Outdent className="w-4 h-4" />
-              </Button>
+                <ListOrdered className="w-6 h-6 text-purple-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* Second toolbar line */}
+          <div className="flex items-center justify-center space-x-3 overflow-x-auto px-4">
+            {/* Template specific controls */}
+            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+              <span className="text-sm text-gray-700">{template?.title || 'New Template'}</span>
             </div>
           </div>
         </div>

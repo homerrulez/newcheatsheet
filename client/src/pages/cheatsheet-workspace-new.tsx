@@ -680,159 +680,167 @@ export default function CheatSheetWorkspace() {
   const requiredPages = calculateRequiredPages();
 
   return (
-    <div className="h-screen flex flex-col" style={{
-      background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
-    }}>
-      {/* Enhanced Microsoft Word-Style Toolbar */}
-      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-white/20 flex-shrink-0">
-        {/* Document title bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {cheatSheet?.title || 'New Cheat Sheet'}
-              </span>
-              <Badge variant="secondary" className="ml-2">
-                {boxes.length} boxes
-              </Badge>
-              <Badge variant="outline" className="ml-1">
-                {requiredPages} page{requiredPages !== 1 ? 's' : ''}
-              </Badge>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              onClick={testCreateBoxes}
-              variant="outline" 
-              size="sm"
-              className="bg-blue-50 hover:bg-blue-100 border-blue-200"
-            >
-              <Brain className="w-4 h-4 mr-2" />
-              Test: Create 10 Physics Equations
-            </Button>
-            <Button 
-              onClick={relayoutAllBoxes}
-              variant="outline" 
-              size="sm"
-              disabled={boxes.length === 0}
-            >
-              <Grid3X3 className="w-4 h-4 mr-2" />
-              Auto-Layout Boxes
-            </Button>
-            <Button onClick={saveCheatSheet} size="sm">
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-            <Button 
-              onClick={() => createCheatSheetMutation.mutate()}
-              variant="outline" 
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New
-            </Button>
-          </div>
-        </div>
+    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)' }}>
+      {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
+      <div className="border-b border-pink-200/30 flex-shrink-0" style={{ 
+        background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)',
+        boxShadow: '0 4px 16px rgba(255, 255, 255, 0.6) inset, 0 2px 8px rgba(0, 0, 0, 0.05)'
+      }}>
+
 
         {/* Main toolbar content - 2 lines */}
         <div className="p-3 space-y-3">
           {/* First toolbar line */}
-          <div className="flex items-center justify-center space-x-4 overflow-x-auto px-4">
-            <div className="flex items-center space-x-1">
-              <Select value={fontFamily} onValueChange={setFontFamily}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Helvetica">Helvetica</SelectItem>
-                <SelectItem value="Georgia">Georgia</SelectItem>
-                <SelectItem value="Courier New">Courier New</SelectItem>
-                <SelectItem value="Verdana">Verdana</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
-              <SelectTrigger className="w-16">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72].map(size => (
-                  <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center justify-center space-x-3 overflow-x-auto px-4">
+            {/* Cheat Sheet Features - First section */}
+            <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
+                <Type className="w-6 h-6 text-blue-600" />
+                <span className="text-xs">{boxes.length} boxes</span>
+              </button>
+              <button 
+                onClick={testCreateBoxes}
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
+              >
+                <Brain className="w-5 h-5 text-purple-600" />
+                <span className="text-xs">Create Physics</span>
+              </button>
+              <button 
+                onClick={relayoutAllBoxes}
+                disabled={boxes.length === 0}
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+              >
+                <Grid3X3 className="w-5 h-5 text-purple-600" />
+                <span className="text-xs">Auto-Layout</span>
+              </button>
             </div>
 
-            <Separator orientation="vertical" className="h-6" />
+            {/* File operations */}
+            <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
+                onClick={saveCheatSheet}
+              >
+                <Save className="w-6 h-6 text-orange-500" />
+                <span className="text-xs">Save</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
+                onClick={() => createCheatSheetMutation.mutate()}
+              >
+                <Plus className="w-6 h-6 text-green-500" />
+                <span className="text-xs">New</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => editor?.chain().focus().undo().run()}
+                disabled={!editor?.can().undo()}
+              >
+                <Undo2 className="w-4 h-4 text-blue-500" />
+                <span className="text-xs">Undo</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => editor?.chain().focus().redo().run()}
+                disabled={!editor?.can().redo()}
+              >
+                <Redo2 className="w-4 h-4 text-blue-500" />
+                <span className="text-xs">Redo</span>
+              </button>
+            </div>
 
-            <div className="flex items-center space-x-1">
-              <Button
-                variant={editor?.isActive('bold') ? 'default' : 'ghost'}
-                size="sm"
+            {/* Font controls */}
+            <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <Select value={fontFamily} onValueChange={setFontFamily}>
+                <SelectTrigger className="w-36 border-none bg-transparent hover:bg-gray-100 text-gray-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                  <SelectItem value="Arial">Arial</SelectItem>
+                  <SelectItem value="Calibri">Calibri</SelectItem>
+                  <SelectItem value="Georgia">Georgia</SelectItem>
+                  <SelectItem value="Verdana">Verdana</SelectItem>
+                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                  <SelectItem value="Courier New">Courier New</SelectItem>
+                  <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
+                  <SelectItem value="Impact">Impact</SelectItem>
+                  <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+                <SelectTrigger className="w-16 border-none bg-transparent hover:bg-gray-100 text-gray-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8</SelectItem>
+                  <SelectItem value="9">9</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="11">11</SelectItem>
+                  <SelectItem value="12">12</SelectItem>
+                  <SelectItem value="14">14</SelectItem>
+                  <SelectItem value="16">16</SelectItem>
+                  <SelectItem value="18">18</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="22">22</SelectItem>
+                  <SelectItem value="24">24</SelectItem>
+                  <SelectItem value="26">26</SelectItem>
+                  <SelectItem value="28">28</SelectItem>
+                  <SelectItem value="36">36</SelectItem>
+                  <SelectItem value="48">48</SelectItem>
+                  <SelectItem value="72">72</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => setFontSize(Math.min(72, fontSize + 2))}
+                disabled={fontSize >= 72}
+              >
+                <Plus className="w-5 h-5 text-blue-600" />
+              </button>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => setFontSize(Math.max(8, fontSize - 2))}
+                disabled={fontSize <= 8}
+              >
+                <Minus className="w-5 h-5 text-blue-600" />
+              </button>
+            </div>
+
+            {/* Text formatting */}
+            <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('bold') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleBold().run()}
               >
-                <Bold className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={editor?.isActive('italic') ? 'default' : 'ghost'}
-                size="sm"
+                <Bold className="w-6 h-6 text-blue-600 font-bold" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('italic') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
-                <Italic className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={editor?.isActive('underline') ? 'default' : 'ghost'}
-                size="sm"
+                <Italic className="w-6 h-6 text-blue-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('underline') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
                 onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
-                <UnderlineIcon className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <Separator orientation="vertical" className="h-6" />
-
-            <div className="flex items-center space-x-1">
-              <Button
-                variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-              >
-                <AlignLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-              >
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-              >
-                <AlignRight className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-              >
-                <AlignJustify className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center space-x-1">
+                <UnderlineIcon className="w-6 h-6 text-blue-600" />
+              </button>
               <input
                 type="color"
                 value={textColor}
@@ -840,9 +848,91 @@ export default function CheatSheetWorkspace() {
                   setTextColor(e.target.value);
                   editor?.chain().focus().setColor(e.target.value).run();
                 }}
-                className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
-                title="Text Color"
+                className="w-8 h-6 border rounded cursor-pointer"
+                title="Font Color"
+                disabled={!editor}
               />
+            </div>
+
+            {/* Text alignment */}
+            <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'left' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+              >
+                <AlignLeft className="w-6 h-6 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'center' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+              >
+                <AlignCenter className="w-6 h-6 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'right' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+              >
+                <AlignRight className="w-6 h-6 text-green-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive({ textAlign: 'justify' }) 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+              >
+                <AlignJustify className="w-6 h-6 text-green-600" />
+              </button>
+            </div>
+
+            {/* Lists and indentation */}
+            <div className="flex items-center space-x-1">
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('bulletList') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+              >
+                <List className="w-6 h-6 text-purple-600" />
+              </button>
+              <button
+                className={`px-2 py-1 rounded transition-colors ${
+                  editor?.isActive('orderedList') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+              >
+                <ListOrdered className="w-6 h-6 text-purple-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* Second toolbar line */}
+          <div className="flex items-center justify-center space-x-3 overflow-x-auto px-4">
+            {/* Cheat Sheet specific controls */}
+            <div className="flex items-center space-x-2 border-r border-gray-300 pr-4">
+              <Badge variant="secondary" className="ml-2">
+                {boxes.length} boxes
+              </Badge>
+              <Badge variant="outline" className="ml-1">
+                {requiredPages} page{requiredPages !== 1 ? 's' : ''}
+              </Badge>
             </div>
           </div>
         </div>
