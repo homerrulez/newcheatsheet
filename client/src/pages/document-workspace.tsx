@@ -1758,14 +1758,25 @@ export default function DocumentWorkspace() {
               
               {/* Document content area */}
               <div className="flex-1 relative overflow-auto" style={{
-                background: 'linear-gradient(135deg, #f8f9fb 0%, #e8f0f5 25%, #f8f9fb 50%, #e8f0f5 75%, #f8f9fb 100%)',
-                backgroundSize: '60px 60px',
-                backgroundImage: `
-                  linear-gradient(45deg, rgba(255,255,255,0.6) 25%, transparent 25%),
-                  linear-gradient(-45deg, rgba(255,255,255,0.6) 25%, transparent 25%),
-                  linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.6) 75%),
-                  linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.6) 75%)
-                `
+                background: `
+                  linear-gradient(135deg, 
+                    #f5f0f5 0%, #f5f0f5 12.5%, 
+                    #faf5fa 12.5%, #faf5fa 25%,
+                    #f5f0f5 25%, #f5f0f5 37.5%,
+                    #faf5fa 37.5%, #faf5fa 50%,
+                    #f5f0f5 50%, #f5f0f5 62.5%,
+                    #faf5fa 62.5%, #faf5fa 75%,
+                    #f5f0f5 75%, #f5f0f5 87.5%,
+                    #faf5fa 87.5%, #faf5fa 100%
+                  ),
+                  linear-gradient(to bottom, 
+                    #f8f5f8 0%, 
+                    #f5f2f5 30%, 
+                    #f0f5f5 70%, 
+                    #e8f2f5 100%
+                  )
+                `,
+                backgroundSize: '40px 40px, 100% 100%'
               }}>
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
