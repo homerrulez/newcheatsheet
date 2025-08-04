@@ -554,7 +554,7 @@ export default function CheatSheetWorkspace() {
     // Auto-save functionality - update the cheat sheet with current boxes
     if (id && id !== 'new') {
       updateCheatSheetMutation.mutate({
-        boxes: boxes,
+        content: JSON.stringify(boxes),
       });
     }
   };
