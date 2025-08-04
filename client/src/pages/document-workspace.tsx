@@ -748,9 +748,9 @@ export default function DocumentWorkspace() {
         {/* Main toolbar content - 2 lines */}
         <div className="p-3 space-y-3 bg-blue-50 dark:bg-blue-950">
           {/* First toolbar line */}
-          <div className="flex items-center space-x-4 overflow-x-auto">
+          <div className="flex items-center justify-center space-x-4 overflow-x-auto">
             {/* AI Features - First section */}
-            <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
+            <div className="flex items-center space-x-2 border-r border-gray-300 dark:border-gray-600 pr-4">
               <Button 
                 onClick={async () => {
                   if (!document?.content || document.content.trim().length === 0) {
@@ -791,7 +791,7 @@ export default function DocumentWorkspace() {
                 disabled={isAiImproving || !document?.content}
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+                className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200 text-purple-700 shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-1"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>{isAiImproving ? 'Improving...' : 'AI Improve'}</span>
@@ -799,7 +799,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600 flex items-center space-x-1"
               >
                 <Type className="w-4 h-4" />
                 <span>{documentStats.words} words</span>
@@ -807,7 +807,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600 flex items-center space-x-1"
               >
                 <Clock className="w-4 h-4" />
                 <span>{documentStats.readTime} min</span>
@@ -852,7 +852,7 @@ export default function DocumentWorkspace() {
                 }}
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600 flex items-center space-x-1"
               >
                 <span className="w-4 h-4 text-center">🎭</span>
                 <span>Tone</span>
@@ -860,11 +860,11 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* File operations */}
-            <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
+            <div className="flex items-center space-x-2 border-r border-gray-300 dark:border-gray-600 pr-4">
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -885,7 +885,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600"
                 onClick={() => {
                   if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
@@ -912,7 +912,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600"
                 onClick={async () => {
                   try {
                     const text = await navigator.clipboard.readText();
@@ -929,7 +929,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600"
                 onClick={() => editor?.chain().focus().undo().run()}
                 disabled={!editor?.can().undo()}
               >
@@ -939,7 +939,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-100 hover:bg-gray-200 border-gray-400 text-gray-600"
                 onClick={() => editor?.chain().focus().redo().run()}
                 disabled={!editor?.can().redo()}
               >
