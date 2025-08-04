@@ -690,105 +690,49 @@ export default function DocumentWorkspace() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Enhanced Microsoft Word-Style Toolbar - Updated with Blue Background */}
-      <div className="bg-blue-200 dark:bg-blue-800 border-b border-blue-300/50 flex-shrink-0">
-        {/* Document title bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-blue-200 dark:border-blue-700">
-          <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img 
-                src="/src/assets/studyflow-logo-new.svg" 
-                alt="StudyFlow" 
-                className="w-8 h-8"
-              />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
-            
-
+      
+      {/* Status Bar at top of document */}
+      <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 px-6 py-2">
+        <div className="flex items-center space-x-6 text-sm">
+          {/* AI Assistant Status */}
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+            <span className="text-purple-700 dark:text-purple-300 font-medium">AI Assistant Active</span>
           </div>
           
-          <div className="flex items-center space-x-4">
-            {/* Document Stats */}
-            <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-300">
-              <div className="flex items-center space-x-1">
-                <Type className="w-3 h-3" />
-                <span>{documentStats.words} words</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Clock className="w-3 h-3" />
-                <span>{documentStats.readTime} min</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Eye className="w-3 h-3" />
-                <span>Page {Math.min(currentPage || 1, derivedPageCount)} of {derivedPageCount}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                {autoSaveStatus === 'saving' ? (
-                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
-                ) : autoSaveStatus === 'saved' ? (
-                  <div className="w-2 h-2 bg-green-400 rounded-full" />
-                ) : (
-                  <div className="w-2 h-2 bg-red-400 rounded-full" />
-                )}
-                <span className="text-xs">
-                  {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Auto-save' : 'Error'}
-                </span>
-              </div>
-            </div>
-            
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
-              onClick={() => {
-                if (!document?.content || document.content.trim().length === 0) {
-                  toast({
-                    title: "No content to download",
-                    description: "Please add some text to your document first.",
-                  });
-                  return;
-                }
-                
-                // Create a clean HTML document for download
-                const cleanContent = document.content
-                  .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
-                  .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ''); // Remove styles
-                
-                const blob = new Blob([
-                  `<!DOCTYPE html>
-                  <html>
-                  <head>
-                    <meta charset="UTF-8">
-                    <title>${document.title || 'Document'}</title>
-                    <style>
-                      body { font-family: ${fontFamily}, serif; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6; margin: 40px; }
-                      @media print { body { margin: 0; } }
-                    </style>
-                  </head>
-                  <body>
-                    ${cleanContent}
-                  </body>
-                  </html>`
-                ], { type: 'text/html' });
-                
-                const url = URL.createObjectURL(blob);
-                const a = window.document.createElement('a');
-                a.href = url;
-                a.download = `${document.title || 'Document'}.html`;
-                a.click();
-                URL.revokeObjectURL(url);
-                
-                toast({ 
-                  title: "Document downloaded",
-                  description: `${document.title || 'Document'}.html has been saved to your downloads.`
-                });
-              }}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Download
-            </Button>
+          {/* Word Count */}
+          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+            <span className="font-medium">{documentStats.words} words</span>
+          </div>
+          
+          {/* Reading Time */}
+          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+            <span className="font-medium">{documentStats.readTime} min read</span>
+          </div>
+          
+          {/* Page Count */}
+          <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+            <span className="font-medium">Page {Math.min(currentPage || 1, derivedPageCount)} of {derivedPageCount}</span>
+          </div>
+          
+          {/* Auto-save Status */}
+          <div className="flex items-center space-x-2">
+            {autoSaveStatus === 'saving' ? (
+              <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+            ) : autoSaveStatus === 'saved' ? (
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            ) : (
+              <div className="w-2 h-2 bg-red-400 rounded-full" />
+            )}
+            <span className="text-green-600 dark:text-green-400 font-medium">
+              {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Auto-save' : 'Error'}
+            </span>
           </div>
         </div>
+      </div>
+
+      {/* Enhanced Microsoft Word-Style Toolbar */}
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200/50 flex-shrink-0 pt-1">
 
 
 
@@ -1499,6 +1443,58 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                onClick={() => {
+                  if (!document?.content || document.content.trim().length === 0) {
+                    toast({
+                      title: "No content to download",
+                      description: "Please add some text to your document first.",
+                    });
+                    return;
+                  }
+                  
+                  // Create a clean HTML document for download
+                  const cleanContent = document.content
+                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+                    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ''); // Remove styles
+                  
+                  const blob = new Blob([
+                    `<!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="UTF-8">
+                      <title>${document.title || 'Document'}</title>
+                      <style>
+                        body { font-family: ${fontFamily}, serif; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6; margin: 40px; }
+                        @media print { body { margin: 0; } }
+                      </style>
+                    </head>
+                    <body>
+                      ${cleanContent}
+                    </body>
+                    </html>`
+                  ], { type: 'text/html' });
+                  
+                  const url = URL.createObjectURL(blob);
+                  const a = window.document.createElement('a');
+                  a.href = url;
+                  a.download = `${document.title || 'Document'}.html`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  
+                  toast({ 
+                    title: "Document downloaded",
+                    description: `${document.title || 'Document'}.html has been saved to your downloads.`
+                  });
+                }}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+
+              <Button 
+                size="sm" 
+                variant="outline" 
                 onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
               >
                 <Minus className="w-4 h-4" />
@@ -1959,54 +1955,7 @@ export default function DocumentWorkspace() {
         </button>
       </div>
 
-      {/* Floating Status Bar at bottom of document - similar to image 3 */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
-        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full border border-gray-200/50 dark:border-gray-700/50 shadow-lg px-6 py-2">
-          <div className="flex items-center space-x-6 text-sm">
-            {/* AI Assistant Status */}
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              <span className="text-purple-700 dark:text-purple-300 font-medium">AI Assistant Active</span>
-            </div>
-            
-            {/* Word Count */}
-            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-              <span className="font-medium">
-                {(() => {
-                  const text = document?.content || '';
-                  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-                  return `${wordCount} words`;
-                })()}
-              </span>
-            </div>
-            
-            {/* Reading Time */}
-            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-              <span className="font-medium">
-                {(() => {
-                  const text = document?.content || '';
-                  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-                  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-                  return `${readingTime} min read`;
-                })()}
-              </span>
-            </div>
-            
-            {/* Page Count */}
-            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
-              <span className="font-medium">
-                Page {Math.min(currentPage || 1, derivedPageCount)} of {derivedPageCount}
-              </span>
-            </div>
-            
-            {/* Auto-save Status */}
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-600 dark:text-green-400 font-medium">Auto-save</span>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }
