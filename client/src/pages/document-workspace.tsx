@@ -716,11 +716,11 @@ export default function DocumentWorkspace() {
             {/* AI Features - First section */}
             <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
               <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
-                <Type className="w-4 h-4 text-blue-600" />
+                <Type className="w-6 h-6 text-blue-600" />
                 <span className="text-xs">{documentStats.words} words</span>
               </button>
               <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
-                <Clock className="w-4 h-4 text-green-600" />
+                <Clock className="w-6 h-6 text-green-600" />
                 <span className="text-xs">{documentStats.readTime} min</span>
               </button>
               <button 
@@ -794,7 +794,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <Copy className="w-4 h-4 text-orange-500" />
+                <Copy className="w-6 h-6 text-orange-500" />
                 <span className="text-xs">Copy</span>
               </button>
               <button 
@@ -819,7 +819,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <Scissors className="w-4 h-4 text-red-500" />
+                <Scissors className="w-6 h-6 text-red-500" />
                 <span className="text-xs">Cut</span>
               </button>
               <button 
@@ -834,7 +834,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <ClipboardPaste className="w-4 h-4 text-green-500" />
+                <ClipboardPaste className="w-6 h-6 text-green-500" />
                 <span className="text-xs">Paste</span>
               </button>
               <button 
@@ -948,7 +948,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={fontSize >= 72}
               >
-                <Plus className="w-3 h-3 text-blue-600" />
+                <Plus className="w-5 h-5 text-blue-600" />
               </button>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -968,7 +968,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={fontSize <= 8}
               >
-                <Minus className="w-3 h-3 text-blue-600" />
+                <Minus className="w-5 h-5 text-blue-600" />
               </button>
             </div>
 
@@ -982,7 +982,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().toggleBold().run()}
               >
-                <Bold className="w-4 h-4 text-blue-600 font-bold" />
+                <Bold className="w-6 h-6 text-blue-600 font-bold" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -992,7 +992,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
-                <Italic className="w-4 h-4 text-blue-600" />
+                <Italic className="w-6 h-6 text-blue-600" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -1002,7 +1002,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
-                <UnderlineIcon className="w-4 h-4 text-blue-600" />
+                <UnderlineIcon className="w-6 h-6 text-blue-600" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -1012,7 +1012,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().toggleStrike().run()}
               >
-                <Strikethrough className="w-4 h-4 text-red-600" />
+                <Strikethrough className="w-6 h-6 text-red-600" />
               </button>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -1032,7 +1032,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <span className="text-xs text-blue-600">X₂</span>
+                <span className="text-base text-blue-600">X₂</span>
               </button>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -1052,7 +1052,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <span className="text-xs text-blue-600">X²</span>
+                <span className="text-base text-blue-600">X²</span>
               </button>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -1071,7 +1071,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <div className="w-4 h-4 bg-yellow-400 border rounded" />
+                <div className="w-6 h-6 bg-yellow-400 border rounded" />
               </button>
               <input
                 type="color"
@@ -1105,7 +1105,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               >
-                <AlignLeft className="w-4 h-4 text-green-600" />
+                <AlignLeft className="w-6 h-6 text-green-600" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -1115,7 +1115,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               >
-                <AlignCenter className="w-4 h-4 text-green-600" />
+                <AlignCenter className="w-6 h-6 text-green-600" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -1125,7 +1125,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               >
-                <AlignRight className="w-4 h-4 text-green-600" />
+                <AlignRight className="w-6 h-6 text-green-600" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -1135,7 +1135,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               >
-                <AlignJustify className="w-4 h-4 text-green-600" />
+                <AlignJustify className="w-6 h-6 text-green-600" />
               </button>
             </div>
 
@@ -1149,7 +1149,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().toggleBulletList().run()}
               >
-                <List className="w-4 h-4 text-purple-600" />
+                <List className="w-6 h-6 text-purple-600" />
               </button>
               <button
                 className={`px-2 py-1 rounded transition-colors ${
@@ -1159,7 +1159,7 @@ export default function DocumentWorkspace() {
                 }`}
                 onClick={() => editor?.chain().focus().toggleOrderedList().run()}
               >
-                <ListOrdered className="w-4 h-4 text-purple-600" />
+                <ListOrdered className="w-6 h-6 text-purple-600" />
               </button>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -1171,7 +1171,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor?.isActive('listItem')}
               >
-                <Indent className="w-4 h-4 text-orange-600" />
+                <Indent className="w-6 h-6 text-orange-600" />
               </button>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
@@ -1183,7 +1183,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor?.isActive('listItem')}
               >
-                <Outdent className="w-4 h-4 text-orange-600" />
+                <Outdent className="w-6 h-6 text-orange-600" />
               </button>
             </div>
           </div>
