@@ -699,11 +699,11 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col" style={{ background: '#e8f5e8' }}>
+    <div className="h-screen flex flex-col" style={{ background: '#e8eaed' }}>
       
       {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
-      <div className="border-b border-green-200/30 flex-shrink-0" style={{ 
-        background: '#e8f5e8',
+      <div className="border-b border-gray-200/30 flex-shrink-0" style={{ 
+        background: '#e8eaed',
         boxShadow: '0 4px 16px rgba(255, 255, 255, 0.6) inset, 0 2px 8px rgba(0, 0, 0, 0.05)'
       }}>
 
@@ -1587,13 +1587,13 @@ export default function DocumentWorkspace() {
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full relative" style={{
-            background: '#e8f5e8'
+            background: '#e8eaed'
           }}>
 
             
             {/* Microsoft Word-Style Floating Horizontal Ruler */}
             <div className="relative h-12 flex justify-center" style={{
-              background: '#e8f5e8'
+              background: '#e8eaed'
             }}>
               <div 
                 className="relative bg-gradient-to-b from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
@@ -1699,7 +1699,7 @@ export default function DocumentWorkspace() {
             <div className="flex-1 flex">
               {/* Microsoft Word-style Floating Vertical Ruler */}
               <div className="relative w-12 flex justify-center" style={{
-                background: '#e8f5e8'
+                background: '#e8eaed'
               }}>
                 <div 
                   className="bg-gradient-to-r from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
@@ -1774,7 +1774,7 @@ export default function DocumentWorkspace() {
               
               {/* Document content area */}
               <div className="flex-1 relative overflow-auto" style={{
-                background: '#e8f5e8'
+                background: '#e8eaed'
               }}>
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
