@@ -704,16 +704,7 @@ export default function DocumentWorkspace() {
             </div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{document?.title || 'Document'}</h1>
             
-            {/* AI Improve Button - Prominent position */}
-            <Button 
-              onClick={() => aiImproveMutation.mutate()}
-              disabled={isAiImproving || !editor}
-              className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 animate-pulse"
-              size="sm"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {isAiImproving ? 'Improving...' : 'AI Improve'}
-            </Button>
+
           </div>
           
           <div className="flex items-center space-x-4">
@@ -758,6 +749,44 @@ export default function DocumentWorkspace() {
         <div className="p-3 space-y-3 bg-blue-50 dark:bg-blue-950">
           {/* First toolbar line */}
           <div className="flex items-center space-x-4 overflow-x-auto">
+            {/* AI Features - First section */}
+            <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
+              <Button 
+                onClick={() => aiImproveMutation.mutate()}
+                disabled={isAiImproving || !editor}
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isAiImproving ? 'Improving...' : 'AI Improve'}</span>
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+              >
+                <Type className="w-4 h-4" />
+                <span>{documentStats.words} words</span>
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+              >
+                <Clock className="w-4 h-4" />
+                <span>{documentStats.readTime} min</span>
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700 flex items-center space-x-1"
+              >
+                <span className="w-4 h-4 text-center">🎭</span>
+                <span>Tone</span>
+              </Button>
+            </div>
+
             {/* File operations */}
             <div className="flex items-center space-x-2 border-r border-blue-300 dark:border-blue-700 pr-4">
               <Button 
