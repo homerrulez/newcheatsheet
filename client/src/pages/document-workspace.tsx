@@ -1448,7 +1448,7 @@ export default function DocumentWorkspace() {
         {/* Left panel - Document History */}
         <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
           <div className="h-full shadow-lg" style={{ 
-            background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)',
+            background: 'white',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(255, 255, 255, 0.6) inset'
           }}>
             <div className="p-4 border-b border-gray-200/30 dark:border-slate-600" style={{ 
@@ -1645,7 +1645,7 @@ export default function DocumentWorkspace() {
         {/* Right panel - Always-On ChatGPT Interface (increased by 30%) */}
         <ResizablePanel defaultSize={33} minSize={25} maxSize={45}>
           <div className="h-full shadow-lg flex flex-col" style={{ 
-            background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)',
+            background: 'white',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(255, 255, 255, 0.6) inset'
           }}>
             {/* ChatGPT Assistant Header - Fixed at top */}
