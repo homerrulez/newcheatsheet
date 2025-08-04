@@ -1407,15 +1407,28 @@ export default function CheatSheetWorkspace() {
                     {/* Quick add button for testing */}
                     <div className="space-y-2 mt-4">
                       <Button
-                        onClick={() => addBox(
-                          'Power Rule', 
-                          'd/dx x^n = nx^(n-1)'
-                        )}
+                        onClick={() => {
+                          // Create 10 physics equations to test Tetris layout
+                          const equations = [
+                            { title: "Newton's Second Law", content: "F = ma", color: "from-blue-50 to-blue-100" },
+                            { title: "Gravitational Force", content: "F = G(m₁m₂)/r²", color: "from-green-50 to-green-100" },
+                            { title: "Kinetic Energy", content: "KE = ½mv²", color: "from-red-50 to-red-100" },
+                            { title: "Work Done", content: "W = Fd cos θ", color: "from-purple-50 to-purple-100" },
+                            { title: "Ohm's Law", content: "V = IR", color: "from-yellow-50 to-yellow-100" },
+                            { title: "Wave Speed", content: "v = fλ", color: "from-indigo-50 to-indigo-100" },
+                            { title: "Mass-Energy", content: "E = mc²", color: "from-pink-50 to-pink-100" },
+                            { title: "Coulomb's Law", content: "F = k|q₁q₂|/r²", color: "from-cyan-50 to-cyan-100" },
+                            { title: "Momentum", content: "p = mv", color: "from-orange-50 to-orange-100" },
+                            { title: "Ideal Gas Law", content: "PV = nRT", color: "from-teal-50 to-teal-100" }
+                          ];
+                          
+                          equations.forEach(eq => addBox(eq.title, eq.content, eq.color));
+                        }}
                         className="w-full"
                         variant="outline"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Sample Box
+                        Create 10 Physics Equations
                       </Button>
                       <Button
                         onClick={relayoutAllBoxes}
