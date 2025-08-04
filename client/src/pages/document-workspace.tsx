@@ -728,7 +728,7 @@ export default function DocumentWorkspace() {
                 onClick={() => aiImproveMutation.mutate()}
                 disabled={isAiImproving || !editor}
               >
-                <Sparkles className="w-4 h-4 text-purple-600" />
+                <Sparkles className="w-5 h-5 text-purple-600" />
                 <span className="text-xs">{isAiImproving ? 'Improving...' : 'AI Improve'}</span>
               </button>
               <button 
@@ -1289,7 +1289,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <Image className="w-4 h-4 text-green-600" />
+                <Image className="w-5 h-5 text-green-600" />
                 <span className="text-xs">Image</span>
               </button>
               <button 
@@ -1326,7 +1326,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <Table className="w-4 h-4 text-blue-600" />
+                <Table className="w-5 h-5 text-blue-600" />
                 <span className="text-xs">Table</span>
               </button>
               <button 
@@ -1342,7 +1342,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <Link className="w-4 h-4 text-purple-600" />
+                <Link className="w-5 h-5 text-purple-600" />
                 <span className="text-xs">Link</span>
               </button>
               <button 
@@ -1355,7 +1355,7 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <FileText className="w-4 h-4 text-orange-600" />
+                <FileText className="w-5 h-5 text-orange-600" />
                 <span className="text-xs">Page Break</span>
               </button>
             </div>
@@ -1408,7 +1408,7 @@ export default function DocumentWorkspace() {
                   });
                 }}
               >
-                <Save className="w-4 h-4 text-green-600" />
+                <Save className="w-5 h-5 text-green-600" />
                 <span className="text-xs">Download</span>
               </button>
 
@@ -1416,14 +1416,14 @@ export default function DocumentWorkspace() {
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
               >
-                <Minus className="w-4 h-4 text-blue-600" />
+                <Minus className="w-5 h-5 text-blue-600" />
               </button>
               <span className="text-sm font-medium w-16 text-center text-gray-700">{zoomLevel}%</span>
               <button 
                 className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
               >
-                <Plus className="w-4 h-4 text-blue-600" />
+                <Plus className="w-5 h-5 text-blue-600" />
               </button>
               <Select value={zoomLevel.toString()} onValueChange={(value) => setZoomLevel(parseInt(value))}>
                 <SelectTrigger className="w-20 border-none bg-transparent hover:bg-gray-100 text-gray-700">
