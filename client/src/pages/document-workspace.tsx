@@ -1117,11 +1117,11 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Text formatting */}
-            <div className="flex items-center space-x-1 border-r border-blue-300 dark:border-blue-700 pr-4">
+            <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
               <Button
                 size="sm"
                 variant={editor?.isActive('bold') ? 'default' : 'outline'}
-                className={editor?.isActive('bold') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive('bold') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().toggleBold().run()}
               >
                 <Bold className="w-4 h-4" />
@@ -1129,7 +1129,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('italic') ? 'default' : 'outline'}
-                className={editor?.isActive('italic') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive('italic') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().toggleItalic().run()}
               >
                 <Italic className="w-4 h-4" />
@@ -1137,7 +1137,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('underline') ? 'default' : 'outline'}
-                className={editor?.isActive('underline') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive('underline') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().toggleUnderline().run()}
               >
                 <UnderlineIcon className="w-4 h-4" />
@@ -1145,7 +1145,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive('strike') ? 'default' : 'outline'}
-                className={editor?.isActive('strike') ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive('strike') ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().toggleStrike().run()}
               >
                 <Strikethrough className="w-4 h-4" />
@@ -1153,7 +1153,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 title="Subscript"
                 onClick={() => {
                   if (!editor) return;
@@ -1175,7 +1175,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 title="Superscript"
                 onClick={() => {
                   if (!editor) return;
@@ -1197,7 +1197,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 title="Highlight"
                 onClick={() => {
                   if (!editor) return;
@@ -1345,7 +1345,7 @@ export default function DocumentWorkspace() {
                   });
                 }
               }}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-36 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
                   <SelectValue placeholder="Page Size" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1367,7 +1367,7 @@ export default function DocumentWorkspace() {
                 setPageMetrics(newLayoutEngine.getCurrentMetrics());
                 toast({ title: `Page orientation changed to ${value}` });
               }}>
-                <SelectTrigger className="w-24">
+                <SelectTrigger className="w-24 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1376,7 +1376,7 @@ export default function DocumentWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
                 <Layout className="w-4 h-4 mr-1" />
                 Margins
               </Button>
@@ -1393,6 +1393,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 onClick={() => {
                   if (editor) {
                     // Create hidden file input for image upload
@@ -1422,6 +1423,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 onClick={() => {
                   if (editor) {
                     // Insert a simple HTML table since Tiptap table extension might not be available
@@ -1460,6 +1462,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 onClick={() => {
                   if (editor) {
                     const url = prompt('Enter URL:');
@@ -1477,6 +1480,7 @@ export default function DocumentWorkspace() {
               <Button 
                 size="sm" 
                 variant="outline"
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
                 onClick={() => {
                   if (editor) {
                     editor.chain().focus().insertContent('<div style="page-break-before: always;"></div>').run();
@@ -1953,6 +1957,55 @@ export default function DocumentWorkspace() {
             {isAiImproving ? 'Improving...' : 'AI Improve'}
           </span>
         </button>
+      </div>
+
+      {/* Floating Status Bar at bottom of document - similar to image 3 */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full border border-gray-200/50 dark:border-gray-700/50 shadow-lg px-6 py-2">
+          <div className="flex items-center space-x-6 text-sm">
+            {/* AI Assistant Status */}
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <span className="text-purple-700 dark:text-purple-300 font-medium">AI Assistant Active</span>
+            </div>
+            
+            {/* Word Count */}
+            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+              <span className="font-medium">
+                {(() => {
+                  const text = document?.content || '';
+                  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                  return `${wordCount} words`;
+                })()}
+              </span>
+            </div>
+            
+            {/* Reading Time */}
+            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+              <span className="font-medium">
+                {(() => {
+                  const text = document?.content || '';
+                  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+                  return `${readingTime} min read`;
+                })()}
+              </span>
+            </div>
+            
+            {/* Page Count */}
+            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-300">
+              <span className="font-medium">
+                Page {Math.min(currentPage || 1, derivedPageCount)} of {derivedPageCount}
+              </span>
+            </div>
+            
+            {/* Auto-save Status */}
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-green-600 dark:text-green-400 font-medium">Auto-save</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
