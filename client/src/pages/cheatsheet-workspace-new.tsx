@@ -570,46 +570,63 @@ export default function CheatSheetWorkspace() {
     }
   }, [cheatSheet, chatSessions, defaultSessionId]);
 
-  // Tetris-style intelligent placement algorithm
+  // Correct Tetris-style placement: Fill horizontal space first, then move down
   const findOptimalPosition = (newBoxWidth: number, newBoxHeight: number, existingBoxes: Box[]) => {
     const PAGE_WIDTH = 816;
     const MARGIN = 40;
-    const SPACING = 10;
+    const SPACING = 8;
     const usableWidth = PAGE_WIDTH - (2 * MARGIN);
     
-    // Start from top-left and find first available spot
-    for (let y = MARGIN; y < 2000; y += SPACING) {
-      for (let x = MARGIN; x <= usableWidth - newBoxWidth; x += SPACING) {
-        const testRect = {
-          left: x,
-          top: y,
-          right: x + newBoxWidth,
-          bottom: y + newBoxHeight
-        };
+    if (existingBoxes.length === 0) {
+      return { x: MARGIN, y: MARGIN };
+    }
+    
+    // Get all existing box positions and create a grid
+    const occupied = new Set<string>();
+    existingBoxes.forEach(box => {
+      for (let x = box.x; x < box.x + box.width; x += SPACING) {
+        for (let y = box.y; y < box.y + box.height; y += SPACING) {
+          occupied.add(`${x},${y}`);
+        }
+      }
+    });
+    
+    // Find rows by identifying Y positions with boxes
+    const usedYPositions = [...new Set(existingBoxes.map(box => box.y))].sort((a, b) => a - b);
+    
+    // Try to fit in existing rows first (fill horizontal space)
+    for (const rowY of usedYPositions) {
+      const rowBoxes = existingBoxes.filter(box => box.y === rowY);
+      const rowHeight = Math.max(...rowBoxes.map(box => box.height));
+      
+      // Check if new box can fit in height of this row
+      if (newBoxHeight <= rowHeight + SPACING) {
+        // Find rightmost box in this row
+        const rightmostX = Math.max(...rowBoxes.map(box => box.x + box.width));
+        const testX = rightmostX + SPACING;
         
-        // Check if this position conflicts with existing boxes
-        const hasConflict = existingBoxes.some(box => {
-          const boxRect = {
-            left: box.x,
-            top: box.y,
-            right: box.x + box.width,
-            bottom: box.y + box.height
-          };
+        // Check if it fits horizontally
+        if (testX + newBoxWidth <= MARGIN + usableWidth) {
+          // Verify no conflicts
+          const hasConflict = existingBoxes.some(box => {
+            return !(testX + newBoxWidth <= box.x || 
+                    testX >= box.x + box.width || 
+                    rowY + newBoxHeight <= box.y || 
+                    rowY >= box.y + box.height);
+          });
           
-          return !(testRect.right <= boxRect.left || 
-                  testRect.left >= boxRect.right || 
-                  testRect.bottom <= boxRect.top || 
-                  testRect.top >= boxRect.bottom);
-        });
-        
-        if (!hasConflict) {
-          return { x, y };
+          if (!hasConflict) {
+            return { x: testX, y: rowY };
+          }
         }
       }
     }
     
-    // Fallback: place at bottom
-    const maxY = Math.max(0, ...existingBoxes.map(box => box.y + box.height));
+    // No space in existing rows, create new row
+    const maxY = existingBoxes.length > 0 
+      ? Math.max(...existingBoxes.map(box => box.y + box.height))
+      : MARGIN;
+    
     return { x: MARGIN, y: maxY + SPACING };
   };
 
@@ -662,7 +679,7 @@ export default function CheatSheetWorkspace() {
     return { width: Math.round(width), height: Math.round(height) };
   };
 
-  // Intelligent Tetris-style layout engine
+  // Intelligent horizontal-first layout engine (proper Tetris style)
   const relayoutAllBoxes = () => {
     if (boxes.length === 0) return;
     
@@ -671,8 +688,12 @@ export default function CheatSheetWorkspace() {
     const SPACING = 8;
     const usableWidth = PAGE_WIDTH - (2 * MARGIN);
     
-    // Sort boxes by area (largest first for better packing)
-    const sortedBoxes = [...boxes].sort((a, b) => (b.width * b.height) - (a.width * a.height));
+    // Sort boxes by height first (shorter boxes fill gaps better), then by width
+    const sortedBoxes = [...boxes].sort((a, b) => {
+      if (a.height !== b.height) return a.height - b.height;
+      return a.width - b.width;
+    });
+    
     const repositionedBoxes: Box[] = [];
     
     sortedBoxes.forEach(box => {
