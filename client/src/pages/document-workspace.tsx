@@ -640,15 +640,12 @@ export default function DocumentWorkspace() {
       const content = editor.getHTML();
       if (!content.trim()) throw new Error('No content to improve');
 
-      const response = await apiRequest('/api/ai/improve-content', {
-        method: 'POST',
-        body: JSON.stringify({
-          content,
-          documentId: id,
-          instruction: 'Improve this content while maintaining its structure and meaning. Focus on clarity, grammar, and readability.'
-        }),
+      const response = await apiRequest('POST', '/api/ai/improve-content', {
+        content,
+        documentId: id,
+        instruction: 'Improve this content while maintaining its structure and meaning. Focus on clarity, grammar, and readability.'
       });
-      return response;
+      return await response.json();
     },
     onMutate: () => {
       setIsAiImproving(true);

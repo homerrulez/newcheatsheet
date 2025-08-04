@@ -110,4 +110,55 @@ Adjust the tone thoughtfully while keeping the content well-organized and profes
   }
 });
 
+// AI Content Improvement Route (alternative endpoint)
+router.post('/improve-content', async (req, res) => {
+  try {
+    const { content, documentId, instruction } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const systemPrompt = `You are an intelligent writing assistant that improves content while maintaining structure and meaning.
+
+IMPROVEMENT APPROACH:
+- Fix grammar, spelling, and awkward phrasing naturally
+- Enhance clarity and flow without changing the author's voice
+- Improve word choice and sentence structure thoughtfully
+- Maintain professional tone and readability
+- Preserve all existing formatting (headings, paragraphs, bold, italic, etc.)
+- Keep the document structure intact (separate paragraphs stay separate)
+- Keep all mathematical content and technical terminology exactly as written
+- Preserve HTML formatting and structure
+
+SMART BEHAVIOR:
+- Never merge well-structured paragraphs
+- Never remove intentional formatting or structure
+- Never change technical terms or proper nouns unnecessarily  
+- Never alter the fundamental meaning or style
+- Always maintain the document's visual organization
+- Return content in the same HTML format as received
+
+Your goal is to make the writing cleaner, clearer, and more polished while respecting the original organization.`;
+
+    const userPrompt = instruction ? `${instruction}\n\nContent to improve:\n${content}` : content;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.3,
+    });
+
+    const improvedContent = response.choices[0].message.content;
+
+    res.json({ improvedContent });
+  } catch (error) {
+    console.error('AI improve content error:', error);
+    res.status(500).json({ error: 'Failed to improve content' });
+  }
+});
+
 export default router;
