@@ -1648,16 +1648,16 @@ export default function DocumentWorkspace() {
 
             
             {/* Word-Style Horizontal Ruler with Drag Functionality */}
-            <div className="bg-gradient-to-b from-gray-100 to-gray-200 dark:bg-gradient-to-b dark:from-gray-600 dark:to-gray-700 border-b border-gray-300 dark:border-gray-600">
+            <div className="bg-white dark:bg-gray-800 border-b border-gray-400 dark:border-gray-600">
               <div className="flex justify-center">
                 <div className="relative flex">
                   {/* Left margin spacer - exactly 32px to align with vertical ruler */}
-                  <div style={{ width: '32px' }} className="bg-gradient-to-b from-gray-100 to-gray-200 dark:bg-gradient-to-b dark:from-gray-600 dark:to-gray-700"></div>
+                  <div style={{ width: '32px' }} className="bg-white dark:bg-gray-800"></div>
                   
                   {/* Main ruler area - exactly matches page width */}
                   <div 
                     style={{ width: `${pageWidth}px` }} 
-                    className="relative h-8 bg-gradient-to-b from-gray-50 to-gray-150 dark:bg-gradient-to-b dark:from-gray-500 dark:to-gray-600 border-x border-gray-400 dark:border-gray-500"
+                    className="relative h-8 bg-white dark:bg-gray-800 border-x border-gray-500 dark:border-gray-600"
                     onMouseMove={(e) => {
                       if (isDraggingMarker) {
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -1683,17 +1683,17 @@ export default function DocumentWorkspace() {
                         // Inch markings (96 pixels per inch at 96 DPI)
                         Array.from({ length: Math.ceil(pageWidth / 96) + 1 }, (_, i) => (
                           <div key={i} className="absolute" style={{ left: `${i * 96}px` }}>
-                            <div className="w-px h-5 bg-gray-600 dark:bg-gray-300"></div>
-                            <div className="absolute top-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-x-1/2" style={{ left: '0px' }}>
+                            <div className="w-px h-6 bg-black dark:bg-white"></div>
+                            <div className="absolute top-6 text-xs text-black dark:text-white font-medium transform -translate-x-1/2" style={{ left: '0px' }}>
                               {i}
                             </div>
                             {/* Half-inch marks */}
                             {i < Math.ceil(pageWidth / 96) && (
-                              <div className="absolute w-px h-3 bg-gray-500 dark:bg-gray-400" style={{ left: '48px', top: '0px' }}></div>
+                              <div className="absolute w-px h-4 bg-black dark:bg-white" style={{ left: '48px', top: '0px' }}></div>
                             )}
                             {/* Quarter-inch marks */}
                             {Array.from({ length: 3 }, (_, j) => (
-                              <div key={j} className="absolute w-px h-2 bg-gray-400 dark:bg-gray-500" style={{ left: `${(j + 1) * 24}px`, top: '0px' }}></div>
+                              <div key={j} className="absolute w-px h-2 bg-black dark:bg-white" style={{ left: `${(j + 1) * 24}px`, top: '0px' }}></div>
                             ))}
                           </div>
                         ))
@@ -1701,13 +1701,13 @@ export default function DocumentWorkspace() {
                         // Centimeter markings (37.8 pixels per cm at 96 DPI)
                         Array.from({ length: Math.ceil(pageWidth / 37.8) + 1 }, (_, i) => (
                           <div key={i} className="absolute" style={{ left: `${i * 37.8}px` }}>
-                            <div className="w-px h-5 bg-gray-600 dark:bg-gray-300"></div>
-                            <div className="absolute top-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-x-1/2" style={{ left: '0px' }}>
+                            <div className="w-px h-6 bg-black dark:bg-white"></div>
+                            <div className="absolute top-6 text-xs text-black dark:text-white font-medium transform -translate-x-1/2" style={{ left: '0px' }}>
                               {i}
                             </div>
                             {/* Half-cm marks */}
                             {i < Math.ceil(pageWidth / 37.8) && (
-                              <div className="absolute w-px h-3 bg-gray-500 dark:bg-gray-400" style={{ left: '18.9px', top: '0px' }}></div>
+                              <div className="absolute w-px h-4 bg-black dark:bg-white" style={{ left: '18.9px', top: '0px' }}></div>
                             )}
                           </div>
                         ))
@@ -1782,24 +1782,24 @@ export default function DocumentWorkspace() {
             <ScrollArea className="h-full bg-gray-300 dark:bg-gray-700">
               <div className="min-h-full flex">
                 {/* Left Vertical Ruler - exactly 32px wide to match horizontal ruler */}
-                <div className="w-8 bg-gradient-to-r from-gray-100 to-gray-200 dark:bg-gradient-to-r dark:from-gray-600 dark:to-gray-700 border-r border-gray-300 dark:border-gray-600 flex-shrink-0">
-                  <div className="h-full bg-gradient-to-r from-gray-50 to-gray-150 dark:bg-gradient-to-r dark:from-gray-500 dark:to-gray-600 relative" style={{ height: `${pageHeight}px` }}>
+                <div className="w-8 bg-white dark:bg-gray-800 border-r border-gray-500 dark:border-gray-600 flex-shrink-0">
+                  <div className="h-full bg-white dark:bg-gray-800 relative" style={{ height: `${pageHeight}px` }}>
                     {/* Vertical ruler tick marks */}
                     {rulerUnit === 'inches' ? (
                       // Inch markings vertically (96 pixels per inch at 96 DPI)
                       Array.from({ length: Math.ceil(pageHeight / 96) + 1 }, (_, i) => (
                         <div key={i} className="absolute w-full" style={{ top: `${i * 96}px` }}>
-                          <div className="h-px w-5 bg-gray-600 dark:bg-gray-300"></div>
-                          <div className="absolute left-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-y-1/2 rotate-90 origin-left" style={{ top: '0px' }}>
+                          <div className="h-px w-6 bg-black dark:bg-white"></div>
+                          <div className="absolute left-6 text-xs text-black dark:text-white font-medium transform -translate-y-1/2 rotate-90 origin-left" style={{ top: '0px' }}>
                             {i}
                           </div>
                           {/* Half-inch marks */}
                           {i < Math.ceil(pageHeight / 96) && (
-                            <div className="absolute h-px w-3 bg-gray-500 dark:bg-gray-400" style={{ top: '48px', left: '0px' }}></div>
+                            <div className="absolute h-px w-4 bg-black dark:bg-white" style={{ top: '48px', left: '0px' }}></div>
                           )}
                           {/* Quarter-inch marks */}
                           {Array.from({ length: 3 }, (_, j) => (
-                            <div key={j} className="absolute h-px w-2 bg-gray-400 dark:bg-gray-500" style={{ top: `${(j + 1) * 24}px`, left: '0px' }}></div>
+                            <div key={j} className="absolute h-px w-2 bg-black dark:bg-white" style={{ top: `${(j + 1) * 24}px`, left: '0px' }}></div>
                           ))}
                         </div>
                       ))
@@ -1807,13 +1807,13 @@ export default function DocumentWorkspace() {
                       // Centimeter markings vertically (37.8 pixels per cm at 96 DPI)
                       Array.from({ length: Math.ceil(pageHeight / 37.8) + 1 }, (_, i) => (
                         <div key={i} className="absolute w-full" style={{ top: `${i * 37.8}px` }}>
-                          <div className="h-px w-5 bg-gray-600 dark:bg-gray-300"></div>
-                          <div className="absolute left-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-y-1/2 rotate-90 origin-left" style={{ top: '0px' }}>
+                          <div className="h-px w-6 bg-black dark:bg-white"></div>
+                          <div className="absolute left-6 text-xs text-black dark:text-white font-medium transform -translate-y-1/2 rotate-90 origin-left" style={{ top: '0px' }}>
                             {i}
                           </div>
                           {/* Half-cm marks */}
                           {i < Math.ceil(pageHeight / 37.8) && (
-                            <div className="absolute h-px w-3 bg-gray-500 dark:bg-gray-400" style={{ top: '18.9px', left: '0px' }}></div>
+                            <div className="absolute h-px w-4 bg-black dark:bg-white" style={{ top: '18.9px', left: '0px' }}></div>
                           )}
                         </div>
                       ))
