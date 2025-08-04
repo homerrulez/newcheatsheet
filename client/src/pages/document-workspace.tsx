@@ -724,6 +724,14 @@ export default function DocumentWorkspace() {
                 <span className="text-xs">{documentStats.readTime} min</span>
               </button>
               <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
+                onClick={() => aiImproveMutation.mutate()}
+                disabled={isAiImproving || !editor}
+              >
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <span className="text-xs">{isAiImproving ? 'Improving...' : 'AI Improve'}</span>
+              </button>
+              <button 
                 onClick={async () => {
                   if (!document?.content || document.content.trim().length === 0) {
                     toast({
@@ -1934,56 +1942,7 @@ export default function DocumentWorkspace() {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
-      
-      
-      {/* Floating AI Improve Button at bottom of document */}
-      <div className="fixed bottom-6 right-8 z-50">
-        <button
-          onClick={async () => {
-            if (!document?.content || document.content.trim().length === 0) {
-              toast({
-                title: "No content to improve",
-                description: "Please add some text to your document first.",
-              });
-              return;
-            }
-            
-            try {
-              setIsAiImproving(true);
-              const response = await fetch('/api/ai/improve-writing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: document.content })
-              });
-              
-              if (!response.ok) throw new Error('AI service unavailable');
-              
-              const { improvedContent } = await response.json();
-              await updateDocumentMutation.mutateAsync({ content: improvedContent });
-              
-              toast({
-                title: "Content improved!",
-                description: "Your document has been enhanced for clarity and readability.",
-              });
-            } catch (error) {
-              toast({
-                title: "AI improve failed",
-                description: "Please try again or check your connection.",
-                variant: "destructive"
-              });
-            } finally {
-              setIsAiImproving(false);
-            }
-          }}
-          disabled={isAiImproving || !document?.content}
-          className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm border border-white/20"
-        >
-          <Sparkles className="w-5 h-5" />
-          <span className="font-medium">
-            {isAiImproving ? 'Improving...' : 'AI Improve'}
-          </span>
-        </button>
-      </div>
+
 
 
     </div>
