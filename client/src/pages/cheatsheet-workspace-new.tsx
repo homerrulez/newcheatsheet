@@ -742,10 +742,12 @@ export default function CheatSheetWorkspace() {
           </div>
         </div>
 
-        {/* Formatting toolbar */}
-        <div className="flex items-center space-x-1 px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <Select value={fontFamily} onValueChange={setFontFamily}>
+        {/* Main toolbar content - 2 lines */}
+        <div className="p-3 space-y-3">
+          {/* First toolbar line */}
+          <div className="flex items-center justify-center space-x-4 overflow-x-auto px-4">
+            <div className="flex items-center space-x-1">
+              <Select value={fontFamily} onValueChange={setFontFamily}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -769,80 +771,79 @@ export default function CheatSheetWorkspace() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+            </div>
 
-          <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="h-6" />
 
-          <div className="flex items-center space-x-1">
-            <Button
-              variant={editor?.isActive('bold') ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().toggleBold().run()}
-            >
-              <Bold className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={editor?.isActive('italic') ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().toggleItalic().run()}
-            >
-              <Italic className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={editor?.isActive('underline') ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().toggleUnderline().run()}
-            >
-              <UnderlineIcon className="w-4 h-4" />
-            </Button>
-          </div>
+            <div className="flex items-center space-x-1">
+              <Button
+                variant={editor?.isActive('bold') ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+              >
+                <Bold className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={editor?.isActive('italic') ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+              >
+                <Italic className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={editor?.isActive('underline') ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().toggleUnderline().run()}
+              >
+                <UnderlineIcon className="w-4 h-4" />
+              </Button>
+            </div>
 
-          <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="h-6" />
 
-          <div className="flex items-center space-x-1">
-            <Button
-              variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-            >
-              <AlignLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-            >
-              <AlignCenter className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-            >
-              <AlignRight className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-            >
-              <AlignJustify className="w-4 h-4" />
-            </Button>
-          </div>
+            <div className="flex items-center space-x-1">
+              <Button
+                variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+              >
+                <AlignLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+              >
+                <AlignCenter className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+              >
+                <AlignRight className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+              >
+                <AlignJustify className="w-4 h-4" />
+              </Button>
+            </div>
 
-          <Separator orientation="vertical" className="h-6" />
-
-          <div className="flex items-center space-x-1">
-            <input
-              type="color"
-              value={textColor}
-              onChange={(e) => {
-                setTextColor(e.target.value);
-                editor?.chain().focus().setColor(e.target.value).run();
-              }}
-              className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
-              title="Text Color"
-            />
+            <div className="flex items-center space-x-1">
+              <input
+                type="color"
+                value={textColor}
+                onChange={(e) => {
+                  setTextColor(e.target.value);
+                  editor?.chain().focus().setColor(e.target.value).run();
+                }}
+                className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
+                title="Text Color"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -851,7 +852,7 @@ export default function CheatSheetWorkspace() {
       <div className="flex-1 flex overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left sidebar - Cheat sheets list */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+          <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
             <div className="h-full shadow-lg border-r border-gray-200 dark:border-gray-700" style={{
               background: 'white'
             }}>
@@ -914,7 +915,7 @@ export default function CheatSheetWorkspace() {
           <ResizableHandle withHandle />
 
           {/* Middle panel - Cheat sheet workspace with FIXED multi-page rendering */}
-          <ResizablePanel defaultSize={60} minSize={40}>
+          <ResizablePanel defaultSize={66} minSize={40}>
             <div className="h-full relative overflow-auto" style={{
               background: 'linear-gradient(to right, #ffc0cb, #e6e6fa, #add8e6)'
             }}>
@@ -1049,7 +1050,7 @@ export default function CheatSheetWorkspace() {
           <ResizableHandle withHandle />
 
           {/* Right panel - ChatGPT integration */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+          <ResizablePanel defaultSize={17} minSize={12} maxSize={35}>
             <div className="h-full shadow-lg border-l border-gray-200 dark:border-gray-700 flex flex-col" style={{
               background: 'white'
             }}>
