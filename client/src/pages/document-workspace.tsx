@@ -690,8 +690,8 @@ export default function DocumentWorkspace() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Enhanced Microsoft Word-Style Toolbar - Updated with Pastel Blue Background */}
-      <div className="bg-blue-50/95 dark:bg-blue-950/95 backdrop-blur-sm border-b border-blue-200/30 flex-shrink-0">
+      {/* Enhanced Microsoft Word-Style Toolbar - Updated with Blue Background */}
+      <div className="bg-blue-200 dark:bg-blue-800 border-b border-blue-300/50 flex-shrink-0">
         {/* Document title bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-blue-200 dark:border-blue-700">
           <div className="flex items-center space-x-4">
@@ -736,9 +736,56 @@ export default function DocumentWorkspace() {
               </div>
             </div>
             
-            <Button variant="outline" size="sm" className="bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              onClick={() => {
+                if (!document?.content || document.content.trim().length === 0) {
+                  toast({
+                    title: "No content to download",
+                    description: "Please add some text to your document first.",
+                  });
+                  return;
+                }
+                
+                // Create a clean HTML document for download
+                const cleanContent = document.content
+                  .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+                  .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ''); // Remove styles
+                
+                const blob = new Blob([
+                  `<!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="UTF-8">
+                    <title>${document.title || 'Document'}</title>
+                    <style>
+                      body { font-family: ${fontFamily}, serif; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6; margin: 40px; }
+                      @media print { body { margin: 0; } }
+                    </style>
+                  </head>
+                  <body>
+                    ${cleanContent}
+                  </body>
+                  </html>`
+                ], { type: 'text/html' });
+                
+                const url = URL.createObjectURL(blob);
+                const a = window.document.createElement('a');
+                a.href = url;
+                a.download = `${document.title || 'Document'}.html`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                toast({ 
+                  title: "Document downloaded",
+                  description: `${document.title || 'Document'}.html has been saved to your downloads.`
+                });
+              }}
+            >
               <Save className="w-4 h-4 mr-2" />
-              Save
+              Download
             </Button>
           </div>
         </div>
@@ -746,7 +793,7 @@ export default function DocumentWorkspace() {
 
 
         {/* Main toolbar content - 2 lines */}
-        <div className="p-3 space-y-3 bg-blue-200 dark:bg-blue-800">
+        <div className="p-3 space-y-3">
           {/* First toolbar line */}
           <div className="flex items-center justify-center space-x-3 overflow-x-auto px-4">
             {/* AI Features - First section */}
@@ -1859,145 +1906,53 @@ export default function DocumentWorkspace() {
       </ResizablePanelGroup>
       
       
-      {/* AI Writing Assistant Toolbar - Only spans center panel, positioned between left history and right ChatGPT panels */}
-      <div className="fixed bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 z-50" style={{ left: '25%', width: '50%' }}>
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {/* AI Grammar & Style Assistant */}
-            <button
-              onClick={async () => {
-                if (!document?.content || document.content.trim().length === 0) {
-                  toast({
-                    title: "No content to improve",
-                    description: "Please add some text to your document first.",
-                  });
-                  return;
-                }
-                
-                try {
-                  const response = await fetch('/api/ai/improve-writing', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      content: document.content,
-                      preserveEquations: true,
-                      preserveNotations: true 
-                    })
-                  });
-                  
-                  if (!response.ok) throw new Error('AI service unavailable');
-                  
-                  const { improvedContent } = await response.json();
-                  await updateDocumentMutation.mutateAsync({ content: improvedContent });
-                  
-                  toast({
-                    title: "Writing improved!",
-                    description: "Grammar, spelling, and phrasing have been enhanced while preserving equations and notations.",
-                  });
-                } catch (error) {
-                  toast({
-                    title: "AI improvement failed",
-                    description: "Please try again or check your connection.",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              className="flex items-center space-x-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700 transition-colors"
-            >
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Improve</span>
-            </button>
-
-            {/* Word Count & Reading Time */}
-            <div className="flex items-center space-x-4 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-              <div className="flex items-center space-x-1">
-                <Type className="w-3 h-3 text-blue-600" />
-                <span className="text-xs text-blue-700 dark:text-blue-300">
-                  {(() => {
-                    const text = document?.content || '';
-                    const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-                    return `${wordCount} words`;
-                  })()}
-                </span>
-              </div>
-              <div className="h-3 w-px bg-blue-300 dark:bg-blue-600"></div>
-              <div className="flex items-center space-x-1">
-                <Clock className="w-3 h-3 text-blue-600" />
-                <span className="text-xs text-blue-700 dark:text-blue-300">
-                  {(() => {
-                    const text = document?.content || '';
-                    const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-                    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-                    return `${readingTime} min`;
-                  })()}
-                </span>
-              </div>
-            </div>
-
-            {/* AI Tone Adjustment */}
-            <button
-              onClick={async () => {
-                if (!document?.content || document.content.trim().length === 0) {
-                  toast({
-                    title: "No content to adjust",
-                    description: "Please add some text to your document first.",
-                  });
-                  return;
-                }
-                
-                try {
-                  const response = await fetch('/api/ai/adjust-tone', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      content: document.content,
-                      targetTone: 'professional',
-                      preserveEquations: true 
-                    })
-                  });
-                  
-                  if (!response.ok) throw new Error('AI service unavailable');
-                  
-                  const { adjustedContent } = await response.json();
-                  await updateDocumentMutation.mutateAsync({ content: adjustedContent });
-                  
-                  toast({
-                    title: "Tone adjusted!",
-                    description: "Your writing tone has been made more professional while preserving technical content.",
-                  });
-                } catch (error) {
-                  toast({
-                    title: "Tone adjustment failed",
-                    description: "Please try again or check your connection.",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              className="flex items-center space-x-2 px-3 py-2 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg border border-orange-200 dark:border-orange-700 transition-colors"
-            >
-              <Brain className="w-4 h-4 text-orange-600" />
-              <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Tone</span>
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {/* Document Statistics */}
-            <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-              <FileText className="w-3 h-3 text-gray-600" />
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                Page {Math.max(1, Math.ceil((document?.content?.length || 0) / 3000))}
-              </span>
-            </div>
-
-            {/* Auto-save Status */}
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2 border border-green-200 dark:border-green-700">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-green-700 dark:text-green-400 font-medium">Auto-save</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Floating AI Improve Button at bottom of document */}
+      <div className="fixed bottom-6 right-8 z-50">
+        <button
+          onClick={async () => {
+            if (!document?.content || document.content.trim().length === 0) {
+              toast({
+                title: "No content to improve",
+                description: "Please add some text to your document first.",
+              });
+              return;
+            }
+            
+            try {
+              setIsAiImproving(true);
+              const response = await fetch('/api/ai/improve-writing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: document.content })
+              });
+              
+              if (!response.ok) throw new Error('AI service unavailable');
+              
+              const { improvedContent } = await response.json();
+              await updateDocumentMutation.mutateAsync({ content: improvedContent });
+              
+              toast({
+                title: "Content improved!",
+                description: "Your document has been enhanced for clarity and readability.",
+              });
+            } catch (error) {
+              toast({
+                title: "AI improve failed",
+                description: "Please try again or check your connection.",
+                variant: "destructive"
+              });
+            } finally {
+              setIsAiImproving(false);
+            }
+          }}
+          disabled={isAiImproving || !document?.content}
+          className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 backdrop-blur-sm border border-white/20"
+        >
+          <Sparkles className="w-5 h-5" />
+          <span className="font-medium">
+            {isAiImproving ? 'Improving...' : 'AI Improve'}
+          </span>
+        </button>
       </div>
     </div>
   );
