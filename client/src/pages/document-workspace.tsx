@@ -1469,7 +1469,9 @@ export default function DocumentWorkspace() {
               </div>
             </div>
             
-            <ScrollArea className="h-full p-4">
+            <ScrollArea className="h-full p-4" style={{
+              background: 'transparent'
+            }}>
               <div className="space-y-2">
                 {chatSessions.map((sessionItem: any) => (
                   <div key={sessionItem.id} className="group">
@@ -1576,11 +1578,15 @@ export default function DocumentWorkspace() {
 
         {/* Center panel - Document Editor with True Pagination */}
         <ResizablePanel defaultSize={50} minSize={30}>
-          <div className="h-full relative">
+          <div className="h-full relative" style={{
+            background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+          }}>
 
             
             {/* Microsoft Word-Style Floating Horizontal Ruler */}
-            <div className="relative h-12 flex justify-center bg-gray-300 dark:bg-gray-700">
+            <div className="relative h-12 flex justify-center" style={{
+              background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+            }}>
               <div 
                 className="relative bg-gradient-to-b from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
                 style={{ 
@@ -1684,7 +1690,9 @@ export default function DocumentWorkspace() {
             {/* Document area with vertical ruler */}
             <div className="flex-1 flex">
               {/* Microsoft Word-style Floating Vertical Ruler */}
-              <div className="relative w-12 bg-gray-300 dark:bg-gray-700 flex justify-center">
+              <div className="relative w-12 flex justify-center" style={{
+                background: 'linear-gradient(to bottom, #f2f4f6 0%, #e4e6ea 100%)'
+              }}>
                 <div 
                   className="bg-gradient-to-r from-gray-100 via-gray-150 to-gray-200 border border-gray-300 shadow-sm"
                   style={{ 
