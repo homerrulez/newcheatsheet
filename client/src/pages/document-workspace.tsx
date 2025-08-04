@@ -1440,13 +1440,13 @@ export default function DocumentWorkspace() {
         {/* Left panel - Document History */}
         <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
           <div className="h-full border-4 border-r-4 border-t-4 border-b-4 shadow-lg" style={{ 
-            background: 'linear-gradient(to bottom, #fdf4f9 0%, #fbf1f7 25%, #f9f6fc 50%, #f7faff 75%, #f2f9fd 90%, #eef6fa 100%)',
+            background: 'white',
             borderImage: 'linear-gradient(45deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa) 1',
-            boxShadow: '0 8px 24px rgba(255, 255, 255, 0.4) inset, 0 4px 16px rgba(0, 0, 0, 0.08)'
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(255, 255, 255, 0.6) inset'
           }}>
-            <div className="p-4 border-b border-pink-200/30 dark:border-slate-600" style={{ 
-              background: 'linear-gradient(to right, #fdf4f9 0%, #fbf1f7 50%, #f9f6fc 100%)',
-              boxShadow: '0 4px 12px rgba(255, 255, 255, 0.5) inset'
+            <div className="p-4 border-b border-gray-200/30 dark:border-slate-600" style={{ 
+              background: 'white',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
             }}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1758,15 +1758,8 @@ export default function DocumentWorkspace() {
               
               {/* Document content area */}
               <div className="flex-1 relative overflow-auto" style={{
-                background: `
-                  repeating-linear-gradient(
-                    135deg,
-                    #f5f7f7 0px,
-                    #f5f7f7 40px,
-                    #ffffff 40px,
-                    #ffffff 80px
-                  )
-                `
+                background: '#f8f9fa',
+                boxShadow: '0 4px 16px rgba(255, 255, 255, 0.7) inset, 0 2px 8px rgba(0, 0, 0, 0.04)'
               }}>
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
