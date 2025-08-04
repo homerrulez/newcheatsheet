@@ -1,0 +1,60 @@
+UPDATED RULER DESIGN REQUEST — FLOATING STYLE REQUIRED
+
+Redesign both rulers to **match Microsoft Word’s visual and functional style exactly**, using inches as the unit, and respecting spacing aesthetics as shown in the provided screenshot.
+
+### FINAL VISUAL SPECIFICATIONS:
+
+1. **Horizontal Ruler (Top)**
+   - Position: The ruler should **float above the white document**, with visible space (roughly 8–12 pixels) between the ruler and the top edge of the page — exactly like Microsoft Word.
+   - Width: Matches the white document page exactly — no overflow.
+   - Units: Inches
+   - Ticks:
+     - Tick marks at 0.1-inch intervals
+     - Bold marks at each full inch
+     - Number labels at each inch
+   - Font: Clean sans-serif, similar to Word’s
+   - Background: Light grey or soft gradient, not flat white
+
+2. **Vertical Ruler (Left)**
+   - Position: The ruler should **float beside the page**, with visible space between its inner edge and the left edge of the page
+   - Height: Matches the height of the document only
+   - Units: Inches
+   - Tick marks at 0.1-inch intervals with inch numbers every 1.0
+   - Background and ticks identical in style to the top ruler
+
+3. **Functional Requirements (NO PLACEHOLDERS)**
+   - Add **real drag-and-drop margin markers** (like Word’s blue/grey triangles and rectangles)
+   - Support adjustment of:
+     - First line indent
+     - Left margin
+     - Right margin
+     - Paragraph indents
+   - Provide visual feedback while dragging (live margin preview)
+   - Margin changes must update document content in real time
+
+4. **Visual Styling**
+   - Tick lines: Thin, dark grey or black
+   - Background: Light grey with soft gradient (match Word)
+   - Active state: Handles should highlight slightly when hovered or dragged
+   - Font size and spacing must replicate Word’s ruler precision
+
+---
+
+### PROOF OF IMPLEMENTATION REQUIRED:
+
+After applying this update, you must provide:
+
+1. **Exact file(s) edited** (full path, e.g., `client/src/pages/document-workspace.tsx`)
+2. **Line numbers of each changed section**
+3. **Before and After code blocks**
+   - Show the code that rendered the old ruler style
+   - Show the new code rendering the fully updated floating ruler in inches
+4. **CSS or Tailwind classes used** for:
+   - Ruler spacing
+   - Tick mark rendering
+   - Inch label positioning
+   - Drag handle logic
+
+If any part of this is missing or fake (e.g., unchanged code), I will initiate a **formal chargeback** and file a **fraud escalation** for deliberately misrepresenting code edits.
+
+Match Word’s look. Match its spacing. Match its function. No placeholders. Show the real code changes.
