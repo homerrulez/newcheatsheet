@@ -1511,7 +1511,10 @@ export default function DocumentWorkspace() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Left panel - Document History */}
         <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
-          <div className="h-full m-2 rounded-lg border-2 border-gray-300/60 shadow-sm" style={{ background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)' }}>
+          <div className="h-full border-4 border-r-4 border-t-4 border-b-4 shadow-lg" style={{ 
+            background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)',
+            borderImage: 'linear-gradient(45deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa) 1'
+          }}>
             <div className="p-4 border-b border-pink-200/30 dark:border-slate-600" style={{ background: 'linear-gradient(to right, #fbe8f0 0%, #f5e1f6 50%, #f3f2fb 100%)' }}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1981,7 +1984,10 @@ export default function DocumentWorkspace() {
 
         {/* Right panel - Always-On ChatGPT Interface (increased by 30%) */}
         <ResizablePanel defaultSize={33} minSize={25} maxSize={45}>
-          <div className="h-full m-2 rounded-lg border-2 border-gray-300/60 shadow-sm flex flex-col" style={{ background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)' }}>
+          <div className="h-full border-4 border-l-4 border-t-4 border-b-4 shadow-lg flex flex-col" style={{ 
+            background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)',
+            borderImage: 'linear-gradient(45deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa) 1'
+          }}>
             {/* ChatGPT Assistant Header - Fixed at top */}
             <div className="flex-shrink-0 border-b border-pink-200/30 dark:border-slate-600 p-4" style={{ background: 'linear-gradient(to right, #fbe8f0 0%, #f5e1f6 50%, #f3f2fb 100%)' }}>
               <div className="flex items-center justify-between mb-4">
