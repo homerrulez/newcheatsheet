@@ -337,6 +337,16 @@ Always be helpful and direct about working with their document.`;
     }
   });
 
+  app.patch("/api/cheatsheets/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const cheatSheet = await storage.updateCheatSheet(req.params.id, updates);
+      res.json(cheatSheet);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update cheat sheet" });
+    }
+  });
+
   app.put("/api/cheatsheets/:id", async (req, res) => {
     try {
       const updates = req.body;
@@ -344,6 +354,29 @@ Always be helpful and direct about working with their document.`;
       res.json(cheatSheet);
     } catch (error) {
       res.status(500).json({ message: "Failed to update cheat sheet" });
+    }
+  });
+
+  // CheatSheet Chat Sessions API
+  app.get("/api/cheatsheets/:id/chat-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getChatSessions(req.params.id);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch chat sessions" });
+    }
+  });
+
+  app.post("/api/cheatsheets/:id/chat-sessions", async (req, res) => {
+    try {
+      const validatedData = insertChatSessionSchema.parse(req.body);
+      const session = await storage.createChatSession({
+        ...validatedData,
+        documentId: req.params.id
+      } as any);
+      res.json(session);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid chat session data" });
     }
   });
 
