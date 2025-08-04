@@ -699,10 +699,10 @@ export default function DocumentWorkspace() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-blue-200 dark:bg-blue-800">
+    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(to bottom, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 90%, #c9eaf4 100%)' }}>
       
       {/* Enhanced Microsoft Word-Style Toolbar with Soft Blue Background */}
-      <div className="bg-blue-200 dark:bg-blue-800 border-b border-blue-300/50 flex-shrink-0">
+      <div className="border-b border-pink-200/30 flex-shrink-0" style={{ background: 'linear-gradient(to right, #fbe8f0 0%, #f5e1f6 25%, #f3f2fb 50%, #f0f8ff 75%, #d7f1fb 100%)' }}>
 
 
 
