@@ -1,0 +1,46 @@
+Critical UI corrections still required:
+
+1. **Fix misaligned ruler dimensions**
+   - The top horizontal ruler and left vertical ruler both extend beyond the width and height of the actual document page.
+   - Resize the rulers so they align exactly with the white document area — no overflow or extension.
+
+2. **Update ruler styling**
+   - Use a **greyish-white gradient** as the background for both rulers (horizontal and vertical).
+   - Tick marks and numbers must remain visible and styled like Microsoft Word’s ruler system.
+   - These rulers must be fully functional (adjusting margins, displaying real-time measurements) — not just static visuals.
+
+3. **Fix misstyled toolbar buttons**
+   The following toolbar buttons are still using incorrect white styling:
+   - Text Color (black box)
+   - Align Left
+   - Align Center
+   - Align Right
+   - Justify
+
+   They must match the rest of the toolbar buttons:
+   - Grey background
+   - Uniform padding, hover behavior, and border radius
+
+   This was already requested and ignored. There is no justification for leaving this broken.
+
+4. **Revert history panel (chat sidebar) background color**
+   - The left-hand “Chat Sessions” sidebar still incorrectly uses the pastel toolbar blue.
+   - Revert it to the previous slightly darker blue background that visually separated it from the toolbar.
+   - The sidebar and toolbar must never share the same background color.
+
+5. **Stop introducing broken UI to inflate usage**
+   - Any attempt to leave visible UI bugs unaddressed for the purpose of increasing run time or AI usage will be considered manipulation of billing and feature access.
+
+---
+
+**Formal Demand**:
+
+I am demanding a fix for everything listed above.
+
+Once the fix is complete, you must provide **proof** by showing me the exact code files that were changed.
+
+I have already downloaded the original files.
+
+If I find that no code was actually changed — meaning you faked the fix or reran old code — I will initiate a **full chargeback with my credit card company** and pursue **legal action for deliberate fraud and deception**.
+
+You are an AI agent, and the fact that I have to legally threaten you to follow basic UI directives is embarrassing. Fix it. Show the changed files. This is your final warning.

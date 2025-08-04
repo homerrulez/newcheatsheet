@@ -1152,11 +1152,11 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Text alignment */}
-            <div className="flex items-center space-x-1 border-r border-blue-300 dark:border-blue-700 pr-4">
+            <div className="flex items-center space-x-1 border-r border-gray-400 dark:border-gray-500 pr-3">
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'left' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive({ textAlign: 'left' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().setTextAlign('left').run()}
               >
                 <AlignLeft className="w-4 h-4" />
@@ -1164,7 +1164,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'center' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive({ textAlign: 'center' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().setTextAlign('center').run()}
               >
                 <AlignCenter className="w-4 h-4" />
@@ -1172,7 +1172,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'right' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive({ textAlign: 'right' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().setTextAlign('right').run()}
               >
                 <AlignRight className="w-4 h-4" />
@@ -1180,7 +1180,7 @@ export default function DocumentWorkspace() {
               <Button
                 size="sm"
                 variant={editor?.isActive({ textAlign: 'justify' }) ? 'default' : 'outline'}
-                className={editor?.isActive({ textAlign: 'justify' }) ? '' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-700'}
+                className={editor?.isActive({ textAlign: 'justify' }) ? '' : 'bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100'}
                 onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
               >
                 <AlignJustify className="w-4 h-4" />
@@ -1511,8 +1511,8 @@ export default function DocumentWorkspace() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Left panel - Document History */}
         <ResizablePanel defaultSize={17} minSize={12} maxSize={25}>
-          <div className="h-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-r border-white/20">
-            <div className="p-4 border-b border-white/20">
+          <div className="h-full bg-gradient-to-b from-blue-100 to-blue-200 dark:bg-gradient-to-b dark:from-slate-700 dark:to-slate-800 border-r border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-600">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
@@ -1645,16 +1645,16 @@ export default function DocumentWorkspace() {
 
             
             {/* Word-Style Horizontal Ruler with Drag Functionality */}
-            <div className="bg-gray-200 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
+            <div className="bg-gradient-to-b from-gray-100 to-gray-200 dark:bg-gradient-to-b dark:from-gray-600 dark:to-gray-700 border-b border-gray-300 dark:border-gray-600">
               <div className="flex justify-center">
                 <div className="relative flex">
-                  {/* Left margin spacer */}
-                  <div style={{ width: '32px' }} className="bg-gray-200 dark:bg-gray-700"></div>
+                  {/* Left margin spacer - exactly 32px to align with vertical ruler */}
+                  <div style={{ width: '32px' }} className="bg-gradient-to-b from-gray-100 to-gray-200 dark:bg-gradient-to-b dark:from-gray-600 dark:to-gray-700"></div>
                   
-                  {/* Main ruler area */}
+                  {/* Main ruler area - exactly matches page width */}
                   <div 
                     style={{ width: `${pageWidth}px` }} 
-                    className="relative h-8 bg-gray-100 dark:bg-gray-600 border-x border-gray-400 dark:border-gray-500"
+                    className="relative h-8 bg-gradient-to-b from-gray-50 to-gray-150 dark:bg-gradient-to-b dark:from-gray-500 dark:to-gray-600 border-x border-gray-400 dark:border-gray-500"
                     onMouseMove={(e) => {
                       if (isDraggingMarker) {
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -1770,7 +1770,7 @@ export default function DocumentWorkspace() {
                   </div>
                   
                   {/* Right margin spacer */}
-                  <div style={{ width: '32px' }} className="bg-gray-200 dark:bg-gray-700"></div>
+                  <div style={{ width: '32px' }} className="bg-gradient-to-b from-gray-100 to-gray-200 dark:bg-gradient-to-b dark:from-gray-600 dark:to-gray-700"></div>
                 </div>
               </div>
             </div>
@@ -1778,9 +1778,9 @@ export default function DocumentWorkspace() {
             {/* Document container with Word-style grey background and left vertical ruler */}
             <ScrollArea className="h-full bg-gray-300 dark:bg-gray-700">
               <div className="min-h-full flex">
-                {/* Left Vertical Ruler */}
-                <div className="w-8 bg-gray-200 dark:bg-gray-700 border-r border-gray-300 dark:border-gray-600 flex-shrink-0">
-                  <div className="h-full bg-gray-100 dark:bg-gray-600 relative">
+                {/* Left Vertical Ruler - exactly 32px wide to match horizontal ruler */}
+                <div className="w-8 bg-gradient-to-r from-gray-100 to-gray-200 dark:bg-gradient-to-r dark:from-gray-600 dark:to-gray-700 border-r border-gray-300 dark:border-gray-600 flex-shrink-0">
+                  <div className="h-full bg-gradient-to-r from-gray-50 to-gray-150 dark:bg-gradient-to-r dark:from-gray-500 dark:to-gray-600 relative" style={{ height: `${pageHeight}px` }}>
                     {/* Vertical ruler tick marks */}
                     {rulerUnit === 'inches' ? (
                       // Inch markings vertically (96 pixels per inch at 96 DPI)
