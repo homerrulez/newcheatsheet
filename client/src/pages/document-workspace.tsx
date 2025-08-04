@@ -74,6 +74,16 @@ export default function DocumentWorkspace() {
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
   const [pageOrientation, setPageOrientation] = useState('portrait');
   
+  // Ruler and margin states for Word-style functionality
+  const [leftMargin, setLeftMargin] = useState(96); // 1 inch in pixels at 96 DPI
+  const [rightMargin, setRightMargin] = useState(96); // 1 inch in pixels
+  const [topMargin, setTopMargin] = useState(96); // 1 inch in pixels
+  const [bottomMargin, setBottomMargin] = useState(96); // 1 inch in pixels
+  const [paragraphIndent, setParagraphIndent] = useState(0); // First line indent
+  const [hangingIndent, setHangingIndent] = useState(0); // Left indent for continuing lines
+  const [rulerUnit, setRulerUnit] = useState<'inches' | 'cm'>('inches');
+  const [isDraggingMarker, setIsDraggingMarker] = useState<string | null>(null);
+  
   // AI Improve state
   const [isAiImproving, setIsAiImproving] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saving' | 'saved' | 'error'
@@ -1285,6 +1295,16 @@ export default function DocumentWorkspace() {
                 Margins
               </Button>
               
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                onClick={() => setRulerUnit(rulerUnit === 'inches' ? 'cm' : 'inches')}
+                title="Toggle ruler units"
+              >
+                {rulerUnit === 'inches' ? 'in' : 'cm'}
+              </Button>
+              
               {/* Page Metrics Display */}
               <div className="text-xs text-gray-500 dark:text-gray-400 px-2 border-l border-gray-300">
                 <div>{pageMetrics.charactersPerLine} chars/line</div>
@@ -1624,37 +1644,240 @@ export default function DocumentWorkspace() {
           <div className="h-full relative">
 
             
-            {/* Horizontal Ruler */}
-            <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700">
+            {/* Word-Style Horizontal Ruler with Drag Functionality */}
+            <div className="bg-gray-200 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
               <div className="flex justify-center">
-                <div style={{ width: `${pageWidth}px` }} className="relative h-6 bg-gray-50 dark:bg-slate-800 border-x border-gray-300 dark:border-gray-600">
-                  {/* Ruler markings */}
-                  <div className="absolute inset-0 flex">
-                    {Array.from({ length: Math.ceil(pageWidth / 48) + 1 }, (_, i) => (
-                      <div key={i} className="relative" style={{ width: '48px' }}>
-                        {/* Major tick mark every inch (48px = 1 inch at 96 DPI) */}
-                        <div className="absolute left-0 top-0 w-px h-4 bg-gray-400 dark:bg-gray-500"></div>
-                        <div className="absolute left-0 top-4 text-xs text-gray-500 dark:text-gray-400 text-center w-12 transform -translate-x-1/2">
-                          {i}
-                        </div>
-                        {/* Minor tick marks */}
-                        {Array.from({ length: 4 }, (_, j) => (
-                          <div 
-                            key={j} 
-                            className="absolute top-0 w-px h-2 bg-gray-300 dark:bg-gray-600"
-                            style={{ left: `${(j + 1) * 12}px` }}
-                          ></div>
-                        ))}
+                <div className="relative flex">
+                  {/* Left margin spacer */}
+                  <div style={{ width: '32px' }} className="bg-gray-200 dark:bg-gray-700"></div>
+                  
+                  {/* Main ruler area */}
+                  <div 
+                    style={{ width: `${pageWidth}px` }} 
+                    className="relative h-8 bg-gray-100 dark:bg-gray-600 border-x border-gray-400 dark:border-gray-500"
+                    onMouseMove={(e) => {
+                      if (isDraggingMarker) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const relativeX = e.clientX - rect.left;
+                        
+                        // Update the appropriate margin/indent based on which marker is being dragged
+                        if (isDraggingMarker === 'leftMargin') {
+                          setLeftMargin(Math.max(0, Math.min(relativeX, pageWidth - rightMargin - 48)));
+                        } else if (isDraggingMarker === 'rightMargin') {
+                          setRightMargin(Math.max(0, Math.min(pageWidth - relativeX, pageWidth - leftMargin - 48)));
+                        } else if (isDraggingMarker === 'paragraphIndent') {
+                          setParagraphIndent(Math.max(0, Math.min(relativeX - leftMargin, pageWidth - leftMargin - rightMargin - 24)));
+                        } else if (isDraggingMarker === 'hangingIndent') {
+                          setHangingIndent(Math.max(0, Math.min(relativeX - leftMargin, pageWidth - leftMargin - rightMargin - 24)));
+                        }
+                      }
+                    }}
+                    onMouseUp={() => setIsDraggingMarker(null)}
+                  >
+                    {/* Ruler tick marks */}
+                    <div className="absolute inset-0">
+                      {rulerUnit === 'inches' ? (
+                        // Inch markings (96 pixels per inch at 96 DPI)
+                        Array.from({ length: Math.ceil(pageWidth / 96) + 1 }, (_, i) => (
+                          <div key={i} className="absolute" style={{ left: `${i * 96}px` }}>
+                            <div className="w-px h-5 bg-gray-600 dark:bg-gray-300"></div>
+                            <div className="absolute top-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-x-1/2" style={{ left: '0px' }}>
+                              {i}
+                            </div>
+                            {/* Half-inch marks */}
+                            {i < Math.ceil(pageWidth / 96) && (
+                              <div className="absolute w-px h-3 bg-gray-500 dark:bg-gray-400" style={{ left: '48px', top: '0px' }}></div>
+                            )}
+                            {/* Quarter-inch marks */}
+                            {Array.from({ length: 3 }, (_, j) => (
+                              <div key={j} className="absolute w-px h-2 bg-gray-400 dark:bg-gray-500" style={{ left: `${(j + 1) * 24}px`, top: '0px' }}></div>
+                            ))}
+                          </div>
+                        ))
+                      ) : (
+                        // Centimeter markings (37.8 pixels per cm at 96 DPI)
+                        Array.from({ length: Math.ceil(pageWidth / 37.8) + 1 }, (_, i) => (
+                          <div key={i} className="absolute" style={{ left: `${i * 37.8}px` }}>
+                            <div className="w-px h-5 bg-gray-600 dark:bg-gray-300"></div>
+                            <div className="absolute top-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-x-1/2" style={{ left: '0px' }}>
+                              {i}
+                            </div>
+                            {/* Half-cm marks */}
+                            {i < Math.ceil(pageWidth / 37.8) && (
+                              <div className="absolute w-px h-3 bg-gray-500 dark:bg-gray-400" style={{ left: '18.9px', top: '0px' }}></div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    {/* Draggable margin and indent markers */}
+                    {/* Left margin marker */}
+                    <div 
+                      className="absolute top-0 w-3 h-8 bg-blue-600 hover:bg-blue-700 cursor-ew-resize border border-blue-800 shadow-sm"
+                      style={{ left: `${leftMargin}px`, transform: 'translateX(-50%)' }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setIsDraggingMarker('leftMargin');
+                      }}
+                      title="Left Margin"
+                    >
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-1 h-4 bg-white rounded-sm"></div>
                       </div>
-                    ))}
+                    </div>
+                    
+                    {/* Right margin marker */}
+                    <div 
+                      className="absolute top-0 w-3 h-8 bg-blue-600 hover:bg-blue-700 cursor-ew-resize border border-blue-800 shadow-sm"
+                      style={{ left: `${pageWidth - rightMargin}px`, transform: 'translateX(-50%)' }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setIsDraggingMarker('rightMargin');
+                      }}
+                      title="Right Margin"
+                    >
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-1 h-4 bg-white rounded-sm"></div>
+                      </div>
+                    </div>
+                    
+                    {/* First line indent marker (triangle pointing down) */}
+                    <div 
+                      className="absolute top-0 cursor-ew-resize"
+                      style={{ left: `${leftMargin + paragraphIndent}px`, transform: 'translateX(-50%)' }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setIsDraggingMarker('paragraphIndent');
+                      }}
+                      title="First Line Indent"
+                    >
+                      <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-l-transparent border-r-transparent border-b-green-600 hover:border-b-green-700"></div>
+                    </div>
+                    
+                    {/* Hanging indent marker (triangle pointing up) */}
+                    <div 
+                      className="absolute bottom-0 cursor-ew-resize"
+                      style={{ left: `${leftMargin + hangingIndent}px`, transform: 'translateX(-50%)' }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setIsDraggingMarker('hangingIndent');
+                      }}
+                      title="Hanging Indent"
+                    >
+                      <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-l-transparent border-r-transparent border-t-green-600 hover:border-t-green-700"></div>
+                    </div>
                   </div>
+                  
+                  {/* Right margin spacer */}
+                  <div style={{ width: '32px' }} className="bg-gray-200 dark:bg-gray-700"></div>
                 </div>
               </div>
             </div>
 
-            {/* Document container */}
-            <ScrollArea className="h-full bg-gray-100 dark:bg-gray-800">
-              <div className="min-h-full p-8 flex flex-col items-center">
+            {/* Document container with Word-style grey background and left vertical ruler */}
+            <ScrollArea className="h-full bg-gray-300 dark:bg-gray-700">
+              <div className="min-h-full flex">
+                {/* Left Vertical Ruler */}
+                <div className="w-8 bg-gray-200 dark:bg-gray-700 border-r border-gray-300 dark:border-gray-600 flex-shrink-0">
+                  <div className="h-full bg-gray-100 dark:bg-gray-600 relative">
+                    {/* Vertical ruler tick marks */}
+                    {rulerUnit === 'inches' ? (
+                      // Inch markings vertically (96 pixels per inch at 96 DPI)
+                      Array.from({ length: Math.ceil(pageHeight / 96) + 1 }, (_, i) => (
+                        <div key={i} className="absolute w-full" style={{ top: `${i * 96}px` }}>
+                          <div className="h-px w-5 bg-gray-600 dark:bg-gray-300"></div>
+                          <div className="absolute left-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-y-1/2 rotate-90 origin-left" style={{ top: '0px' }}>
+                            {i}
+                          </div>
+                          {/* Half-inch marks */}
+                          {i < Math.ceil(pageHeight / 96) && (
+                            <div className="absolute h-px w-3 bg-gray-500 dark:bg-gray-400" style={{ top: '48px', left: '0px' }}></div>
+                          )}
+                          {/* Quarter-inch marks */}
+                          {Array.from({ length: 3 }, (_, j) => (
+                            <div key={j} className="absolute h-px w-2 bg-gray-400 dark:bg-gray-500" style={{ top: `${(j + 1) * 24}px`, left: '0px' }}></div>
+                          ))}
+                        </div>
+                      ))
+                    ) : (
+                      // Centimeter markings vertically (37.8 pixels per cm at 96 DPI)
+                      Array.from({ length: Math.ceil(pageHeight / 37.8) + 1 }, (_, i) => (
+                        <div key={i} className="absolute w-full" style={{ top: `${i * 37.8}px` }}>
+                          <div className="h-px w-5 bg-gray-600 dark:bg-gray-300"></div>
+                          <div className="absolute left-5 text-xs text-gray-700 dark:text-gray-200 font-medium transform -translate-y-1/2 rotate-90 origin-left" style={{ top: '0px' }}>
+                            {i}
+                          </div>
+                          {/* Half-cm marks */}
+                          {i < Math.ceil(pageHeight / 37.8) && (
+                            <div className="absolute h-px w-3 bg-gray-500 dark:bg-gray-400" style={{ top: '18.9px', left: '0px' }}></div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                    
+                    {/* Top margin marker on vertical ruler */}
+                    <div 
+                      className="absolute left-0 w-8 h-3 bg-blue-600 hover:bg-blue-700 cursor-ns-resize border border-blue-800 shadow-sm"
+                      style={{ top: `${topMargin}px`, transform: 'translateY(-50%)' }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        const startY = e.clientY;
+                        const startMargin = topMargin;
+                        
+                        const handleMouseMove = (moveEvent: MouseEvent) => {
+                          const deltaY = moveEvent.clientY - startY;
+                          setTopMargin(Math.max(0, Math.min(startMargin + deltaY, pageHeight - bottomMargin - 48)));
+                        };
+                        
+                        const handleMouseUp = () => {
+                          window.document.removeEventListener('mousemove', handleMouseMove);
+                          window.document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        
+                        window.document.addEventListener('mousemove', handleMouseMove);
+                        window.document.addEventListener('mouseup', handleMouseUp);
+                      }}
+                      title="Top Margin"
+                    >
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-4 h-1 bg-white rounded-sm"></div>
+                      </div>
+                    </div>
+                    
+                    {/* Bottom margin marker on vertical ruler */}
+                    <div 
+                      className="absolute left-0 w-8 h-3 bg-blue-600 hover:bg-blue-700 cursor-ns-resize border border-blue-800 shadow-sm"
+                      style={{ top: `${pageHeight - bottomMargin}px`, transform: 'translateY(-50%)' }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        const startY = e.clientY;
+                        const startMargin = bottomMargin;
+                        
+                        const handleMouseMove = (moveEvent: MouseEvent) => {
+                          const deltaY = moveEvent.clientY - startY;
+                          setBottomMargin(Math.max(0, Math.min(startMargin - deltaY, pageHeight - topMargin - 48)));
+                        };
+                        
+                        const handleMouseUp = () => {
+                          window.document.removeEventListener('mousemove', handleMouseMove);
+                          window.document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        
+                        window.document.addEventListener('mousemove', handleMouseMove);
+                        window.document.addEventListener('mouseup', handleMouseUp);
+                      }}
+                      title="Bottom Margin"
+                    >
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-4 h-1 bg-white rounded-sm"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Main document area */}
+                <div className="flex-1 p-8 flex flex-col items-center">
 
 
                 {/* Render pages with real distributed content */}
@@ -1667,6 +1890,11 @@ export default function DocumentWorkspace() {
                       height: `${pageHeight}px`,
                       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.05)',
                       minHeight: `${pageHeight}px`,
+                      // Apply real margins to content area
+                      paddingLeft: `${leftMargin}px`,
+                      paddingRight: `${rightMargin}px`,
+                      paddingTop: `${topMargin}px`,
+                      paddingBottom: `${bottomMargin}px`
                     }}
                   >
                     {/* Page number indicator with content info */}
@@ -1743,6 +1971,7 @@ export default function DocumentWorkspace() {
                     )}
                   </div>
                 ))}
+                </div>
               </div>
             </ScrollArea>
           </div>
