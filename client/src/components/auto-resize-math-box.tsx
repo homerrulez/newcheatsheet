@@ -69,7 +69,10 @@ export default function AutoResizeMathBox({
   isSelected = false,
   onClick
 }: AutoResizeMathBoxProps) {
-  const [currentSize, setCurrentSize] = useState<Size>(externalSize || { width: 300, height: 200 });
+  const [currentSize, setCurrentSize] = useState<Size>(() => {
+    // Initialize with unique instance to prevent shared state
+    return externalSize ? { ...externalSize } : { width: 300, height: 200 };
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [optimalFontSize, setOptimalFontSize] = useState(SIZING_CONSTANTS.DEFAULT_FONT_SIZE);
   const [contentLayout, setContentLayout] = useState({ lineHeight: 1.4, wordSpacing: 'normal' });

@@ -526,33 +526,12 @@ export default function CheatSheetWorkspace() {
           ];
           
           const numToCreate = Math.min(requestedCount, mathFormulas.length);
-          let createdCount = 0;
           
-          // Smart layout within page boundaries
-          const PAGE_WIDTH = 816;
-          const PAGE_HEIGHT = 1056;
-          const MARGIN = 72; // Page margins
-          const BOX_WIDTH = 200;
-          const BOX_HEIGHT = 150;
-          const SPACING = 20;
-          
-          // Calculate how many boxes fit per row within page margins
-          const usableWidth = PAGE_WIDTH - (2 * MARGIN);
-          const boxesPerRow = Math.floor(usableWidth / (BOX_WIDTH + SPACING));
-          
+          // Add boxes sequentially - positioning will be handled by Tetris layout
           for (let i = 0; i < numToCreate; i++) {
             const formula = mathFormulas[i];
-            
-            // Calculate position within page boundaries
-            const row = Math.floor(i / boxesPerRow);
-            const col = i % boxesPerRow;
-            const page = Math.floor(row / Math.floor((PAGE_HEIGHT - 2 * MARGIN) / (BOX_HEIGHT + SPACING)));
-            
-            const x = MARGIN + col * (BOX_WIDTH + SPACING) + (page * (PAGE_WIDTH + 40));
-            const y = MARGIN + (row % Math.floor((PAGE_HEIGHT - 2 * MARGIN) / (BOX_HEIGHT + SPACING))) * (BOX_HEIGHT + SPACING) + (page * 40);
-            
-            addBox(formula.title, formula.content, formula.color, x, y);
-            createdCount++;
+            // Start with temporary position - Tetris algorithm will place optimally
+            addBox(formula.title, formula.content, formula.color, 0, 0);
           }
           
           toast({ title: `Created ${createdCount} math formula boxes` });
@@ -591,19 +570,148 @@ export default function CheatSheetWorkspace() {
     }
   }, [cheatSheet, chatSessions, defaultSessionId]);
 
-  // Box management functions
-  const addBox = (title: string, content: string, color: string = '#fff', x: number = 100, y: number = 100) => {
+  // Tetris-style intelligent placement algorithm
+  const findOptimalPosition = (newBoxWidth: number, newBoxHeight: number, existingBoxes: Box[]) => {
+    const PAGE_WIDTH = 816;
+    const MARGIN = 40;
+    const SPACING = 10;
+    const usableWidth = PAGE_WIDTH - (2 * MARGIN);
+    
+    // Start from top-left and find first available spot
+    for (let y = MARGIN; y < 2000; y += SPACING) {
+      for (let x = MARGIN; x <= usableWidth - newBoxWidth; x += SPACING) {
+        const testRect = {
+          left: x,
+          top: y,
+          right: x + newBoxWidth,
+          bottom: y + newBoxHeight
+        };
+        
+        // Check if this position conflicts with existing boxes
+        const hasConflict = existingBoxes.some(box => {
+          const boxRect = {
+            left: box.x,
+            top: box.y,
+            right: box.x + box.width,
+            bottom: box.y + box.height
+          };
+          
+          return !(testRect.right <= boxRect.left || 
+                  testRect.left >= boxRect.right || 
+                  testRect.bottom <= boxRect.top || 
+                  testRect.top >= boxRect.bottom);
+        });
+        
+        if (!hasConflict) {
+          return { x, y };
+        }
+      }
+    }
+    
+    // Fallback: place at bottom
+    const maxY = Math.max(0, ...existingBoxes.map(box => box.y + box.height));
+    return { x: MARGIN, y: maxY + SPACING };
+  };
+
+  // Advanced content-based dynamic sizing system
+  const calculateContentSize = (title: string, content: string) => {
+    // Analyze content complexity and length
+    const titleLength = title.length;
+    const contentLength = content.length;
+    const newlineCount = (content.match(/\n/g) || []).length;
+    const hasLaTeX = /\\[a-zA-Z]+|\$.*\$|\\\(.*\\\)/.test(content);
+    const hasComplexMath = /\^|\{|\}|_|\\frac|\\sqrt|\\sum|\\int/.test(content);
+    const wordCount = content.split(/\s+/).length;
+    
+    // Base dimensions
+    let width = 180;
+    let height = 120;
+    
+    // Title contribution
+    if (titleLength > 20) width += Math.min(100, (titleLength - 20) * 3);
+    if (titleLength > 30) height += 25;
+    
+    // Content length adjustments
+    if (contentLength > 50) {
+      width += Math.min(120, Math.floor((contentLength - 50) / 8));
+    }
+    
+    // Line-based height calculation
+    const estimatedLines = Math.max(1, newlineCount + Math.ceil(contentLength / 40));
+    height += estimatedLines * 22;
+    
+    // LaTeX and math adjustments
+    if (hasLaTeX) {
+      width += 40;
+      height += 30;
+    }
+    if (hasComplexMath) {
+      width += 60;
+      height += 40;
+    }
+    
+    // Word density adjustments
+    if (wordCount > 15) {
+      height += Math.min(80, (wordCount - 15) * 4);
+    }
+    
+    // Ensure reasonable bounds
+    width = Math.max(160, Math.min(450, width));
+    height = Math.max(100, Math.min(500, height));
+    
+    return { width: Math.round(width), height: Math.round(height) };
+  };
+
+  // Intelligent Tetris-style layout engine
+  const relayoutAllBoxes = () => {
+    if (boxes.length === 0) return;
+    
+    const PAGE_WIDTH = 816;
+    const MARGIN = 40;
+    const SPACING = 8;
+    const usableWidth = PAGE_WIDTH - (2 * MARGIN);
+    
+    // Sort boxes by area (largest first for better packing)
+    const sortedBoxes = [...boxes].sort((a, b) => (b.width * b.height) - (a.width * a.height));
+    const repositionedBoxes: Box[] = [];
+    
+    sortedBoxes.forEach(box => {
+      const position = findOptimalPosition(box.width, box.height, repositionedBoxes);
+      repositionedBoxes.push({
+        ...box,
+        x: position.x,
+        y: position.y
+      });
+    });
+    
+    setBoxes(repositionedBoxes);
+  };
+
+  // Box management functions with intelligent placement
+  const addBox = (title: string, content: string, color: string = 'from-blue-50 to-blue-100', x?: number, y?: number) => {
+    const { width, height } = calculateContentSize(title, content);
+    
+    // Use provided coordinates or find optimal position
+    const position = (x !== undefined && y !== undefined) 
+      ? { x, y } 
+      : findOptimalPosition(width, height, boxes);
+    
     const newBox: Box = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       title,
       content,
       color,
-      x,
-      y,
-      width: 200,
-      height: 150
+      x: position.x,
+      y: position.y,
+      width,
+      height
     };
+    
     setBoxes(prev => [...prev, newBox]);
+    
+    // Auto-relayout after adding new box for optimal arrangement
+    setTimeout(() => relayoutAllBoxes(), 100);
+    
     return newBox.id;
   };
 
@@ -1188,41 +1296,36 @@ export default function CheatSheetWorkspace() {
 
         <ResizableHandle />
 
-        {/* Middle panel - Box Layout Area */}
+        {/* Middle panel - Single Page Layout Area */}
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full bg-gray-100 dark:bg-gray-800 relative overflow-auto">
-            {/* Dynamic page boundaries as visual guides */}
-            <div className="absolute inset-0" style={{ minWidth: '856px', minHeight: '1096px' }}>
-              {/* Render multiple pages based on box count */}
-              {Array.from({ length: Math.max(1, Math.ceil(boxes.length / 15)) }).map((_, pageIndex) => (
-                <div
-                  key={pageIndex}
-                  className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg"
-                  style={{
-                    top: '20px',
-                    left: `${20 + pageIndex * 856}px`,
-                    width: '816px',
-                    height: '1056px',
-                    zIndex: 0
-                  }}
-                >
-                  {/* Page header */}
-                  <div className="absolute top-2 right-4 text-xs text-gray-400">
-                    Cheat Sheet • Page {pageIndex + 1}
-                  </div>
-                  
-                  {/* Page margins guide */}
-                  <div 
-                    className="absolute border border-blue-200 border-dashed"
-                    style={{
-                      top: '72px',
-                      left: '72px',
-                      width: '672px',
-                      height: '912px'
-                    }}
-                  />
+            {/* Single page workspace with proper containment */}
+            <div className="absolute inset-0" style={{ minWidth: '816px' }}>
+              {/* Single letter-size page guide */}
+              <div
+                className="absolute border-2 border-dashed border-gray-300 bg-white/50 rounded-lg mx-4 my-4"
+                style={{
+                  width: '816px',
+                  minHeight: '1056px',
+                  zIndex: 0
+                }}
+              >
+                {/* Page header */}
+                <div className="absolute top-2 right-4 text-xs text-gray-400">
+                  Cheat Sheet • {boxes.length} boxes
                 </div>
-              ))}
+                
+                {/* Working area margins guide */}
+                <div 
+                  className="absolute border border-blue-200 border-dashed"
+                  style={{
+                    top: '40px',
+                    left: '40px',
+                    width: '736px',
+                    minHeight: '976px'
+                  }}
+                />
+              </div>
             </div>
             
             {/* Boxes container */}
@@ -1265,18 +1368,27 @@ export default function CheatSheetWorkspace() {
                     </div>
                     
                     {/* Quick add button for testing */}
-                    <Button
-                      onClick={() => addBox(
-                        'Power Rule for Differentiation', 
-                        'd/dx x^n = nx^(n-1)',
-                        'from-blue-50 to-blue-100'
-                      )}
-                      className="mt-4"
-                      variant="outline"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Sample Box
-                    </Button>
+                    <div className="space-y-2 mt-4">
+                      <Button
+                        onClick={() => addBox(
+                          'Power Rule', 
+                          'd/dx x^n = nx^(n-1)'
+                        )}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Sample Box
+                      </Button>
+                      <Button
+                        onClick={relayoutAllBoxes}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        <Grid3X3 className="w-4 h-4 mr-2" />
+                        Auto-Layout Boxes
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
