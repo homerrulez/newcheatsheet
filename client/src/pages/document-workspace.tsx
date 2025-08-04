@@ -906,7 +906,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <SelectTrigger className="w-36 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
+                <SelectTrigger className="w-36 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -941,7 +941,7 @@ export default function DocumentWorkspace() {
                   }
                 }}
               >
-                <SelectTrigger className="w-16 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
+                <SelectTrigger className="w-16 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1245,7 +1245,7 @@ export default function DocumentWorkspace() {
                   });
                 }
               }}>
-                <SelectTrigger className="w-36 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
+                <SelectTrigger className="w-36 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue placeholder="Page Size" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1267,7 +1267,7 @@ export default function DocumentWorkspace() {
                 setPageMetrics(newLayoutEngine.getCurrentMetrics());
                 toast({ title: `Page orientation changed to ${value}` });
               }}>
-                <SelectTrigger className="w-24 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
+                <SelectTrigger className="w-24 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1276,20 +1276,18 @@ export default function DocumentWorkspace() {
                 </SelectContent>
               </Select>
               
-              <Button size="sm" variant="outline" className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
-                <Layout className="w-4 h-4 mr-1" />
-                Margins
-              </Button>
+              <button className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700">
+                <Layout className="w-4 h-4 text-blue-600" />
+                <span className="text-xs">Margins</span>
+              </button>
               
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => setRulerUnit(rulerUnit === 'inches' ? 'cm' : 'inches')}
                 title="Toggle ruler units"
               >
-                {rulerUnit === 'inches' ? 'in' : 'cm'}
-              </Button>
+                <span className="text-xs text-blue-600">{rulerUnit === 'inches' ? 'in' : 'cm'}</span>
+              </button>
               
               {/* Page Metrics Display */}
               <div className="text-xs text-gray-500 dark:text-gray-400 px-2 border-l border-gray-300">
@@ -1300,10 +1298,8 @@ export default function DocumentWorkspace() {
 
             {/* Insert options */}
             <div className="flex items-center space-x-1 border-r border-gray-300 pr-4">
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => {
                   if (editor) {
                     // Create hidden file input for image upload
@@ -1327,13 +1323,11 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <Image className="w-4 h-4 mr-1" />
-                Image
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Image className="w-4 h-4 text-green-600" />
+                <span className="text-xs">Image</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => {
                   if (editor) {
                     // Insert a simple HTML table since Tiptap table extension might not be available
@@ -1366,13 +1360,11 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <Table className="w-4 h-4 mr-1" />
-                Table
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Table className="w-4 h-4 text-blue-600" />
+                <span className="text-xs">Table</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => {
                   if (editor) {
                     const url = prompt('Enter URL:');
@@ -1384,13 +1376,11 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <Link className="w-4 h-4 mr-1" />
-                Link
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Link className="w-4 h-4 text-purple-600" />
+                <span className="text-xs">Link</span>
+              </button>
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700 disabled:opacity-50"
                 onClick={() => {
                   if (editor) {
                     editor.chain().focus().insertContent('<div style="page-break-before: always;"></div>').run();
@@ -1399,17 +1389,15 @@ export default function DocumentWorkspace() {
                 }}
                 disabled={!editor}
               >
-                <FileText className="w-4 h-4 mr-1" />
-                Page Break
-              </Button>
+                <FileText className="w-4 h-4 text-orange-600" />
+                <span className="text-xs">Page Break</span>
+              </button>
             </div>
 
             {/* Zoom controls */}
             <div className="flex items-center space-x-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              <button 
+                className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => {
                   if (!document?.content || document.content.trim().length === 0) {
                     toast({
@@ -1454,29 +1442,25 @@ export default function DocumentWorkspace() {
                   });
                 }}
               >
-                <Save className="w-4 h-4 mr-2" />
-                Download
-              </Button>
+                <Save className="w-4 h-4 text-green-600" />
+                <span className="text-xs">Download</span>
+              </button>
 
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
               >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <span className="text-sm font-medium w-16 text-center">{zoomLevel}%</span>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100"
+                <Minus className="w-4 h-4 text-blue-600" />
+              </button>
+              <span className="text-sm font-medium w-16 text-center text-gray-700">{zoomLevel}%</span>
+              <button 
+                className="px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
                 onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
               >
-                <Plus className="w-4 h-4" />
-              </Button>
+                <Plus className="w-4 h-4 text-blue-600" />
+              </button>
               <Select value={zoomLevel.toString()} onValueChange={(value) => setZoomLevel(parseInt(value))}>
-                <SelectTrigger className="w-20 bg-gray-400 hover:bg-gray-500 border-gray-500 text-gray-100">
+                <SelectTrigger className="w-20 border-none bg-transparent hover:bg-gray-100 text-gray-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
