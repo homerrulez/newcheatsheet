@@ -578,7 +578,7 @@ export default function CheatSheetWorkspace() {
     // Auto-save functionality - update the cheat sheet with current boxes
     if (id && id !== 'new') {
       updateCheatSheetMutation.mutate({
-        boxes: boxes,
+        content: JSON.stringify(boxes),
       });
     }
   };
@@ -838,11 +838,11 @@ export default function CheatSheetWorkspace() {
                                   {sheet.title}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  {new Date(sheet.updatedAt || Date.now()).toLocaleDateString()}
+                                  {new Date(sheet.updatedAt).toLocaleDateString()}
                                 </p>
                                 <div className="flex items-center space-x-2 mt-2">
                                   <Badge variant="secondary" className="text-xs">
-                                    {(sheet.boxes as any[])?.length || 0} boxes
+                                    {JSON.parse(sheet.content || '[]').length || 0} boxes
                                   </Badge>
                                 </div>
                               </div>
@@ -912,15 +912,16 @@ export default function CheatSheetWorkspace() {
                                   title={box.title}
                                   content={box.content}
                                   color={box.color}
-                                  position={{ x: box.x, y: box.y - pageStartY }}
-                                  size={{ width: box.width, height: box.height }}
-                                  onPositionChange={(position) => updateBox(box.id, { x: position.x, y: position.y + pageStartY })}
-                                  onSizeChange={(size) => updateBox(box.id, { width: size.width, height: size.height })}
-                                  onSaveRequest={() => saveCheatSheet()}
+                                  // CRITICAL FIX: Adjust Y position for multi-page layout
+                                  x={box.x}
+                                  y={box.y - pageStartY}
+                                  width={box.width}
+                                  height={box.height}
+                                  onUpdate={(updates) => updateBox(box.id, updates)}
                                   onDelete={() => deleteBox(box.id)}
-                                  onClick={() => setSelectedBox(box.id)}
+                                  onSelect={() => setSelectedBox(box.id)}
                                   isSelected={selectedBox === box.id}
-                                  boxNumber={getBoxNumber(box.id)}
+                                  getBoxNumber={() => getBoxNumber(box.id)}
                                 />
                               ))}
                             </div>
@@ -996,7 +997,7 @@ export default function CheatSheetWorkspace() {
                         <div className="flex items-center space-x-1">
                           <Clock className="w-3 h-3 text-gray-400" />
                           <span className="text-xs text-gray-500">
-                            {new Date(session.updatedAt || Date.now()).toLocaleDateString()}
+                            {new Date(session.updatedAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
@@ -1036,7 +1037,7 @@ export default function CheatSheetWorkspace() {
                             {message.content}
                           </p>
                           <span className="text-xs text-gray-500 mt-1 block">
-                            {new Date(message.createdAt || Date.now()).toLocaleTimeString()}
+                            {new Date(message.createdAt).toLocaleTimeString()}
                           </span>
                         </div>
                       </div>
