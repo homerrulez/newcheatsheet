@@ -1,7 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { FontFamily } from '@tiptap/extension-font-family';
+import Highlight from '@tiptap/extension-highlight';
 
+// Custom FontSize extension
+const FontSize = TextStyle.extend({
+  addAttributes() {
+    return {
+      fontSize: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.style.fontSize?.replace('pt', ''),
+        renderHTML: (attributes: any) => {
+          if (!attributes.fontSize) return {}
+          return { style: `font-size: ${attributes.fontSize}pt` }
+        },
+      }
+    }
+  }
+});
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,7 +49,6 @@ import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/sch
 import { useToast } from '@/hooks/use-toast';
 import { LayoutEngine, createLayoutEngine } from '@/lib/layout-engine';
 import { DocumentCommandInterface, createDocumentInterface } from '@/lib/document-commands';
-import { PaginatedTextEditor } from '@/components/PaginatedTextEditor';
 
 // Page sizes (in inches, converted to pixels at 96 DPI)
 const PAGE_SIZES = {
@@ -51,7 +73,6 @@ export default function DocumentWorkspace() {
   const [textColor, setTextColor] = useState('#000000');
   const [pageSize, setPageSize] = useState<keyof typeof PAGE_SIZES>('letter');
   const [pageOrientation, setPageOrientation] = useState('portrait');
-  const [documentContent, setDocumentContent] = useState('');
   
   // Ruler and margin states for Word-style functionality
   const [leftMargin, setLeftMargin] = useState(96); // 1 inch in pixels at 96 DPI
@@ -85,19 +106,38 @@ export default function DocumentWorkspace() {
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Import debounce utility
-  const debounce = useCallback((func: Function, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(null, args), delay);
-    };
-  }, []);
-
-  // Document content management
-  const handleContentChange = useCallback((newContent: string) => {
-    setDocumentContent(newContent);
-  }, []);
+  // Editor setup with extensive functionality
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Underline,
+      TextStyle,
+      Color,
+      FontFamily,
+      FontSize,
+      Highlight.configure({
+        multicolor: true,
+      }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full w-full',
+        style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
+      },
+    },
+    onUpdate: ({ editor }) => {
+      // Auto-save document changes
+      debouncedSave();
+    },
+  });
 
   // Fetch document
   const { data: document, isLoading: documentLoading } = useQuery<Document>({
@@ -360,9 +400,9 @@ export default function DocumentWorkspace() {
   // Debounced save function
   const debouncedSave = useCallback(
     debounce(() => {
-      if (documentContent && id) {
+      if (editor) {
         updateDocumentMutation.mutate({
-          content: documentContent,
+          content: editor.getHTML(),
           pageSize,
           fontSize: fontSize.toString(),
           fontFamily,
@@ -370,26 +410,19 @@ export default function DocumentWorkspace() {
         });
       }
     }, 1000),
-    [documentContent, pageSize, fontSize, fontFamily, textColor, id]
+    [editor, pageSize, fontSize, fontFamily, textColor]
   );
 
-  // Auto-save when content changes
+  // Initialize editor with document content
   useEffect(() => {
-    if (documentContent && id) {
-      debouncedSave();
-    }
-  }, [documentContent, debouncedSave, id]);
-
-  // Initialize document content
-  useEffect(() => {
-    if (document && document.content !== documentContent) {
-      setDocumentContent(document.content || '');
+    if (document && editor && document.content && !editor.getHTML().includes(document.content)) {
+      editor.commands.setContent(document.content || '<p></p>');
       setPageSize((document.pageSize as keyof typeof PAGE_SIZES) || 'letter');
       setFontSize(parseInt(document.fontSize || '12'));
       setFontFamily(document.fontFamily || 'Times New Roman');
       setTextColor(document.textColor || '#000000');
     }
-  }, [document, documentContent]);
+  }, [document, editor]);
 
   // Update editor props when formatting changes
   useEffect(() => {
@@ -1559,13 +1592,47 @@ export default function DocumentWorkspace() {
             <div className="flex-1 relative overflow-auto" style={{
               background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
             }}>
-                <PaginatedTextEditor
-                  content={documentContent}
-                  onChange={handleContentChange}
-                  fontSize={fontSize}
-                  fontFamily={fontFamily}
-                  zoom={zoomLevel}
-                />
+                <ScrollArea className="h-full" style={{
+                  background: 'transparent'
+                }}>
+                  <div className="flex justify-center py-8 px-4 min-h-full" style={{
+                    background: 'transparent'
+                  }}>
+                    {/* Document pages content */}
+                    <div className="relative">
+                      {/* Render pages with real distributed content */}
+                      {pageContent.map((page, pageIndex) => (
+                        <div
+                          key={page.pageNumber}
+                          className="bg-white dark:bg-slate-100 mb-8 relative group transition-all duration-500"
+                          style={{
+                            width: `${pageWidth}px`,
+                            height: `${pageHeight}px`,
+                            boxShadow: '0 2px 16px rgba(0, 0, 0, 0.06)',
+                            minHeight: `${pageHeight}px`,
+                            paddingLeft: `${leftMargin}px`,
+                            paddingRight: `${rightMargin}px`,
+                            paddingTop: `${topMargin}px`,
+                            paddingBottom: `${bottomMargin}px`
+                          }}
+                        >
+                          {/* Apply paragraph indents to content */}
+                          <div
+                            style={{
+                              textIndent: `${paragraphIndent}px`,
+                              marginLeft: `${hangingIndent}px`
+                            }}
+                          >
+                            <EditorContent 
+                              editor={editor} 
+                              className="prose prose-lg max-w-none dark:prose-invert focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollArea>
               </div>
           </div>
         </ResizablePanel>
