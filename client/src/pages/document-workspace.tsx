@@ -11,6 +11,23 @@ import { FontFamily } from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
 import StandaloneDocumentEngine from '@/components/standalone-document-engine';
 
+// Extend Window interface for standalone document API
+declare global {
+  interface Window {
+    standaloneDocumentAPI?: {
+      print: () => void;
+      save: () => void;
+      exportPDF: () => void;
+      exportJSON: () => void;
+      formatText: (command: string) => void;
+      insertText: (text: string) => void;
+      getData: () => void;
+      clearContent: () => void;
+      setContent: (content: string) => void;
+    };
+  }
+}
+
 // Custom FontSize extension
 const FontSize = TextStyle.extend({
   name: 'fontSize',
@@ -236,7 +253,7 @@ export default function DocumentWorkspace() {
 
   // Helper functions for standalone document engine communication
   const sendToDocumentEngine = (type: string, data?: any) => {
-    const iframe = document.querySelector('iframe[title="Standalone Document Editor"]') as HTMLIFrameElement;
+    const iframe = window.document.querySelector('iframe[title="Standalone Document Editor"]') as HTMLIFrameElement;
     if (iframe && iframe.contentWindow) {
       iframe.contentWindow.postMessage({ type, data }, window.location.origin);
     }
@@ -331,6 +348,83 @@ export default function DocumentWorkspace() {
 
   // Execute document commands from ChatGPT
   const executeDocumentCommand = useCallback((command: DocumentCommand) => {
+    // Support both standalone engine and TipTap editor
+    if (useStandaloneEngine && window.standaloneDocumentAPI) {
+      // Execute commands on standalone document engine
+      switch (command.type) {
+        case 'delete_page':
+        case 'clear_all':
+          window.standaloneDocumentAPI.clearContent();
+          toast({ title: `Document cleared` });
+          break;
+          
+        case 'add_text':
+          const { text: addText, position } = command.params;
+          if (addText) {
+            window.standaloneDocumentAPI.insertText(addText);
+            toast({ title: "Text added to document" });
+          }
+          break;
+          
+        case 'format_text':
+          const { text: formatText, formatting } = command.params;
+          if (formatText && formatting) {
+            if (formatting.bold) {
+              sendToDocumentEngine('FORMAT_TEXT', { command: 'bold' });
+            }
+            if (formatting.italic) {
+              sendToDocumentEngine('FORMAT_TEXT', { command: 'italic' });
+            }
+            if (formatting.underline) {
+              sendToDocumentEngine('FORMAT_TEXT', { command: 'underline' });
+            }
+            toast({ title: `Formatted text: "${formatText}"` });
+          }
+          break;
+          
+        case 'replace_text':
+          const { targetText, newText } = command.params;
+          if (targetText && newText) {
+            // Get current content and replace
+            getDocumentEngineContent().then((content) => {
+              const updatedContent = content.replace(new RegExp(targetText, 'gi'), newText);
+              if (window.standaloneDocumentAPI) {
+                window.standaloneDocumentAPI.setContent(updatedContent);
+              }
+              toast({ title: `Replaced "${targetText}" with "${newText}"` });
+            });
+          }
+          break;
+          
+        case 'delete_text':
+          const { text: deleteText } = command.params;
+          if (deleteText) {
+            getDocumentEngineContent().then((content) => {
+              const updatedContent = content.replace(new RegExp(deleteText, 'gi'), '');
+              if (window.standaloneDocumentAPI) {
+                window.standaloneDocumentAPI.setContent(updatedContent);
+              }
+              toast({ title: `Deleted text: "${deleteText}"` });
+            });
+          }
+          break;
+          
+        case 'center_text':
+          // For now, insert text with center styling hint
+          const { text: centerText } = command.params;
+          if (centerText) {
+            window.standaloneDocumentAPI.insertText(`[CENTER]${centerText}[/CENTER]`);
+            toast({ title: `Centered text: "${centerText}"` });
+          }
+          break;
+      }
+      
+      // Save changes after executing command
+      debouncedSave();
+      return;
+    }
+    
+    // Original TipTap editor commands
     if (!editor) return;
 
     switch (command.type) {
@@ -494,10 +588,12 @@ export default function DocumentWorkspace() {
   // Calculate page metrics - with error protection
   const currentPageSize = PAGE_SIZES[pageSize] || PAGE_SIZES.letter;
   // Swap dimensions for landscape orientation
-  let baseWidth = currentPageSize.width;
-  let baseHeight = currentPageSize.height;
+  let baseWidth: number = currentPageSize.width;
+  let baseHeight: number = currentPageSize.height;
   if (pageOrientation === 'landscape') {
-    [baseWidth, baseHeight] = [baseHeight, baseWidth];
+    const temp = baseWidth;
+    baseWidth = baseHeight;
+    baseHeight = temp;
   }
   const pageWidth = baseWidth * (zoomLevel / 100);
   const pageHeight = baseHeight * (zoomLevel / 100);
