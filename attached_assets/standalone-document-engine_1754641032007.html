@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Document Engine</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Times New Roman', serif;
+            background-color: #f5f5f5;
+        }
+        
+        .pages-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+        }
+        
+        .page {
+            width: 8.5in;
+            height: 11in;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            padding: 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
+        .page-number {
+            position: absolute;
+            bottom: 0.5in;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .editor {
+            width: 6.5in;  /* 8.5in - 2in for margins */
+            height: 9in;   /* 11in - 2in for margins */
+            margin: 1in;   /* 1in margin on all sides */
+            border: none;
+            outline: none;
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            resize: none;
+            background: transparent;
+            overflow: hidden;
+            padding: 0;
+        }
+        
+        /* Print styles - only show document pages when printing */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+            
+            .pages-container {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .page {
+                margin: 0;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+                page-break-after: always;
+                page-break-inside: avoid;
+                width: 8.5in;
+                height: 11in;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+            }
+            
+            .page:last-child {
+                page-break-after: auto;
+            }
+            
+            .editor {
+                border: none;
+                background: transparent;
+                color: black;
+                font-family: 'Times New Roman', serif;
+                font-size: 12pt;
+                line-height: 1.5;
+                margin: 1in;
+                padding: 0;
+                width: 6.5in;
+                height: 9in;
+                overflow: visible;
+                resize: none;
+            }
+            
+            .page-number {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="pages-container" id="pagesContainer">
+        <div class="page">
+            <textarea class="editor" id="editor1" data-page="1" placeholder="Start typing your document..."></textarea>
+            <div class="page-number">Page 1</div>
+        </div>
+    </div>
+
+    <script>
+        let pages = [];
+        let currentPageIndex = 0;
+        const pagesContainer = document.getElementById('pagesContainer');
+        
+        // Initialize pages
+        function initializePages() {
+            const firstEditor = document.getElementById('editor1');
+            pages = [firstEditor];
+            setupEditorEvents(firstEditor, 0);
+            firstEditor.focus();
+        }
+        
+        // Create a new page
+        function createNewPage() {
+            const pageNumber = pages.length + 1;
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page';
+            
+            pageDiv.innerHTML = `
+                <textarea class="editor" id="editor${pageNumber}" data-page="${pageNumber}"></textarea>
+                <div class="page-number">Page ${pageNumber}</div>
+            `;
+            
+            pagesContainer.appendChild(pageDiv);
+            
+            const newEditor = pageDiv.querySelector('.editor');
+            pages.push(newEditor);
+            setupEditorEvents(newEditor, pageNumber - 1);
+            
+            console.log(`Created page ${pageNumber}`);
+            return newEditor;
+        }
+        
+        // Setup events for an editor
+        function setupEditorEvents(editor, pageIndex) {
+            // Handle input and check for overflow/underflow
+            editor.addEventListener('input', function(e) {
+                checkForOverflow(editor, pageIndex);
+                checkForUnderflow(editor, pageIndex);
+            });
+            
+            // Handle keyboard navigation between pages
+            editor.addEventListener('keydown', function(e) {
+                handleKeyboardNavigation(e, editor, pageIndex);
+            });
+            
+            // Handle focus
+            editor.addEventListener('focus', function() {
+                currentPageIndex = pageIndex;
+            });
+            
+            // Handle text selection and cutting/copying
+            editor.addEventListener('cut', function(e) {
+                setTimeout(() => {
+                    checkForUnderflow(editor, pageIndex);
+                }, 10);
+            });
+            
+            // Handle paste operations
+            editor.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    // After paste, check for overflow first, then underflow
+                    checkForOverflow(editor, pageIndex);
+                    setTimeout(() => {
+                        checkForUnderflow(editor, pageIndex);
+                    }, 50);
+                }, 10);
+            });
+            
+            editor.addEventListener('keyup', function(e) {
+                // Check for underflow on backspace or delete
+                if (e.key === 'Backspace' || e.key === 'Delete') {
+                    checkForUnderflow(editor, pageIndex);
+                }
+            });
+        }
+        
+        // Check if current page has overflowed
+        function checkForOverflow(editor, pageIndex) {
+            // Real-time overflow detection: if scrollHeight > clientHeight, we need a new page
+            if (editor.scrollHeight > editor.clientHeight) {
+                handleOverflow(editor, pageIndex);
+            }
+        }
+        
+        // Handle text overflow to next page using binary search to find exact break point
+        function handleOverflow(editor, pageIndex) {
+            const text = editor.value;
+            const cursorPos = editor.selectionStart;
+            
+            // Use binary search to find the exact character position where overflow occurs
+            const breakPoint = findOverflowBreakPoint(editor, text);
+            
+            if (breakPoint < text.length) {
+                // Split content at the break point
+                const currentPageContent = text.substring(0, breakPoint);
+                const overflowContent = text.substring(breakPoint);
+                
+                // Update current page
+                editor.value = currentPageContent;
+                
+                // Create or update next page
+                let nextEditor;
+                if (pageIndex + 1 < pages.length) {
+                    nextEditor = pages[pageIndex + 1];
+                    nextEditor.value = overflowContent + (nextEditor.value ? nextEditor.value : '');
+                } else {
+                    nextEditor = createNewPage();
+                    nextEditor.value = overflowContent;
+                }
+                
+                // Position cursor appropriately
+                if (cursorPos > breakPoint) {
+                    // Cursor was in overflow content, move to next page
+                    nextEditor.focus();
+                    const newCursorPos = cursorPos - breakPoint;
+                    nextEditor.setSelectionRange(newCursorPos, newCursorPos);
+                    currentPageIndex = pageIndex + 1;
+                } else {
+                    // Cursor stays on current page
+                    editor.focus();
+                    editor.setSelectionRange(cursorPos, cursorPos);
+                }
+                
+                // Check if the next page also overflows
+                setTimeout(() => {
+                    checkForOverflow(nextEditor, pageIndex + 1);
+                }, 10);
+            }
+        }
+        
+
+
+        // Binary search to find exact character position where content overflows
+        function findOverflowBreakPoint(editor, text) {
+            // Use pure binary search based on scrollHeight measurements - no line counting
+            let left = 0;
+            let right = text.length;
+            let lastValidPosition = text.length;
+            
+            const originalValue = editor.value;
+            const originalScrollTop = editor.scrollTop;
+            
+            while (left < right) {
+                const mid = Math.floor((left + right) / 2);
+                const testContent = text.substring(0, mid);
+                
+                // Test if this amount of content fits
+                editor.value = testContent;
+                editor.scrollTop = 0;
+                
+                // Be very aggressive - only break when we absolutely must
+                if (editor.scrollHeight <= editor.clientHeight) {
+                    // Content fits, try more
+                    lastValidPosition = mid;
+                    left = mid + 1;
+                } else {
+                    // Content overflows, try less
+                    right = mid;
+                }
+            }
+            
+            // Try to break at a word or line boundary near the valid position
+            const nearBreakPoint = findNearestBreakPoint(text, lastValidPosition);
+            
+            // Restore original state
+            editor.value = originalValue;
+            editor.scrollTop = originalScrollTop;
+            
+            return nearBreakPoint;
+        }
+        
+        // Find the nearest word or line break near the target position
+        function findNearestBreakPoint(text, targetPosition) {
+            // If we're very close to the target position (within 5 characters), just use it
+            if (targetPosition >= text.length - 5) {
+                return targetPosition;
+            }
+            
+            // Look for line breaks first (higher priority) - but only look back a short distance
+            for (let i = targetPosition; i >= Math.max(0, targetPosition - 20); i--) {
+                if (text[i] === '\n') {
+                    return i + 1; // Include the newline in previous page
+                }
+            }
+            
+            // Look for word breaks (spaces) - only look back a very short distance
+            for (let i = targetPosition; i >= Math.max(0, targetPosition - 10); i--) {
+                if (text[i] === ' ') {
+                    return i + 1; // Include the space in previous page
+                }
+            }
+            
+            // If no nearby break point found, use the exact character position
+            // This maximizes page usage and only breaks words when absolutely necessary
+            return targetPosition;
+        }
+        
+        // Check if current page has too little content and can pull from next page
+        function checkForUnderflow(editor, pageIndex) {
+            // Only check if there's a next page
+            if (pageIndex + 1 >= pages.length) return;
+            
+            const currentText = editor.value;
+            const nextEditor = pages[pageIndex + 1];
+            const nextText = nextEditor.value;
+            
+            // If next page is empty, we can remove it
+            if (nextText.trim() === '') {
+                removeEmptyPage(pageIndex + 1);
+                return;
+            }
+            
+            // Check if current page has significant space available using real measurements
+            const currentHeight = editor.scrollHeight;
+            const availableHeight = editor.clientHeight;
+            const spaceRatio = currentHeight / availableHeight;
+            
+            // Be more conservative with underflow - only pull if page is less than 40% full
+            // This prevents excessive redistribution during paste operations
+            if (spaceRatio < 0.4) {
+                pullContentFromNextPage(editor, pageIndex);
+            }
+        }
+        
+        // Pull content from next page to current page using real measurements
+        function pullContentFromNextPage(editor, pageIndex) {
+            const nextEditor = pages[pageIndex + 1];
+            if (!nextEditor) return;
+            
+            const nextText = nextEditor.value;
+            if (!nextText) return;
+            
+            const currentText = editor.value;
+            
+            // Use binary search to find how much content we can pull without overflowing
+            const maxPullAmount = findMaxPullAmount(editor, currentText, nextText);
+            
+            if (maxPullAmount > 0) {
+                const contentToPull = nextText.substring(0, maxPullAmount);
+                const remainingNextContent = nextText.substring(maxPullAmount);
+                
+                // Save cursor positions
+                const currentCursorPos = editor.selectionStart;
+                const nextCursorPos = nextEditor.selectionStart;
+                
+                // Update content
+                editor.value = currentText + (currentText ? '\n' : '') + contentToPull;
+                nextEditor.value = remainingNextContent;
+                
+                // Restore focus to appropriate page
+                if (currentPageIndex === pageIndex) {
+                    editor.focus();
+                    editor.setSelectionRange(currentCursorPos, currentCursorPos);
+                } else if (currentPageIndex === pageIndex + 1) {
+                    nextEditor.focus();
+                    const newCursorPos = Math.max(0, nextCursorPos - contentToPull.length - 1);
+                    nextEditor.setSelectionRange(newCursorPos, newCursorPos);
+                }
+                
+                // Check if next page is now empty
+                if (nextEditor.value.trim() === '') {
+                    removeEmptyPage(pageIndex + 1);
+                } else {
+                    // Check if next page can also pull content
+                    setTimeout(() => {
+                        checkForUnderflow(nextEditor, pageIndex + 1);
+                    }, 10);
+                }
+            }
+        }
+        
+        // Find maximum amount of content we can pull from next page without overflowing current page
+        function findMaxPullAmount(editor, currentText, nextText) {
+            let left = 0;
+            let right = nextText.length;
+            let maxPull = 0;
+            
+            const originalValue = editor.value;
+            const originalScrollTop = editor.scrollTop;
+            
+            while (left <= right) {
+                const mid = Math.floor((left + right) / 2);
+                const testContent = nextText.substring(0, mid);
+                const combinedContent = currentText + (currentText ? '\n' : '') + testContent;
+                
+                // Test if this amount of content fits
+                editor.value = combinedContent;
+                editor.scrollTop = 0;
+                
+                if (editor.scrollHeight <= editor.clientHeight) {
+                    // Content fits, try pulling more
+                    maxPull = mid;
+                    left = mid + 1;
+                } else {
+                    // Content overflows, try pulling less
+                    right = mid - 1;
+                }
+            }
+            
+            // Try to break at a word or line boundary
+            const breakPoint = findNearestBreakPoint(nextText, maxPull);
+            
+            // Restore original state
+            editor.value = originalValue;
+            editor.scrollTop = originalScrollTop;
+            
+            return Math.min(breakPoint, maxPull);
+        }
+        
+        // Remove an empty page
+        function removeEmptyPage(pageIndex) {
+            if (pageIndex === 0 || pageIndex >= pages.length) return; // Never remove first page
+            
+            const pageElement = pages[pageIndex].parentElement;
+            pageElement.remove();
+            pages.splice(pageIndex, 1);
+            
+            // Update page numbers
+            for (let i = pageIndex; i < pages.length; i++) {
+                const pageNumber = i + 1;
+                pages[i].id = `editor${pageNumber}`;
+                pages[i].setAttribute('data-page', pageNumber);
+                const pageNumberElement = pages[i].parentElement.querySelector('.page-number');
+                if (pageNumberElement) {
+                    pageNumberElement.textContent = `Page ${pageNumber}`;
+                }
+                
+                // Update event listeners with new index
+                setupEditorEvents(pages[i], i);
+            }
+            
+            // Adjust current page index if necessary
+            if (currentPageIndex >= pageIndex) {
+                currentPageIndex = Math.max(0, currentPageIndex - 1);
+            }
+            
+            console.log(`Removed empty page, now have ${pages.length} pages`);
+        }
+        
+        // Handle keyboard navigation between pages
+        function handleKeyboardNavigation(e, editor, pageIndex) {
+            const cursorPos = editor.selectionStart;
+            const text = editor.value;
+            
+            if (e.key === 'ArrowDown' && cursorPos === text.length) {
+                // At end of current page, move to next page
+                if (pageIndex + 1 < pages.length) {
+                    e.preventDefault();
+                    pages[pageIndex + 1].focus();
+                    pages[pageIndex + 1].setSelectionRange(0, 0);
+                    currentPageIndex = pageIndex + 1;
+                }
+            } else if (e.key === 'ArrowUp' && cursorPos === 0) {
+                // At beginning of current page, move to previous page
+                if (pageIndex > 0) {
+                    e.preventDefault();
+                    const prevEditor = pages[pageIndex - 1];
+                    prevEditor.focus();
+                    prevEditor.setSelectionRange(prevEditor.value.length, prevEditor.value.length);
+                    currentPageIndex = pageIndex - 1;
+                }
+            }
+        }
+        
+        // API Functions for external integration
+        window.DocumentEngine = {
+            // Get all text content
+            getAllText: function() {
+                return pages.map(editor => editor.value).join('\n');
+            },
+            
+            // Set content (will automatically paginate)
+            setContent: function(content) {
+                // Clear all pages except first
+                while (pages.length > 1) {
+                    removeEmptyPage(1);
+                }
+                
+                // Set content to first page
+                pages[0].value = content;
+                pages[0].focus();
+                
+                // Check if content overflows and needs pagination
+                setTimeout(() => {
+                    checkForOverflow(pages[0], 0);
+                }, 10);
+            },
+            
+            // Get page count
+            getPageCount: function() {
+                return pages.length;
+            },
+            
+            // Print document - only prints document content, not website interface
+            print: function() {
+                // Temporarily adjust editor styles for optimal printing
+                pages.forEach((editor, index) => {
+                    editor.style.height = 'auto';
+                    editor.style.minHeight = '9in';
+                    editor.style.overflow = 'visible';
+                    editor.style.border = 'none';
+                    editor.style.outline = 'none';
+                    editor.style.boxShadow = 'none';
+                });
+                
+                // Brief delay to ensure styles are applied, then print
+                setTimeout(() => {
+                    window.print();
+                    
+                    // Restore normal editor styles after printing
+                    setTimeout(() => {
+                        pages.forEach(editor => {
+                            editor.style.height = '9in';
+                            editor.style.minHeight = '';
+                            editor.style.overflow = 'hidden';
+                            editor.style.border = '';
+                            editor.style.outline = '';
+                            editor.style.boxShadow = '';
+                        });
+                    }, 200);
+                }, 100);
+            },
+            
+            // Get current statistics
+            getStats: function() {
+                const allText = this.getAllText();
+                const words = allText.trim() ? allText.trim().split(/\s+/).length : 0;
+                const chars = allText.length;
+                const lines = allText.split('\n').length;
+                
+                return {
+                    words: words,
+                    characters: chars,
+                    lines: lines,
+                    pages: pages.length
+                };
+            },
+            
+            // Focus on specific page
+            focusPage: function(pageNumber) {
+                if (pageNumber >= 1 && pageNumber <= pages.length) {
+                    pages[pageNumber - 1].focus();
+                    currentPageIndex = pageNumber - 1;
+                }
+            }
+        };
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePages();
+            console.log('Standalone Document Engine initialized');
+        });
+    </script>
+</body>
+</html>

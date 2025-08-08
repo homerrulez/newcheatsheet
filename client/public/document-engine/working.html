@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Engine</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Times New Roman', serif;
+            background-color: #f5f5f5;
+        }
+        
+        .pages-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+        }
+        
+        .page {
+            width: 8.5in;
+            height: 11in;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            padding: 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
+        .page-number {
+            position: absolute;
+            bottom: 0.5in;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .editor {
+            width: 6.5in;  /* 8.5in - 2in for margins */
+            height: 9in;   /* 11in - 2in for margins */
+            margin: 1in;   /* 1in margin on all sides */
+            border: none;
+            outline: none;
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            resize: none;
+            background: transparent;
+            overflow: hidden;
+            padding: 0;
+        }
+        
+        /* Print styles - only show document pages when printing */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+            
+            .pages-container {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .page {
+                margin: 0;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+                page-break-after: always;
+                page-break-inside: avoid;
+                width: 8.5in;
+                height: 11in;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+            }
+            
+            .page:last-child {
+                page-break-after: auto;
+            }
+            
+            .editor {
+                border: none;
+                background: transparent;
+                color: black;
+                font-family: 'Times New Roman', serif;
+                font-size: 12pt;
+                line-height: 1.5;
+                margin: 1in;
+                padding: 0;
+                width: 6.5in;
+                height: 9in;
+                overflow: visible;
+                resize: none;
+            }
+            
+            .page-number {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="pages-container" id="pagesContainer">
+        <div class="page">
+            <textarea class="editor" id="editor1" data-page="1" placeholder="Start typing your document..."></textarea>
+            <div class="page-number">Page 1</div>
+        </div>
+    </div>
+
+    <script>
+        let pages = [];
+        let currentPageIndex = 0;
+        const pagesContainer = document.getElementById('pagesContainer');
+        
+        // Initialize pages
+        function initializePages() {
+            const firstEditor = document.getElementById('editor1');
+            pages = [firstEditor];
+            setupEditorEvents(firstEditor, 0);
+            firstEditor.focus();
+            
+            // Send ready message to parent
+            sendMessageToParent('DOCUMENT_ENGINE_READY', {});
+        }
+        
+        // Send message to parent window
+        function sendMessageToParent(type, data) {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type, data }, '*');
+            }
+        }
+        
+        // Send document data to parent
+        function sendDocumentData() {
+            const stats = getStats();
+            const content = getAllText();
+            const contentHeight = pagesContainer.scrollHeight;
+            
+            sendMessageToParent('DOCUMENT_DATA', {
+                title: 'Document',
+                content: content,
+                stats: {
+                    wordCount: stats.words,
+                    charCount: stats.characters,
+                    lineCount: stats.lines,
+                    pageCount: stats.pages
+                },
+                contentHeight: contentHeight
+            });
+        }
+        
+        // Create a new page
+        function createNewPage() {
+            const pageNumber = pages.length + 1;
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page';
+            
+            pageDiv.innerHTML = `
+                <textarea class="editor" id="editor${pageNumber}" data-page="${pageNumber}"></textarea>
+                <div class="page-number">Page ${pageNumber}</div>
+            `;
+            
+            pagesContainer.appendChild(pageDiv);
+            
+            const newEditor = pageDiv.querySelector('.editor');
+            pages.push(newEditor);
+            setupEditorEvents(newEditor, pageNumber - 1);
+            
+            console.log(`Created page ${pageNumber}`);
+            sendDocumentData();
+            return newEditor;
+        }
+        
+        // Setup events for an editor
+        function setupEditorEvents(editor, pageIndex) {
+            // Handle input and check for overflow/underflow
+            editor.addEventListener('input', function(e) {
+                checkForOverflow(editor, pageIndex);
+                checkForUnderflow(editor, pageIndex);
+                sendDocumentData();
+            });
+            
+            // Handle keyboard navigation between pages
+            editor.addEventListener('keydown', function(e) {
+                handleKeyboardNavigation(e, editor, pageIndex);
+            });
+            
+            // Handle focus
+            editor.addEventListener('focus', function() {
+                currentPageIndex = pageIndex;
+            });
+            
+            // Handle text selection and cutting/copying
+            editor.addEventListener('cut', function(e) {
+                setTimeout(() => {
+                    checkForUnderflow(editor, pageIndex);
+                    sendDocumentData();
+                }, 10);
+            });
+            
+            // Handle paste operations
+            editor.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    checkForOverflow(editor, pageIndex);
+                    setTimeout(() => {
+                        checkForUnderflow(editor, pageIndex);
+                        sendDocumentData();
+                    }, 50);
+                }, 10);
+            });
+            
+            editor.addEventListener('keyup', function(e) {
+                if (e.key === 'Backspace' || e.key === 'Delete') {
+                    checkForUnderflow(editor, pageIndex);
+                    sendDocumentData();
+                }
+            });
+        }
+        
+        // Check if current page has overflowed
+        function checkForOverflow(editor, pageIndex) {
+            if (editor.scrollHeight > editor.clientHeight) {
+                handleOverflow(editor, pageIndex);
+            }
+        }
+        
+        // Handle text overflow to next page using binary search
+        function handleOverflow(editor, pageIndex) {
+            const text = editor.value;
+            const cursorPos = editor.selectionStart;
+            
+            const breakPoint = findOverflowBreakPoint(editor, text);
+            
+            if (breakPoint < text.length) {
+                const currentPageContent = text.substring(0, breakPoint);
+                const overflowContent = text.substring(breakPoint);
+                
+                editor.value = currentPageContent;
+                
+                let nextEditor;
+                if (pageIndex + 1 < pages.length) {
+                    nextEditor = pages[pageIndex + 1];
+                    nextEditor.value = overflowContent + (nextEditor.value ? nextEditor.value : '');
+                } else {
+                    nextEditor = createNewPage();
+                    nextEditor.value = overflowContent;
+                }
+                
+                if (cursorPos > breakPoint) {
+                    nextEditor.focus();
+                    const newCursorPos = cursorPos - breakPoint;
+                    nextEditor.setSelectionRange(newCursorPos, newCursorPos);
+                    currentPageIndex = pageIndex + 1;
+                } else {
+                    editor.focus();
+                    editor.setSelectionRange(cursorPos, cursorPos);
+                }
+                
+                setTimeout(() => {
+                    checkForOverflow(nextEditor, pageIndex + 1);
+                }, 10);
+            }
+        }
+        
+        // Binary search to find exact character position where content overflows
+        function findOverflowBreakPoint(editor, text) {
+            let left = 0;
+            let right = text.length;
+            let lastValidPosition = text.length;
+            
+            const originalValue = editor.value;
+            const originalScrollTop = editor.scrollTop;
+            
+            while (left < right) {
+                const mid = Math.floor((left + right) / 2);
+                const testContent = text.substring(0, mid);
+                
+                editor.value = testContent;
+                editor.scrollTop = 0;
+                
+                if (editor.scrollHeight <= editor.clientHeight) {
+                    lastValidPosition = mid;
+                    left = mid + 1;
+                } else {
+                    right = mid;
+                }
+            }
+            
+            const nearBreakPoint = findNearestBreakPoint(text, lastValidPosition);
+            
+            editor.value = originalValue;
+            editor.scrollTop = originalScrollTop;
+            
+            return nearBreakPoint;
+        }
+        
+        // Find the nearest word or line break near the target position
+        function findNearestBreakPoint(text, targetPosition) {
+            if (targetPosition >= text.length - 5) {
+                return targetPosition;
+            }
+            
+            for (let i = targetPosition; i >= Math.max(0, targetPosition - 20); i--) {
+                if (text[i] === '\n') {
+                    return i + 1;
+                }
+            }
+            
+            for (let i = targetPosition; i >= Math.max(0, targetPosition - 10); i--) {
+                if (text[i] === ' ') {
+                    return i + 1;
+                }
+            }
+            
+            return targetPosition;
+        }
+        
+        // Check if current page has too little content and can pull from next page
+        function checkForUnderflow(editor, pageIndex) {
+            if (pageIndex + 1 >= pages.length) return;
+            
+            const currentText = editor.value;
+            const nextEditor = pages[pageIndex + 1];
+            const nextText = nextEditor.value;
+            
+            if (nextText.trim() === '') {
+                removeEmptyPage(pageIndex + 1);
+                return;
+            }
+            
+            const currentHeight = editor.scrollHeight;
+            const availableHeight = editor.clientHeight;
+            const spaceRatio = currentHeight / availableHeight;
+            
+            if (spaceRatio < 0.4) {
+                pullContentFromNextPage(editor, pageIndex);
+            }
+        }
+        
+        // Pull content from next page to current page
+        function pullContentFromNextPage(editor, pageIndex) {
+            const nextEditor = pages[pageIndex + 1];
+            if (!nextEditor) return;
+            
+            const nextText = nextEditor.value;
+            if (!nextText) return;
+            
+            const currentText = editor.value;
+            const maxPullAmount = findMaxPullAmount(editor, currentText, nextText);
+            
+            if (maxPullAmount > 0) {
+                const contentToPull = nextText.substring(0, maxPullAmount);
+                const remainingNextContent = nextText.substring(maxPullAmount);
+                
+                const currentCursorPos = editor.selectionStart;
+                const nextCursorPos = nextEditor.selectionStart;
+                
+                editor.value = currentText + (currentText ? '\n' : '') + contentToPull;
+                nextEditor.value = remainingNextContent;
+                
+                if (currentPageIndex === pageIndex) {
+                    editor.focus();
+                    editor.setSelectionRange(currentCursorPos, currentCursorPos);
+                } else if (currentPageIndex === pageIndex + 1) {
+                    nextEditor.focus();
+                    const newCursorPos = Math.max(0, nextCursorPos - contentToPull.length - 1);
+                    nextEditor.setSelectionRange(newCursorPos, newCursorPos);
+                }
+                
+                if (nextEditor.value.trim() === '') {
+                    removeEmptyPage(pageIndex + 1);
+                } else {
+                    setTimeout(() => {
+                        checkForUnderflow(nextEditor, pageIndex + 1);
+                    }, 10);
+                }
+            }
+        }
+        
+        // Find maximum amount of content we can pull from next page
+        function findMaxPullAmount(editor, currentText, nextText) {
+            let left = 0;
+            let right = nextText.length;
+            let maxPull = 0;
+            
+            const originalValue = editor.value;
+            const originalScrollTop = editor.scrollTop;
+            
+            while (left <= right) {
+                const mid = Math.floor((left + right) / 2);
+                const testContent = nextText.substring(0, mid);
+                const combinedContent = currentText + (currentText ? '\n' : '') + testContent;
+                
+                editor.value = combinedContent;
+                editor.scrollTop = 0;
+                
+                if (editor.scrollHeight <= editor.clientHeight) {
+                    maxPull = mid;
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
+            }
+            
+            const breakPoint = findNearestBreakPoint(nextText, maxPull);
+            
+            editor.value = originalValue;
+            editor.scrollTop = originalScrollTop;
+            
+            return Math.min(breakPoint, maxPull);
+        }
+        
+        // Remove an empty page
+        function removeEmptyPage(pageIndex) {
+            if (pageIndex === 0 || pageIndex >= pages.length) return;
+            
+            const pageElement = pages[pageIndex].parentElement;
+            pageElement.remove();
+            pages.splice(pageIndex, 1);
+            
+            for (let i = pageIndex; i < pages.length; i++) {
+                const pageNumber = i + 1;
+                pages[i].id = `editor${pageNumber}`;
+                pages[i].setAttribute('data-page', pageNumber);
+                const pageNumberElement = pages[i].parentElement.querySelector('.page-number');
+                if (pageNumberElement) {
+                    pageNumberElement.textContent = `Page ${pageNumber}`;
+                }
+                
+                setupEditorEvents(pages[i], i);
+            }
+            
+            if (currentPageIndex >= pageIndex) {
+                currentPageIndex = Math.max(0, currentPageIndex - 1);
+            }
+            
+            console.log(`Removed empty page, now have ${pages.length} pages`);
+            sendDocumentData();
+        }
+        
+        // Handle keyboard navigation between pages
+        function handleKeyboardNavigation(e, editor, pageIndex) {
+            const cursorPos = editor.selectionStart;
+            const text = editor.value;
+            
+            if (e.key === 'ArrowDown' && cursorPos === text.length) {
+                if (pageIndex + 1 < pages.length) {
+                    e.preventDefault();
+                    pages[pageIndex + 1].focus();
+                    pages[pageIndex + 1].setSelectionRange(0, 0);
+                    currentPageIndex = pageIndex + 1;
+                }
+            } else if (e.key === 'ArrowUp' && cursorPos === 0) {
+                if (pageIndex > 0) {
+                    e.preventDefault();
+                    const prevEditor = pages[pageIndex - 1];
+                    prevEditor.focus();
+                    prevEditor.setSelectionRange(prevEditor.value.length, prevEditor.value.length);
+                    currentPageIndex = pageIndex - 1;
+                }
+            }
+        }
+        
+        // API Functions
+        function getAllText() {
+            return pages.map(editor => editor.value).join('\n');
+        }
+        
+        function setContent(content) {
+            while (pages.length > 1) {
+                removeEmptyPage(1);
+            }
+            
+            pages[0].value = content;
+            pages[0].focus();
+            
+            setTimeout(() => {
+                checkForOverflow(pages[0], 0);
+                sendDocumentData();
+            }, 10);
+        }
+        
+        function getPageCount() {
+            return pages.length;
+        }
+        
+        function printDocument() {
+            pages.forEach((editor, index) => {
+                editor.style.height = 'auto';
+                editor.style.minHeight = '9in';
+                editor.style.overflow = 'visible';
+                editor.style.border = 'none';
+                editor.style.outline = 'none';
+                editor.style.boxShadow = 'none';
+            });
+            
+            setTimeout(() => {
+                window.print();
+                
+                setTimeout(() => {
+                    pages.forEach(editor => {
+                        editor.style.height = '9in';
+                        editor.style.minHeight = '';
+                        editor.style.overflow = 'hidden';
+                        editor.style.border = '';
+                        editor.style.outline = '';
+                        editor.style.boxShadow = '';
+                    });
+                    sendMessageToParent('PRINT_COMPLETE', {});
+                }, 200);
+            }, 100);
+        }
+        
+        function getStats() {
+            const allText = getAllText();
+            const words = allText.trim() ? allText.trim().split(/\s+/).length : 0;
+            const chars = allText.length;
+            const lines = allText.split('\n').length;
+            
+            return {
+                words: words,
+                characters: chars,
+                lines: lines,
+                pages: pages.length
+            };
+        }
+        
+        function focusPage(pageNumber) {
+            if (pageNumber >= 1 && pageNumber <= pages.length) {
+                pages[pageNumber - 1].focus();
+                currentPageIndex = pageNumber - 1;
+            }
+        }
+        
+        // Listen for messages from parent
+        window.addEventListener('message', function(event) {
+            const { type, data } = event.data;
+            
+            switch (type) {
+                case 'PRINT_DOCUMENT':
+                    printDocument();
+                    break;
+                case 'GET_DOCUMENT':
+                    sendDocumentData();
+                    break;
+                case 'SET_CONTENT':
+                    setContent(data.content || '');
+                    break;
+                case 'CLEAR_CONTENT':
+                    setContent('');
+                    break;
+                case 'INSERT_TEXT':
+                    if (data.text && pages[currentPageIndex]) {
+                        const editor = pages[currentPageIndex];
+                        const cursorPos = editor.selectionStart;
+                        const text = editor.value;
+                        const newText = text.substring(0, cursorPos) + data.text + text.substring(editor.selectionEnd);
+                        editor.value = newText;
+                        editor.setSelectionRange(cursorPos + data.text.length, cursorPos + data.text.length);
+                        checkForOverflow(editor, currentPageIndex);
+                        sendDocumentData();
+                    }
+                    break;
+                case 'FORMAT_TEXT':
+                    // Basic formatting support
+                    if (data.command && pages[currentPageIndex]) {
+                        const editor = pages[currentPageIndex];
+                        editor.focus();
+                        try {
+                            document.execCommand(data.command);
+                        } catch (e) {
+                            console.log('Format command not supported:', data.command);
+                        }
+                    }
+                    break;
+            }
+        });
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePages();
+            console.log('Document Engine initialized and ready');
+        });
+    </script>
+</body>
+</html>

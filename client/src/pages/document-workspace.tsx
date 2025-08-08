@@ -1,30 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
-import { Color } from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
-import { FontFamily } from '@tiptap/extension-font-family';
-import Highlight from '@tiptap/extension-highlight';
-
-// Custom FontSize extension
-const FontSize = TextStyle.extend({
-  addAttributes() {
-    return {
-      fontSize: {
-        default: null,
-        parseHTML: (element: HTMLElement) => element.style.fontSize?.replace('pt', ''),
-        renderHTML: (attributes: any) => {
-          if (!attributes.fontSize) return {}
-          return { style: `font-size: ${attributes.fontSize}pt` }
-        },
-      }
-    }
-  }
-});
+import StandaloneDocumentEngine from '@/components/standalone-document-engine';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -106,38 +83,9 @@ export default function DocumentWorkspace() {
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Editor setup with extensive functionality
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Underline,
-      TextStyle,
-      Color,
-      FontFamily,
-      FontSize,
-      Highlight.configure({
-        multicolor: true,
-      }),
-    ],
-    content: '',
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full w-full',
-        style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
-      },
-    },
-    onUpdate: ({ editor }) => {
-      // Auto-save document changes
-      debouncedSave();
-    },
-  });
+  // Document engine state
+  const [documentContent, setDocumentContent] = useState('');
+  const [documentEngine, setDocumentEngine] = useState<any>(null);
 
   // Fetch document
   const { data: document, isLoading: documentLoading } = useQuery<Document>({
@@ -237,7 +185,7 @@ export default function DocumentWorkspace() {
         await createDefaultSession();
       }
       
-      const documentContent = editor?.getHTML() || '';
+      const documentContent = documentContent || '';
       const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
