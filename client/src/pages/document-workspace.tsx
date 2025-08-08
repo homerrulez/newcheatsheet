@@ -234,6 +234,33 @@ export default function DocumentWorkspace() {
     }
   };
 
+  // Helper functions for standalone document engine communication
+  const sendToDocumentEngine = (type: string, data?: any) => {
+    const iframe = document.querySelector('iframe[title="Standalone Document Editor"]') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type, data }, window.location.origin);
+    }
+  };
+
+  const getDocumentEngineContent = (): Promise<string> => {
+    return new Promise((resolve) => {
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data.type === 'DOCUMENT_DATA') {
+          window.removeEventListener('message', handleMessage);
+          resolve(event.data.content || '');
+        }
+      };
+      window.addEventListener('message', handleMessage);
+      sendToDocumentEngine('GET_DOCUMENT');
+      
+      // Timeout fallback
+      setTimeout(() => {
+        window.removeEventListener('message', handleMessage);
+        resolve('');
+      }, 1000);
+    });
+  };
+
   // Update document mutation
   const updateDocumentMutation = useMutation({
     mutationFn: async (updates: Partial<Document>) => {
@@ -760,7 +787,9 @@ export default function DocumentWorkspace() {
               </button>
               <button 
                 onClick={async () => {
-                  if (!document?.content || document.content.trim().length === 0) {
+                  const content = useStandaloneEngine ? documentContent : (document?.content || '');
+                  
+                  if (!content || content.trim().length === 0) {
                     toast({
                       title: "No content to adjust",
                       description: "Please add some text to your document first.",
@@ -773,7 +802,7 @@ export default function DocumentWorkspace() {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ 
-                        content: document.content,
+                        content,
                         targetTone: 'professional',
                         preserveEquations: true 
                       })
@@ -782,7 +811,12 @@ export default function DocumentWorkspace() {
                     if (!response.ok) throw new Error('AI service unavailable');
                     
                     const { adjustedContent } = await response.json();
-                    await updateDocumentMutation.mutateAsync({ content: adjustedContent });
+                    
+                    if (useStandaloneEngine && window.standaloneDocumentAPI) {
+                      window.standaloneDocumentAPI.setContent(adjustedContent);
+                    } else {
+                      await updateDocumentMutation.mutateAsync({ content: adjustedContent });
+                    }
                     
                     toast({
                       title: "Tone adjusted!",
@@ -807,17 +841,26 @@ export default function DocumentWorkspace() {
             <div className="flex items-center space-x-2 border-r border-gray-400 dark:border-gray-500 pr-3">
               <button 
                 className="flex items-center space-x-1 px-2 py-1 hover:bg-gray-100 rounded transition-colors text-gray-700"
-                onClick={() => {
-                  if (!editor) {
+                onClick={async () => {
+                  if (useStandaloneEngine) {
+                    try {
+                      const content = await getDocumentEngineContent();
+                      navigator.clipboard.writeText(content);
+                      toast({ title: "Content copied to clipboard" });
+                    } catch (error) {
+                      toast({ title: "Copy failed", description: "Please use Ctrl+C", variant: "destructive" });
+                    }
+                  } else if (!editor) {
                     toast({ title: "Editor not ready", variant: "destructive" });
                     return;
-                  }
-                  try {
-                    const content = editor.getHTML() || '';
-                    navigator.clipboard.writeText(content);
-                    toast({ title: "Content copied to clipboard" });
-                  } catch (error) {
-                    toast({ title: "Copy failed", description: "Please use Ctrl+C", variant: "destructive" });
+                  } else {
+                    try {
+                      const content = editor.getHTML() || '';
+                      navigator.clipboard.writeText(content);
+                      toast({ title: "Content copied to clipboard" });
+                    } catch (error) {
+                      toast({ title: "Copy failed", description: "Please use Ctrl+C", variant: "destructive" });
+                    }
                   }
                 }}
               >
@@ -854,8 +897,13 @@ export default function DocumentWorkspace() {
                 onClick={async () => {
                   try {
                     const text = await navigator.clipboard.readText();
-                    editor?.chain().focus().insertContent(text).run();
-                    toast({ title: "Content pasted" });
+                    if (useStandaloneEngine) {
+                      sendToDocumentEngine('INSERT_TEXT', { text });
+                      toast({ title: "Content pasted" });
+                    } else {
+                      editor?.chain().focus().insertContent(text).run();
+                      toast({ title: "Content pasted" });
+                    }
                   } catch (err) {
                     toast({ title: "Paste failed", description: "Please use Ctrl+V instead", variant: "destructive" });
                   }
@@ -887,7 +935,11 @@ export default function DocumentWorkspace() {
               <Select 
                 value={fontFamily} 
                 onValueChange={(value) => {
-                  if (editor) {
+                  if (useStandaloneEngine) {
+                    sendToDocumentEngine('SET_FONT', { fontFamily: value });
+                    setFontFamily(value);
+                    toast({ title: `Font changed to ${value}` });
+                  } else if (editor) {
                     const { selection } = editor.state;
                     if (!selection.empty) {
                       // Apply font family to selected text only
@@ -1007,7 +1059,13 @@ export default function DocumentWorkspace() {
                     ? 'bg-blue-100 text-blue-700' 
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
-                onClick={() => editor?.chain().focus().toggleBold().run()}
+                onClick={() => {
+                  if (useStandaloneEngine) {
+                    sendToDocumentEngine('FORMAT_TEXT', { command: 'bold' });
+                  } else {
+                    editor?.chain().focus().toggleBold().run();
+                  }
+                }}
               >
                 <Bold className="w-6 h-6 text-blue-600 font-bold" />
               </button>
@@ -1017,7 +1075,13 @@ export default function DocumentWorkspace() {
                     ? 'bg-blue-100 text-blue-700' 
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
-                onClick={() => editor?.chain().focus().toggleItalic().run()}
+                onClick={() => {
+                  if (useStandaloneEngine) {
+                    sendToDocumentEngine('FORMAT_TEXT', { command: 'italic' });
+                  } else {
+                    editor?.chain().focus().toggleItalic().run();
+                  }
+                }}
               >
                 <Italic className="w-6 h-6 text-blue-600" />
               </button>
@@ -1027,7 +1091,13 @@ export default function DocumentWorkspace() {
                     ? 'bg-blue-100 text-blue-700' 
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
-                onClick={() => editor?.chain().focus().toggleUnderline().run()}
+                onClick={() => {
+                  if (useStandaloneEngine) {
+                    sendToDocumentEngine('FORMAT_TEXT', { command: 'underline' });
+                  } else {
+                    editor?.chain().focus().toggleUnderline().run();
+                  }
+                }}
               >
                 <UnderlineIcon className="w-6 h-6 text-blue-600" />
               </button>
@@ -1037,7 +1107,13 @@ export default function DocumentWorkspace() {
                     ? 'bg-blue-100 text-blue-700' 
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
-                onClick={() => editor?.chain().focus().toggleStrike().run()}
+                onClick={() => {
+                  if (useStandaloneEngine) {
+                    sendToDocumentEngine('FORMAT_TEXT', { command: 'strikethrough' });
+                  } else {
+                    editor?.chain().focus().toggleStrike().run();
+                  }
+                }}
               >
                 <Strikethrough className="w-6 h-6 text-red-600" />
               </button>

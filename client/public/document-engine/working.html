@@ -573,15 +573,62 @@
                     }
                     break;
                 case 'FORMAT_TEXT':
-                    // Basic formatting support
+                    // Enhanced formatting support
                     if (data.command && pages[currentPageIndex]) {
                         const editor = pages[currentPageIndex];
-                        editor.focus();
-                        try {
-                            document.execCommand(data.command);
-                        } catch (e) {
-                            console.log('Format command not supported:', data.command);
+                        const start = editor.selectionStart;
+                        const end = editor.selectionEnd;
+                        const selectedText = editor.value.substring(start, end);
+                        
+                        if (selectedText) {
+                            let formattedText = selectedText;
+                            
+                            // Apply formatting based on command
+                            switch(data.command) {
+                                case 'bold':
+                                    formattedText = `**${selectedText}**`;
+                                    break;
+                                case 'italic':
+                                    formattedText = `*${selectedText}*`;
+                                    break;
+                                case 'underline':
+                                    formattedText = `__${selectedText}__`;
+                                    break;
+                                case 'strikethrough':
+                                    formattedText = `~~${selectedText}~~`;
+                                    break;
+                                default:
+                                    // For other commands, try execCommand
+                                    editor.focus();
+                                    try {
+                                        document.execCommand(data.command);
+                                    } catch (e) {
+                                        console.log('Format command not supported:', data.command);
+                                    }
+                                    break;
+                            }
+                            
+                            // Replace selected text with formatted version
+                            if (formattedText !== selectedText) {
+                                const newText = editor.value.substring(0, start) + formattedText + editor.value.substring(end);
+                                editor.value = newText;
+                                editor.setSelectionRange(start, start + formattedText.length);
+                                checkForOverflow(editor, currentPageIndex);
+                                sendDocumentData();
+                            }
                         }
+                    }
+                    break;
+                case 'SET_FONT':
+                    // Set font family or size
+                    if (data.fontFamily && pages[currentPageIndex]) {
+                        pages[currentPageIndex].style.fontFamily = data.fontFamily;
+                        sendDocumentData();
+                    }
+                    if (data.fontSize && pages[currentPageIndex]) {
+                        pages[currentPageIndex].style.fontSize = `${data.fontSize}pt`;
+                        checkForOverflow(pages[currentPageIndex], currentPageIndex);
+                        sendDocumentData();
                     }
                     break;
             }
