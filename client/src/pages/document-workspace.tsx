@@ -1619,22 +1619,25 @@ export default function DocumentWorkspace() {
 
             
             {/* Document content area */}
-            <div className="flex-1 relative" style={{
-              background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
+            <div className="flex-1 relative overflow-auto" style={{
+              background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)',
+              height: '100%'
             }}>
               {useStandaloneEngine ? (
-                <StandaloneDocumentEngine
-                  onDataUpdate={(data) => {
-                    setDocumentContent(data.content);
-                    setDocumentStats({
-                      words: data.stats.wordCount,
-                      readTime: Math.ceil(data.stats.wordCount / 200)
-                    });
-                    setCurrentPage(data.stats.pageCount);
-                  }}
-                  initialContent={document?.content}
-                  className="h-full"
-                />
+                <div className="h-full overflow-y-auto">
+                  <StandaloneDocumentEngine
+                    onDataUpdate={(data) => {
+                      setDocumentContent(data.content);
+                      setDocumentStats({
+                        words: data.stats.wordCount,
+                        readTime: Math.ceil(data.stats.wordCount / 200)
+                      });
+                      setCurrentPage(data.stats.pageCount);
+                    }}
+                    initialContent={document?.content}
+                    className="min-h-full"
+                  />
+                </div>
               ) : (
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'

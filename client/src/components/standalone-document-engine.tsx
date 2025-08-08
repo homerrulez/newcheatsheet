@@ -59,7 +59,11 @@ export function StandaloneDocumentEngine({
           
           // Dynamic height adjustment based on content
           if (data.contentHeight && data.contentHeight > 0) {
-            const newHeight = Math.max(data.contentHeight + 200, window.innerHeight);
+            // Calculate height based on actual document content with proper padding
+            // Each page is approximately 1100px height, add extra padding for scrolling
+            const pageCount = data.stats?.pageCount || 1;
+            const estimatedHeight = pageCount * 1150 + 100; // 1150px per page + buffer
+            const newHeight = Math.max(data.contentHeight + 400, estimatedHeight, window.innerHeight);
             setDocumentHeight(newHeight);
             
             if (iframeRef.current) {
@@ -106,7 +110,7 @@ export function StandaloneDocumentEngine({
   };
 
   return (
-    <div className={`standalone-document-engine ${className || ''}`}>
+    <div className={`standalone-document-engine ${className || ''}`} style={{ height: '100%' }}>
       <iframe
         ref={iframeRef}
         src="/document-engine/working.html"
@@ -115,12 +119,10 @@ export function StandaloneDocumentEngine({
           height: `${documentHeight}px`,
           minHeight: '100vh',
           backgroundColor: '#f9f9fa',
-          overflow: 'hidden',
           display: 'block'
         }}
         title="Standalone Document Editor"
         sandbox="allow-scripts allow-same-origin allow-popups allow-downloads"
-        scrolling="no"
         frameBorder="0"
       />
       
