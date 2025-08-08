@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import DocumentWorkspace from "@/pages/document-workspace-new";
+import DocumentWorkspace from "@/pages/document-workspace";
 
 import TemplateWorkspace from "@/pages/template-workspace";
 import CheatSheetWorkspaceNew from "@/pages/cheatsheet-workspace-new";

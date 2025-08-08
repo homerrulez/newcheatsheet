@@ -1,31 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
-import { Color } from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
-import { FontFamily } from '@tiptap/extension-font-family';
-import Highlight from '@tiptap/extension-highlight';
 import StandaloneDocumentEngine from '@/components/standalone-document-engine';
-
-// Custom FontSize extension
-const FontSize = TextStyle.extend({
-  addAttributes() {
-    return {
-      fontSize: {
-        default: null,
-        parseHTML: (element: HTMLElement) => element.style.fontSize?.replace('pt', ''),
-        renderHTML: (attributes: any) => {
-          if (!attributes.fontSize) return {}
-          return { style: `font-size: ${attributes.fontSize}pt` }
-        },
-      }
-    }
-  }
-});
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,18 +26,6 @@ import { Document, ChatSession, ChatMessage, DocumentCommand } from '@shared/sch
 import { useToast } from '@/hooks/use-toast';
 import { LayoutEngine, createLayoutEngine } from '@/lib/layout-engine';
 import { DocumentCommandInterface, createDocumentInterface } from '@/lib/document-commands';
-
-// Debounce function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
 
 // Page sizes (in inches, converted to pixels at 96 DPI)
 const PAGE_SIZES = {
@@ -119,42 +83,9 @@ export default function DocumentWorkspace() {
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Editor setup with extensive functionality - will be replaced with standalone engine
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Underline,
-      TextStyle,
-      Color,
-      FontFamily,
-      FontSize,
-      Highlight.configure({
-        multicolor: true,
-      }),
-    ],
-    content: '',
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-full w-full',
-        style: `font-family: ${fontFamily}; font-size: ${fontSize}pt; color: ${textColor}; line-height: 1.6;`,
-      },
-    },
-    onUpdate: ({ editor }) => {
-      // Auto-save document changes
-      debouncedSave();
-    },
-  });
-
-  // Document engine state for new pagination system
+  // Document engine state
   const [documentContent, setDocumentContent] = useState('');
-  const [useStandaloneEngine, setUseStandaloneEngine] = useState(true); // Switch to new engine
+  const [documentEngine, setDocumentEngine] = useState<any>(null);
 
   // Fetch document
   const { data: document, isLoading: documentLoading } = useQuery<Document>({
@@ -254,13 +185,13 @@ export default function DocumentWorkspace() {
         await createDefaultSession();
       }
       
-      const currentContent = useStandaloneEngine ? documentContent : (editor?.getHTML() || '');
+      const documentContent = documentContent || '';
       const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           content: message, 
-          documentContent: currentContent,
+          documentContent,
           documentId: id 
         }),
       });
@@ -282,17 +213,13 @@ export default function DocumentWorkspace() {
       }
       
       // Insert text response into document if it's content
-      if (response.insertText) {
-        if (useStandaloneEngine && window.standaloneDocumentAPI) {
-          window.standaloneDocumentAPI.insertText(response.insertText);
-        } else if (editor) {
-          if (response.insertAtEnd) {
-            editor.commands.focus('end');
-            editor.commands.insertContent(response.insertText);
-          } else {
-            editor.commands.focus();
-            editor.commands.insertContent(response.insertText);
-          }
+      if (response.insertText && editor) {
+        if (response.insertAtEnd) {
+          editor.commands.focus('end');
+          editor.commands.insertContent(response.insertText);
+        } else {
+          editor.commands.focus();
+          editor.commands.insertContent(response.insertText);
         }
       }
     },
@@ -421,10 +348,9 @@ export default function DocumentWorkspace() {
   // Debounced save function
   const debouncedSave = useCallback(
     debounce(() => {
-      const content = useStandaloneEngine ? documentContent : (editor?.getHTML() || '');
-      if (content) {
+      if (editor) {
         updateDocumentMutation.mutate({
-          content,
+          content: editor.getHTML(),
           pageSize,
           fontSize: fontSize.toString(),
           fontFamily,
@@ -432,7 +358,7 @@ export default function DocumentWorkspace() {
         });
       }
     }, 1000),
-    [useStandaloneEngine, documentContent, editor, pageSize, fontSize, fontFamily, textColor]
+    [editor, pageSize, fontSize, fontFamily, textColor]
   );
 
   // Initialize editor with document content
@@ -657,9 +583,9 @@ export default function DocumentWorkspace() {
   // AI Improve functionality
   const aiImproveMutation = useMutation({
     mutationFn: async () => {
-      if (!id) throw new Error('Document ID not available');
+      if (!editor || !id) throw new Error('Editor or document ID not available');
       
-      const content = useStandaloneEngine ? documentContent : (editor?.getHTML() || '');
+      const content = editor.getHTML();
       if (!content.trim()) throw new Error('No content to improve');
 
       const response = await apiRequest('POST', '/api/ai/improve-content', {
@@ -673,12 +599,8 @@ export default function DocumentWorkspace() {
       setIsAiImproving(true);
     },
     onSuccess: (response: any) => {
-      if (response.improvedContent) {
-        if (useStandaloneEngine && window.standaloneDocumentAPI) {
-          window.standaloneDocumentAPI.setContent(response.improvedContent);
-        } else if (editor) {
-          editor.commands.setContent(response.improvedContent);
-        }
+      if (response.improvedContent && editor) {
+        editor.commands.setContent(response.improvedContent);
         toast({ title: "Content improved by AI", description: "Your document has been enhanced for clarity and readability." });
       }
     },
@@ -1615,23 +1537,9 @@ export default function DocumentWorkspace() {
 
             
             {/* Document content area */}
-            <div className="flex-1 relative" style={{
+            <div className="flex-1 relative overflow-auto" style={{
               background: 'linear-gradient(to right, #fcf2f7 0%, #f8f4fc 40%, #f5f9ff 60%, #eef8fd 100%)'
             }}>
-              {useStandaloneEngine ? (
-                <StandaloneDocumentEngine
-                  onDataUpdate={(data) => {
-                    setDocumentContent(data.content);
-                    setDocumentStats({
-                      words: data.stats.wordCount,
-                      readTime: Math.ceil(data.stats.wordCount / 200)
-                    });
-                    setCurrentPage(data.stats.pageCount);
-                  }}
-                  initialContent={document?.content}
-                  className="h-full"
-                />
-              ) : (
                 <ScrollArea className="h-full" style={{
                   background: 'transparent'
                 }}>
@@ -1673,8 +1581,7 @@ export default function DocumentWorkspace() {
                     </div>
                   </div>
                 </ScrollArea>
-              )}
-            </div>
+              </div>
           </div>
         </ResizablePanel>
 
@@ -1802,4 +1709,13 @@ export default function DocumentWorkspace() {
 
     </div>
   );
+}
+
+// Utility function for debouncing
+function debounce<T extends (...args: any[]) => any>(func: T, delay: number): T {
+  let timeoutId: NodeJS.Timeout;
+  return ((...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  }) as T;
 }
