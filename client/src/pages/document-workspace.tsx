@@ -13,6 +13,7 @@ import StandaloneDocumentEngine from '@/components/standalone-document-engine';
 
 // Custom FontSize extension
 const FontSize = TextStyle.extend({
+  name: 'fontSize',
   addAttributes() {
     return {
       fontSize: {
@@ -119,7 +120,7 @@ export default function DocumentWorkspace() {
   const [defaultSessionId, setDefaultSessionId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  // Editor setup with extensive functionality - will be replaced with standalone engine
+  // Editor setup with extensive functionality - fallback for old system
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -130,8 +131,11 @@ export default function DocumentWorkspace() {
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      Underline,
-      TextStyle,
+      Underline.configure({
+        HTMLAttributes: {
+          class: 'underline',
+        },
+      }),
       Color,
       FontFamily,
       FontSize,
