@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 
 interface DocumentData {
   title: string;
@@ -24,14 +24,17 @@ interface StandaloneDocumentEngineProps {
  * This component provides proper pagination with Microsoft Word-like page layout.
  * It uses an iframe-based document engine that handles text overflow automatically.
  */
-export function StandaloneDocumentEngine({ 
+export const StandaloneDocumentEngine = forwardRef<HTMLIFrameElement, StandaloneDocumentEngineProps>(({ 
   onDataUpdate, 
   className, 
   initialContent 
-}: StandaloneDocumentEngineProps) {
+}, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isReady, setIsReady] = useState(false);
   const [documentHeight, setDocumentHeight] = useState(1200);
+
+  // Forward the ref
+  useImperativeHandle(ref, () => iframeRef.current!);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -136,6 +139,6 @@ export function StandaloneDocumentEngine({
       )}
     </div>
   );
-}
+});
 
 export default StandaloneDocumentEngine;

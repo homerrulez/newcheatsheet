@@ -1,178 +1,186 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
-interface LaTeXRendererProps {
-  content: string;
-  displayMode?: boolean;
-  className?: string;
+// Declare global renderMathInElement function
+declare global {
+  interface Window {
+    renderMathInElement?: (element: HTMLElement, options?: any) => void;
+  }
 }
 
-export default function LaTeXRenderer({ content, displayMode = true, className = "" }: LaTeXRendererProps) {
+interface LaTeXRendererProps {
+  content: string;
+  className?: string;
+  displayMode?: boolean;
+}
+
+export default function LaTeXRenderer({ content, className = "", displayMode = true }: LaTeXRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
     if (containerRef.current && content) {
-      // Add delay to prevent race conditions when multiple boxes render simultaneously
-      const renderTimeout = setTimeout(() => {
-        if (!containerRef.current) return;
+      try {
+        // Process LaTeX content for beautiful rendering
+        const processedContent = processLaTeXContent(content);
+        containerRef.current.innerHTML = processedContent;
         
-        // Check if content is mathematical notation or regular text
-        const isMathContent = content.includes('\\') || content.includes('=') || content.includes('^') || content.includes('_') || content.includes('frac') || content.match(/[∫∑∏∇αβγδεζηθικλμνξοπρστυφχψω]/);
-        
-        // If it's regular text, just display it normally with proper formatting
-        if (!isMathContent) {
-          // Preserve line breaks and spaces in text content
-          const formattedText = content
-            .replace(/\n/g, '<br>')
-            .replace(/  /g, '&nbsp;&nbsp;')
-            .trim();
-          
-          // Handle different content types for optimal display
-          if (content.match(/\.(jpg|jpeg|png|gif|svg|webp)/i)) {
-            // Image content - create responsive image display
-            containerRef.current.innerHTML = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><img src="${content}" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Content image" /></div>`;
-          } else {
-            // Text content - preserve formatting
-            containerRef.current.innerHTML = `<span style="font-family: inherit; font-size: inherit; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;">${formattedText}</span>`;
-          }
-          return;
-        }
-        
-        // Process content for reliable rendering
-        let mathContent = content.trim();
-        
-        try {
-          // Clear previous content
-          containerRef.current.innerHTML = '';
-          
-          // Remove surrounding dollar signs
-          mathContent = mathContent.replace(/^\$+|\$+$/g, '');
-          mathContent = mathContent.replace(/^\\\[|\\\]$/g, '');
-          mathContent = mathContent.replace(/^\\\(|\\\)$/g, '');
-          
-          // Enhanced LaTeX cleaning for complex mathematical expressions
-          mathContent = mathContent.replace(/\\+$/, ''); // Remove trailing backslashes
-          mathContent = mathContent.replace(/\\\s*$/, ''); // Remove trailing backslash with space
-          mathContent = mathContent.replace(/\\times/g, '\\cdot'); // Replace times with cdot
-          
-          // Fix problematic extstyle commands but preserve valid LaTeX
-          mathContent = mathContent.replace(/\\extstyle\\begin\{displaystyle\}/g, '\\displaystyle'); // Fix malformed commands
-          mathContent = mathContent.replace(/\\extstyle/g, ''); // Remove invalid extstyle
-          mathContent = mathContent.replace(/\\begin\{displaystyle\}\\text\{\\textup\{/g, ''); // Remove nested text commands
-          mathContent = mathContent.replace(/\\end\{displaystyle\}/g, ''); // Remove end displaystyle
-          mathContent = mathContent.replace(/\\textstyle\\begin\{displaystyle\}/g, '\\displaystyle'); // Fix nested styles
-          
-          // Remove problematic text commands that break KaTeX
-          mathContent = mathContent.replace(/\\text\{[^}]*\}/g, ''); // Remove text commands (units)
-          mathContent = mathContent.replace(/\\mathrm\{[^}]*\}/g, ''); // Remove mathrm commands
-          mathContent = mathContent.replace(/\\textup\{[^}]*\}/g, ''); // Remove textup commands
-          mathContent = mathContent.replace(/\([^)]*Units[^)]*\)/g, ''); // Remove units in parentheses
-          
-          // Remove unit annotations in parentheses with various spacing patterns
-          mathContent = mathContent.replace(/\s*,\s*\([^)]*\)/g, ''); // Remove ", (N)" style units
-          mathContent = mathContent.replace(/\s*\\\,\s*\([^)]*\)/g, ''); // Remove "\, (N)" style units  
-          mathContent = mathContent.replace(/\s*\\,\s*\([^)]*\)/g, ''); // Remove "\, (N)" style units
-          mathContent = mathContent.replace(/\s*\([^)]*\)\s*$/g, ''); // Remove trailing unit parentheses
-          
-          // Fix common notation issues that cause KaTeX errors
-          mathContent = mathContent.replace(/\\Phi/g, '\\phi');
-          mathContent = mathContent.replace(/\\_/g, '_'); // Fix escaped underscores
-          mathContent = mathContent.replace(/\\left\(/g, '('); // Simplify left/right delimiters
-          mathContent = mathContent.replace(/\\right\)/g, ')');
-          mathContent = mathContent.replace(/\\left\[/g, '[');
-          mathContent = mathContent.replace(/\\right\]/g, ']');
-          mathContent = mathContent.replace(/\\left\{/g, '\\{');
-          mathContent = mathContent.replace(/\\right\}/g, '\\}');
-          
-          // Handle vector notation issues more aggressively
-          mathContent = mathContent.replace(/\\vec\{([^}]*)\}/g, '\\mathbf{$1}'); // Use mathbf instead of vec
-          mathContent = mathContent.replace(/\\mathbf\{([^}]*)\}/g, '$1'); // Remove mathbf entirely
-          mathContent = mathContent.replace(/\\nabla_([a-zA-Z])/g, '\\nabla_$1'); // Fix subscript nabla
-          mathContent = mathContent.replace(/\\nabla\s*\\cdot/g, 'div'); // Replace nabla dot with div
-          mathContent = mathContent.replace(/\\nabla\s*\\times/g, 'curl'); // Replace nabla cross with curl
-          mathContent = mathContent.replace(/\\nabla/g, '\\nabla'); // Keep simple nabla
-          
-          // Clean up extra spaces but preserve essential LaTeX structure
-          mathContent = mathContent.replace(/\s+/g, ' ').trim();
-          
-          // Render the math with KaTeX - add retry logic
-          const attemptRender = (attempt = 1) => {
-            try {
-              katex.render(mathContent, containerRef.current!, {
-                displayMode: displayMode,
-                throwOnError: false,
-                strict: false,
-                trust: true,
-                errorColor: '#666',
-                output: 'html',
-                fleqn: false,
-                macros: {
-                  "\\cdot": "\\cdot",
-                  "\\times": "\\times", 
-                  "\\div": "\\div",
-                  "\\grad": "\\nabla",
-                  "\\curl": "\\nabla \\times",
-                  "\\divergence": "\\nabla \\cdot"
-                }
-              });
-              
-              console.log(`LaTeX rendered successfully on attempt ${attempt}:`, mathContent);
-            } catch (renderError) {
-              console.error(`LaTeX render attempt ${attempt} failed:`, renderError, 'Content:', mathContent);
-              
-              if (attempt < 3) {
-                // Retry with slight delay
-                setTimeout(() => attemptRender(attempt + 1), 50 * attempt);
-              } else {
-                // Final fallback after 3 attempts - show simplified math
-                if (containerRef.current) {
-                  // Create a more readable fallback by simplifying the LaTeX
-                  let simplifiedMath = mathContent
-                    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1)/($2)') // Convert fractions
-                    .replace(/\\partial/g, '∂') // Replace partial symbol
-                    .replace(/\\nabla\s*\\cdot/g, 'div') // Replace nabla dot
-                    .replace(/\\nabla\s*\\times/g, 'curl') // Replace nabla cross
-                    .replace(/\\nabla/g, '∇') // Replace nabla
-                    .replace(/\\cdot/g, '·') // Replace cdot
-                    .replace(/\\mathbf\{([^}]*)\}/g, '$1') // Remove mathbf
-                    .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1') // Remove other commands
-                    .replace(/\\[a-zA-Z]+/g, '') // Remove standalone commands
-                    .replace(/[{}]/g, '') // Remove braces
-                    .replace(/\s+/g, ' ') // Clean up spaces
-                    .trim();
-                  
-                  containerRef.current.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-size: 14px; color: #666; font-style: italic;">${simplifiedMath}</span>`;
-                }
+        // Render LaTeX after content is set
+        setTimeout(() => {
+          if (containerRef.current && typeof window.renderMathInElement !== 'undefined') {
+            window.renderMathInElement(containerRef.current, {
+              delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\[', right: '\\]', display: true},
+                {left: '\\(', right: '\\)', display: false}
+              ],
+              throwOnError: false,
+              errorColor: '#cc0000',
+              macros: {
+                // Physics macros
+                "\\vec": "\\mathbf{#1}",
+                "\\div": "\\text{div}",
+                "\\curl": "\\text{curl}",
+                "\\grad": "\\nabla",
+                "\\force": "\\mathbf{F}",
+                "\\moment": "\\mathbf{M}",
+                "\\velocity": "\\mathbf{v}",
+                "\\acceleration": "\\mathbf{a}",
+                "\\momentum": "\\mathbf{p}",
+                "\\energy": "E",
+                "\\kinetic": "K",
+                "\\potential": "U",
+                "\\work": "W",
+                "\\power": "P",
+                "\\pressure": "P",
+                "\\density": "\\rho",
+                "\\temperature": "T",
+                "\\entropy": "S",
+                "\\enthalpy": "H",
+                "\\heat": "Q",
+                
+                // Chemistry macros
+                "\\chem": "\\text{#1}",
+                "\\reaction": "\\ce{#1}",
+                "\\molecule": "\\ce{#1}",
+                "\\concentration": "[#1]",
+                "\\equilibrium": "\\rightleftharpoons",
+                "\\catalyst": "\\text{catalyst}",
+                "\\activation": "E_a",
+                "\\rate": "k",
+                "\\order": "n",
+                
+                // Engineering macros
+                "\\stress": "\\sigma",
+                "\\strain": "\\varepsilon",
+                "\\modulus": "E",
+                "\\poisson": "\\nu",
+                "\\shear": "\\tau",
+                "\\torsion": "T",
+                "\\bending": "M",
+                "\\deflection": "\\delta",
+                "\\frequency": "f",
+                "\\wavelength": "\\lambda",
+                "\\amplitude": "A",
+                "\\phase": "\\phi",
+                "\\impedance": "Z",
+                "\\resistance": "R",
+                "\\capacitance": "C",
+                "\\inductance": "L",
+                "\\voltage": "V",
+                "\\current": "I",
+                
+                // Calculus macros
+                "\\derivative": "\\frac{d}{dx}",
+                "\\partial": "\\frac{\\partial}{\\partial}",
+                "\\integral": "\\int",
+                "\\definite": "\\int_{#1}^{#2}",
+                "\\limit": "\\lim",
+                "\\series": "\\sum",
+                "\\product": "\\prod",
+                "\\convergence": "\\to",
+                "\\infinity": "\\infty",
+                "\\differential": "d",
+                "\\partialdiff": "\\partial",
+                
+                // Mathematical macros
+                "\\abs": "|#1|",
+                "\\norm": "\\|#1\\|",
+                "\\set": "\\{#1\\}",
+                "\\seq": "(#1)",
+                "\\mat": "\\begin{pmatrix} #1 \\end{pmatrix}",
+                "\\det": "\\det",
+                "\\tr": "\\text{tr}",
+                "\\rank": "\\text{rank}",
+                "\\nullity": "\\text{nullity}",
+                "\\eigenvalue": "\\lambda",
+                "\\eigenvector": "\\mathbf{v}",
+                "\\transpose": "T",
+                "\\inverse": "^{-1}",
+                "\\conjugate": "\\overline{#1}",
+                "\\real": "\\text{Re}",
+                "\\imaginary": "\\text{Im}",
+                "\\mod": "\\bmod",
+                "\\gcd": "\\gcd",
+                "\\lcm": "\\text{lcm}",
+                "\\factorial": "!",
+                "\\binomial": "\\binom{#1}{#2}",
+                "\\permutation": "P(#1,#2)",
+                "\\combination": "C(#1,#2)"
               }
-            }
-          };
-          
-          attemptRender();
-          
-        } catch (error) {
-          console.error('LaTeX preprocessing failed:', error, 'Content:', content);
-          if (containerRef.current) {
-            containerRef.current.textContent = content;
+            });
+            setRenderError(null);
           }
-        }
-      }, Math.random() * 100); // Random delay 0-100ms to prevent simultaneous rendering
-      
-      return () => clearTimeout(renderTimeout);
+        }, 100);
+      } catch (error) {
+        console.error('LaTeX rendering error:', error);
+        setRenderError(error instanceof Error ? error.message : 'Unknown error');
+      }
     }
-  }, [content, displayMode]);
+  }, [content]);
+
+  function processLaTeXContent(content: string): string {
+    return content
+      // Convert LaTeX delimiters to standard format
+      .replace(/\\[(]([^)]+)\\[)]/g, (match, equation) => {
+        return `$${equation}$`; // Standard LaTeX delimiters
+      })
+      .replace(/\\[[[]([^\]]+)\\[\]]/g, (match, equation) => {
+        return `$$${equation}$$`; // Display math delimiters
+      })
+      // Format numbered equations nicely
+      .replace(/(\d+)\.\s*\*\*([^*]+):\*\*\s*\\[(]([^)]+)\\[)]/g, 
+        '\n$1. $2:\n   $$$3$$\n')
+      .replace(/(\d+)\.\s*\*\*([^*]+)\*\*\s*\\[(]([^)]+)\\[)]/g, 
+        '\n$1. $2:\n   $$$3$$\n')
+      // Remove markdown bold formatting
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      // Convert remaining LaTeX delimiters
+      .replace(/\\[(]/g, '$').replace(/\\[)]/g, '$')
+      // Clean up extra spaces and formatting
+      .replace(/\n\s*\n/g, '\n\n') // Remove excessive blank lines
+      .replace(/^\s+|\s+$/g, '') // Trim whitespace
+      .trim();
+  }
 
   return (
     <div 
-      ref={containerRef} 
+      ref={containerRef}
       className={`latex-content ${className}`}
       style={{ 
-        minHeight: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center'
+        fontFamily: 'Times New Roman, serif', 
+        fontSize: '12pt', 
+        lineHeight: '1.5',
+        whiteSpace: 'pre-wrap'
       }}
-    />
+    >
+      {renderError && (
+        <div style={{ color: '#cc0000', fontSize: '10pt', fontStyle: 'italic' }}>
+          LaTeX Error: {renderError}
+        </div>
+      )}
+    </div>
   );
 }

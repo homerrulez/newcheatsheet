@@ -23,6 +23,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Writing Assistant Routes
   app.use("/api/ai", aiRoutes);
   
+  // ChatGPT Integration Routes
+  app.use("/api", chatgptRoutes);
+  
   // Documents API
   app.get("/api/documents", async (req, res) => {
     try {
@@ -138,9 +141,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat Messages API for sessions
   app.get("/api/chat-sessions/:id/messages", async (req, res) => {
     try {
+      console.log('Fetching messages for session:', req.params.id);
       const messages = await storage.getChatMessagesBySession(req.params.id);
+      console.log('Found messages:', messages.length);
       res.json(messages);
     } catch (error) {
+      console.error('Error fetching messages:', error);
       res.status(500).json({ message: "Failed to fetch chat messages" });
     }
   });
@@ -216,6 +222,7 @@ Always be helpful and direct about working with their document.`;
         .replace(/<p[\s\S]*?<\/p>/g, '') // Remove HTML content that will be added to document
         .trim();
 
+      console.log('Saving user message to session:', req.params.id);
       // Save user message
       await storage.createChatMessage({
         sessionId: req.params.id,
@@ -226,6 +233,7 @@ Always be helpful and direct about working with their document.`;
         documentCommand: null
       });
 
+      console.log('Saving assistant message to session:', req.params.id);
       // Save assistant message
       await storage.createChatMessage({
         sessionId: req.params.id,
@@ -439,7 +447,7 @@ Always be helpful and direct about working with their document.`;
 
   app.post("/api/chat", async (req, res) => {
     try {
-      const { workspaceId, workspaceType, message, currentBoxes } = req.body;
+      const { workspaceId, workspaceType, message, currentBoxes, documentContent } = req.body;
       
       // Store user message
       await storage.createChatMessage({
@@ -449,28 +457,161 @@ Always be helpful and direct about working with their document.`;
         content: message
       });
 
-      // Get AI response with box context
-      const systemPrompt = getSystemPrompt(workspaceType, currentBoxes);
+      // Enhanced ChatGPT integration with comprehensive mathematical rendering
+      const systemPrompt = `You are ChatGPT, a powerful AI assistant with advanced document editing and comprehensive mathematical rendering capabilities. You can have natural conversations about any topic while providing intelligent document assistance with full LaTeX/KaTeX support.
+
+🎯 **CORE CAPABILITIES:**
+
+**💬 Natural Conversation:**
+- Answer questions on any topic (science, history, technology, etc.)
+- Provide explanations and clarifications
+- Help with problem-solving and brainstorming
+- Creative writing and storytelling assistance
+- General knowledge and research help
+
+**📝 Advanced Document Editing:**
+- Natural language document commands
+- Real-time content generation and modification
+- Intelligent formatting and structure changes
+- Context-aware editing that preserves document integrity
+- Multi-step document operations
+
+**🧮 COMPREHENSIVE MATHEMATICAL RENDERING:**
+- Beautiful LaTeX/KaTeX mathematical notation rendering
+- **Physics**: Vectors, tensors, quantum mechanics, thermodynamics, mechanics
+- **Chemistry**: Chemical formulas, equations, reactions, molecular structures
+- **Engineering**: Technical symbols, stress/strain, electrical circuits, mechanics
+- **Calculus**: Derivatives, integrals, limits, series, differential equations
+- **Mathematics**: Algebra, geometry, statistics, linear algebra, analysis
+- **Biology**: Biochemical equations, molecular biology notation
+- **Economics**: Mathematical models, statistical notation
+- Real-time equation preservation and enhancement
+
+**🎨 Smart Document Features:**
+- Writing improvement and enhancement
+- Tone adjustment (professional, academic, casual, formal, creative)
+- Content generation with proper formatting
+- Structural document changes
+- Intelligent error prevention
+
+**📊 Context Awareness:**
+- Understands current document content and structure
+- Maintains conversation history and context
+- Preserves mathematical content and formatting
+- Smart suggestions based on document context
+- Multi-session document state management
+
+Current document content length: ${documentContent ? documentContent.length : 0} characters
+Workspace type: ${workspaceType}
+
+**🔧 DOCUMENT COMMAND SYSTEM:**
+When the user requests document modifications, you can use these commands:
+- [COMMAND:ADD_TEXT]new content[/COMMAND] - Add text to document
+- [COMMAND:REPLACE_TEXT:old_text]new text[/COMMAND] - Replace specific text
+- [COMMAND:DELETE_TEXT]text to delete[/COMMAND] - Delete specific text
+- [COMMAND:FORMAT_TEXT:text:BOLD/ITALIC/UNDERLINE][/COMMAND] - Format text
+- [COMMAND:CENTER_TEXT]text to center[/COMMAND] - Center align text
+- [COMMAND:DELETE_LAST_PARAGRAPH][/COMMAND] - Remove last paragraph
+- [COMMAND:INSERT_PAGE][/COMMAND] - Add new page
+- [COMMAND:CLEAR_ALL][/COMMAND] - Clear entire document
+
+**🧮 COMPREHENSIVE MATHEMATICAL RENDERING EXAMPLES:**
+
+**Physics Examples:**
+- Newton's Second Law: \\vec{F} = m\\vec{a}
+- Energy-mass equivalence: E = mc^2
+- Maxwell's equations: \\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}
+- Quantum mechanics: \\hat{H}\\psi = E\\psi
+- Thermodynamics: \\Delta S = \\int \\frac{dQ}{T}
+
+**Chemistry Examples:**
+- Water: H_2O
+- Carbon dioxide: CO_2
+- Combustion: CH_4 + 2O_2 \\rightarrow CO_2 + 2H_2O
+- Equilibrium: A + B \\rightleftharpoons C + D
+- Rate law: rate = k[A]^m[B]^n
+
+**Engineering Examples:**
+- Stress: \\sigma = \\frac{F}{A}
+- Power: P = \\frac{W}{t}
+- Torque: \\tau = F \\times r
+- Ohm's Law: V = IR
+- Frequency: f = \\frac{1}{T}
+
+**Calculus Examples:**
+- Derivative: \\frac{d}{dx}f(x) = \\lim_{h \\to 0}\\frac{f(x+h) - f(x)}{h}
+- Integral: \\int_a^b f(x) dx = F(b) - F(a)
+- Series: \\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
+- Limit: \\lim_{x \\to \\infty} \\frac{1}{x} = 0
+- Partial derivative: \\frac{\\partial f}{\\partial x}
+
+**Mathematics Examples:**
+- Quadratic formula: x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
+- Matrix: \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}
+- Determinant: \\det(A) = ad - bc
+- Eigenvalue: A\\vec{v} = \\lambda\\vec{v}
+- Set notation: A = \\{x \\in \\mathbb{R} : x > 0\\}
+
+**🎯 RESPONSE GUIDELINES:**
+1. For general questions and conversation: Respond naturally as ChatGPT
+2. For document modifications: Use appropriate command markers
+3. For mathematical content: Include proper LaTeX notation with \\ commands
+4. For writing improvement: Provide enhanced content with formatting
+5. Always preserve document structure and mathematical integrity
+6. Maintain professional quality and readability
+7. Use comprehensive mathematical notation for all sciences
+
+**⚡ SPECIAL FEATURES:**
+- Real-time mathematical rendering with KaTeX
+- Context-aware document editing
+- Intelligent error prevention
+- Multi-step operation support
+- Session-based document state management
+- Equation preservation and enhancement
+- Full support for all scientific disciplines
+
+Remember: You're an intelligent writing partner that can handle both natural conversation and advanced document editing with comprehensive mathematical rendering for all sciences!`;
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message }
         ],
-        response_format: { type: "json_object" }
+        temperature: 0.7, // Natural conversation temperature
+        max_tokens: 2000,
+        // No forced JSON format - let ChatGPT respond naturally
       });
 
-      const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+      const aiContent = response.choices[0].message.content || '';
+
+      // Parse any document commands from the response
+      const documentCommands = parseDocumentCommands(aiContent);
+      
+      // Clean the response of command markers for display
+      const cleanContent = aiContent
+        .replace(/\[COMMAND:.*?\]/g, '')
+        .replace(/\[\/COMMAND\]/g, '')
+        .trim();
+
+      // Build response in the format expected by the frontend
+      const chatResponse = {
+        content: cleanContent,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        // Include document commands if any were found
+        ...(documentCommands.length > 0 && { documentCommands })
+      };
       
       // Store AI response
       await storage.createChatMessage({
         workspaceId,
         workspaceType,
         role: "assistant",
-        content: JSON.stringify(aiResponse)
+        content: JSON.stringify(chatResponse)
       });
 
-      res.json(aiResponse);
+      res.json(chatResponse);
     } catch (error) {
       console.error("Chat API error:", error);
       res.status(500).json({ message: "Failed to process chat message" });

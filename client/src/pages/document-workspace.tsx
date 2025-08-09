@@ -9,7 +9,10 @@ import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
-import StandaloneDocumentEngine from '@/components/standalone-document-engine';
+import { StandaloneDocumentEngine } from '@/components/standalone-document-engine';
+import LaTeXRenderer from '@/components/latex-renderer';
+
+
 
 // Extend Window interface for standalone document API
 declare global {
@@ -148,11 +151,7 @@ export default function DocumentWorkspace() {
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      Underline.configure({
-        HTMLAttributes: {
-          class: 'underline',
-        },
-      }),
+      Underline,
       Color,
       FontFamily,
       FontSize,
@@ -176,6 +175,9 @@ export default function DocumentWorkspace() {
   // Document engine state for new pagination system
   const [documentContent, setDocumentContent] = useState('');
   const [useStandaloneEngine, setUseStandaloneEngine] = useState(true); // Switch to new engine
+  const [isEngineReady, setIsEngineReady] = useState(false);
+  const documentEngineRef = useRef<HTMLIFrameElement>(null);
+
 
   // Fetch document
   const { data: document, isLoading: documentLoading } = useQuery<Document>({
@@ -186,6 +188,12 @@ export default function DocumentWorkspace() {
       return response.json();
     },
     enabled: !!id,
+    onSuccess: (data) => {
+      // Load document content into editor when document is fetched
+      if (editor && data.content) {
+        editor.commands.setContent(data.content);
+      }
+    },
   });
 
   // Fetch document history
@@ -214,9 +222,12 @@ export default function DocumentWorkspace() {
   const { data: chatMessages = [], refetch: refetchMessages } = useQuery<ChatMessage[]>({
     queryKey: ['chatMessages', defaultSessionId],
     queryFn: async () => {
+      console.log('Fetching chat messages for session:', defaultSessionId);
       const response = await fetch(`/api/chat-sessions/${defaultSessionId}/messages`);
       if (!response.ok) throw new Error('Failed to fetch chat messages');
-      return response.json();
+      const messages = await response.json();
+      console.log('Fetched chat messages:', messages);
+      return messages;
     },
     enabled: !!defaultSessionId,
   });
@@ -229,6 +240,21 @@ export default function DocumentWorkspace() {
       setDefaultSessionId(chatSessions[0].id);
     }
   }, [document, chatSessions, defaultSessionId]);
+
+  // Listen for document engine ready state
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'DOCUMENT_ENGINE_READY') {
+        console.log('Document engine ready for communication');
+        setIsEngineReady(true);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Create default chat session automatically
   const createDefaultSession = async () => {
@@ -258,6 +284,263 @@ export default function DocumentWorkspace() {
       iframe.contentWindow.postMessage({ type, data }, window.location.origin);
     }
   };
+
+  // Smart content detection - detect math/science content vs casual chat
+  const detectMathContent = (content: string): boolean => {
+    if (typeof content !== 'string') return false;
+    
+    // Check for LaTeX patterns
+    const latexPatterns = [
+      /\$[^$]+\$/g,                           // $equation$
+      /\$\$[^$]+\$\$/g,                       // $$equation$$
+      /\\[(]([^)]+)\\[)]/g,                   // \(equation\)
+      /\\[[[]([^\]]+)\\[\]]/g,                // \[equation\]
+      /\\frac\{[^}]*\}\{[^}]*\}/g,           // \frac{a}{b}
+      /\\sum|\\int|\\partial|\\nabla/g,       // Mathematical operators
+      /\\alpha|\\beta|\\gamma|\\delta|\\theta|\\lambda|\\mu|\\pi|\\sigma|\\phi|\\omega/g, // Greek letters
+      /\\mathbf|\\vec|\\hat/g,                // Vector notation
+      /\\begin\{[^}]*\}|\\end\{[^}]*\}/g,    // LaTeX environments
+    ];
+    
+    // Check for equation patterns
+    const equationPatterns = [
+      /\d+\.\s*[^:]+:\s*[A-Za-z]/g,          // "1. Newton's Law: F = ma"
+      /[A-Z]\s*=\s*[^=\n]+/g,                // "F = ma", "E = mc²"
+      /\b(equation|formula|law|theorem|principle)\b/gi, // Mathematical keywords
+      /\b(physics|chemistry|mathematics|calculus|algebra|geometry)\b/gi, // Science keywords
+    ];
+    
+    // Check for multiple equations (likely math content)
+    const multipleEquations = (content.match(/[A-Z]\s*=\s*/g) || []).length >= 2;
+    
+    // Test all patterns
+    const hasLatex = latexPatterns.some(pattern => pattern.test(content));
+    const hasEquations = equationPatterns.some(pattern => pattern.test(content));
+    
+    return hasLatex || hasEquations || multipleEquations;
+  };
+
+  // Enhanced function to send ChatGPT responses to document engine with formula sheet layout
+  const sendChatGPTResponseToDocument = (response: any) => {
+    console.log('Sending ChatGPT response to document:', response);
+    
+    if (!isEngineReady) {
+      console.warn('Document engine not ready, retrying in 1 second...');
+      setTimeout(() => sendChatGPTResponseToDocument(response), 1000);
+      return;
+    }
+    
+    let content = response;
+    if (typeof response === 'object') {
+      content = response.content || response.message || JSON.stringify(response);
+    }
+    
+    // Check if content contains LaTeX/math expressions using smart detection
+    const hasMathContent = detectMathContent(content);
+    
+                    if (hasMathContent) {
+                  // Parse into clean physics document
+                  console.log('Math content detected, creating clean physics document');
+                  const cleanPhysicsText = createCleanPhysicsDocument(content);
+              
+                  // Send clean text to document engine
+                  if (documentEngineRef.current?.contentWindow) {
+                    documentEngineRef.current.contentWindow.postMessage({
+                      type: 'INSERT_TEXT',
+                      data: { text: cleanPhysicsText }
+                    }, window.location.origin);
+                    toast({ title: "Physics formulas added to document" });
+                  } else {
+                    console.error('Document engine iframe not found');
+                    toast({ title: "Failed to add physics formulas to document", variant: "destructive" });
+                  }
+                } else {
+                  // Regular text content
+                  console.log('Regular text content, using standard processing');
+                  const processedContent = processMathContent(content);
+              
+                  // Send to document engine
+                  if (documentEngineRef.current?.contentWindow) {
+                    documentEngineRef.current.contentWindow.postMessage({
+                      type: 'INSERT_TEXT',
+                      data: { text: processedContent }
+                    }, window.location.origin);
+                    toast({ title: "Response added to document" });
+                  } else {
+                    console.error('Document engine iframe not found');
+                    toast({ title: "Failed to add response to document", variant: "destructive" });
+                  }
+                }
+  };
+  
+  // Create clean text document with organized physics formulas
+  function createCleanPhysicsDocument(content: string): string {
+    // Parse equations from content
+    const equations = parseEquationsFromContent(content);
+    
+    // Organize equations by category
+    const categorizedEquations = categorizeEquations(equations);
+    
+    // Generate clean text document
+    return generateCleanPhysicsText(categorizedEquations);
+  }
+  
+  // Parse equations from ChatGPT response
+  function parseEquationsFromContent(content: string): Array<{name: string, equation: string, description: string}> {
+    const equations: Array<{name: string, equation: string, description: string}> = [];
+    const lines = content.split('\n');
+    
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      
+      // Match patterns like "1. Newton's Law: $F = ma$" or "Newton's Law: \(F = ma\)"
+      const match = trimmed.match(/^(\d+)?\.?\s*([^:]+):\s*([\\$].*[\\$])/);
+      if (match) {
+        const [, number, name, equation] = match;
+        equations.push({
+          name: name.trim(),
+          equation: equation.trim(),
+          description: name.trim()
+        });
+      }
+    });
+    
+    return equations;
+  }
+  
+  // Categorize equations into document sections
+  function categorizeEquations(equations: Array<{name: string, equation: string, description: string}>): {[key: string]: Array<{name: string, equation: string, description: string}>} {
+    const categories: {[key: string]: Array<{name: string, equation: string, description: string}>} = {
+      'FORCES': [],
+      'ENERGY': [],
+      'MOTION': [],
+      'MOMENTUM': [],
+      'CONSTANTS': [],
+      'ELECTROMAGNETISM': []
+    };
+    
+    equations.forEach(eq => {
+      const nameLower = eq.name.toLowerCase();
+      const equationLower = eq.equation.toLowerCase();
+      
+      if (nameLower.includes('constant') || nameLower.includes('basic') || 
+          nameLower.includes('g =') || nameLower.includes('c =') || 
+          equationLower.includes('g =') || equationLower.includes('c =')) {
+        categories['CONSTANTS'].push(eq);
+      } else if (nameLower.includes('force') || nameLower.includes('newton') || 
+                 nameLower.includes('coulomb') || nameLower.includes('gravitational') ||
+                 equationLower.includes('f =') || equationLower.includes('force')) {
+        categories['FORCES'].push(eq);
+      } else if (nameLower.includes('motion') || nameLower.includes('velocity') || 
+                 nameLower.includes('acceleration') || nameLower.includes('kinematic') ||
+                 equationLower.includes('v =') || equationLower.includes('a =')) {
+        categories['MOTION'].push(eq);
+      } else if (nameLower.includes('momentum') || nameLower.includes('impulse') ||
+                 equationLower.includes('p =') || equationLower.includes('momentum')) {
+        categories['MOMENTUM'].push(eq);
+      } else if (nameLower.includes('energy') || nameLower.includes('kinetic') || 
+                 nameLower.includes('potential') || nameLower.includes('work') ||
+                 equationLower.includes('ke =') || equationLower.includes('pe =') || 
+                 equationLower.includes('energy')) {
+        categories['ENERGY'].push(eq);
+      } else if (nameLower.includes('electric') || nameLower.includes('magnetic') || 
+                 nameLower.includes('coulomb') || nameLower.includes('ohm') ||
+                 equationLower.includes('e =') || equationLower.includes('b =') ||
+                 equationLower.includes('v = ir')) {
+        categories['ELECTROMAGNETISM'].push(eq);
+      } else {
+        // Default to FORCES if no match
+        categories['FORCES'].push(eq);
+      }
+    });
+    
+    return categories;
+  }
+  
+  // Generate clean text document with organized sections
+  function generateCleanPhysicsText(categorizedEquations: {[key: string]: Array<{name: string, equation: string, description: string}>}): string {
+    let documentText = '';
+    
+    // Define section order
+    const sectionOrder = [
+      'CONSTANTS',
+      'FORCES', 
+      'MOTION',
+      'MOMENTUM',
+      'ENERGY',
+      'ELECTROMAGNETISM'
+    ];
+    
+    sectionOrder.forEach(sectionName => {
+      const equations = categorizedEquations[sectionName];
+      if (equations.length > 0) {
+        // Add section header
+        documentText += `\n\n**${sectionName}**\n\n`;
+        
+        // Add each equation
+        equations.forEach(eq => {
+          // Clean up LaTeX formatting for text insertion
+          const cleanEquation = eq.equation
+            .replace(/\\[(]([^)]+)\\[)]/g, '$$$1$$')
+            .replace(/\\[(]([^)]+)\\[)]/g, '$$$1$$')
+            .replace(/\\[(]/g, '$').replace(/\\[)]/g, '$')
+            .replace(/\*\*([^*]+)\*\*/g, '$1'); // Remove markdown bold
+          
+          documentText += `${eq.name}: ${cleanEquation}\n\n`;
+        });
+      }
+    });
+    
+    return documentText.trim();
+  }
+  
+  // Render LaTeX content to HTML
+  function renderLaTeXContent(content: string): string {
+    try {
+      // Process LaTeX content for beautiful rendering
+      const processedContent = processMathContent(content);
+      
+      // Create HTML with LaTeX delimiters for rendering in document engine
+      const htmlContent = `
+        <div style="font-family: Times New Roman, serif; font-size: 12pt; line-height: 1.5; padding: 10px;">
+          ${processedContent}
+        </div>
+      `;
+      
+      return htmlContent;
+    } catch (error) {
+      console.error('LaTeX rendering error:', error);
+      return content; // Fallback to original content
+    }
+  }
+  
+  // Math post-processing function
+  function processMathContent(content: string): string {
+    return content
+      // Convert LaTeX delimiters to standard format
+      .replace(/\\[(]([^)]+)\\[)]/g, (match, equation) => {
+        return `$${equation}$`; // Standard LaTeX delimiters
+      })
+      .replace(/\\[[[]([^\]]+)\\[\]]/g, (match, equation) => {
+        return `$$${equation}$$`; // Display math delimiters
+      })
+      // Format numbered equations nicely
+      .replace(/(\d+)\.\s*\*\*([^*]+):\*\*\s*\\[(]([^)]+)\\[)]/g, 
+        '\n$1. $2:\n   $$$3$$\n')
+      .replace(/(\d+)\.\s*\*\*([^*]+)\*\*\s*\\[(]([^)]+)\\[)]/g, 
+        '\n$1. $2:\n   $$$3$$\n')
+      // Remove markdown bold formatting
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      // Convert remaining LaTeX delimiters
+      .replace(/\\[(]/g, '$').replace(/\\[)]/g, '$')
+      // Clean up extra spaces and formatting
+      .replace(/\n\s*\n/g, '\n\n') // Remove excessive blank lines
+      .replace(/^\s+|\s+$/g, '') // Trim whitespace
+      .trim();
+  }
+  
+
 
   const getDocumentEngineContent = (): Promise<string> => {
     return new Promise((resolve) => {
@@ -294,7 +577,7 @@ export default function DocumentWorkspace() {
     },
   });
 
-  // Send chat message mutation with document command parsing
+  // Send chat message mutation with enhanced ChatGPT integration
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       // If no default session, create one first
@@ -307,30 +590,59 @@ export default function DocumentWorkspace() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          content: message, 
+          content: message,
           documentContent: currentContent,
-          documentId: id 
+          documentId: id
         }),
       });
       if (!response.ok) throw new Error('Failed to send message');
       return response.json();
     },
     onSuccess: (response: any) => {
-      refetchMessages();
+      console.log('ChatGPT response received:', response);
+      
+      // Clear input immediately
       setChatInput('');
+      
+      // Refetch messages to show both user message and GPT response in chat
+      refetchMessages().then(() => {
+        console.log('Chat messages refreshed successfully');
+      }).catch((error) => {
+        console.error('Failed to refresh chat messages:', error);
+      });
+      
+      // Smart content filtering - check if response contains math/science content
+      const responseContent = response.content || response.message || response;
+      const hasMathContent = detectMathContent(responseContent);
+      
+      if (hasMathContent) {
+        console.log('Math content detected - sending to document');
+        // Send math content to document engine
+        sendChatGPTResponseToDocument(response);
+      } else {
+        console.log('Regular chat content - staying in chat only');
+      }
+      
+      // Force a manual refetch after a short delay to ensure messages appear
+      setTimeout(() => {
+        refetchMessages();
+      }, 500);
       
       // Execute document commands if any (now supporting multiple commands)
       if (response.documentCommands && Array.isArray(response.documentCommands)) {
+        console.log('Executing document commands:', response.documentCommands);
         response.documentCommands.forEach((command: DocumentCommand) => {
           executeDocumentCommand(command);
         });
       } else if (response.documentCommand) {
         // Backwards compatibility for single command
+        console.log('Executing single document command:', response.documentCommand);
         executeDocumentCommand(response.documentCommand);
       }
       
       // Insert text response into document if it's content
       if (response.insertText) {
+        console.log('Inserting text into document:', response.insertText);
         if (useStandaloneEngine && window.standaloneDocumentAPI) {
           window.standaloneDocumentAPI.insertText(response.insertText);
         } else if (editor) {
@@ -344,12 +656,28 @@ export default function DocumentWorkspace() {
         }
       }
     },
+    onError: (error: any) => {
+      console.error('ChatGPT request failed:', error);
+      toast({ 
+        title: "Failed to send message", 
+        description: error.message || "Please try again", 
+        variant: "destructive" 
+      });
+    },
   });
 
   // Execute document commands from ChatGPT
   const executeDocumentCommand = useCallback((command: DocumentCommand) => {
+    console.log('Executing document command:', command, 'useStandaloneEngine:', useStandaloneEngine, 'standaloneDocumentAPI available:', !!window.standaloneDocumentAPI);
+    
     // Support both standalone engine and TipTap editor
-    if (useStandaloneEngine && window.standaloneDocumentAPI) {
+    if (useStandaloneEngine) {
+      if (!window.standaloneDocumentAPI) {
+        console.warn('Standalone document API not ready, retrying in 1 second...');
+        setTimeout(() => executeDocumentCommand(command), 1000);
+        return;
+      }
+      
       // Execute commands on standalone document engine
       switch (command.type) {
         case 'delete_page':
@@ -416,6 +744,30 @@ export default function DocumentWorkspace() {
             window.standaloneDocumentAPI.insertText(`[CENTER]${centerText}[/CENTER]`);
             toast({ title: `Centered text: "${centerText}"` });
           }
+          break;
+          
+        case 'delete_last_paragraph':
+          // Get current content and remove last paragraph
+          getDocumentEngineContent().then((content) => {
+            const lines = content.split('\n').filter(line => line.trim());
+            if (lines.length > 0) {
+              lines.pop(); // Remove last paragraph
+              const updatedContent = lines.join('\n');
+              window.standaloneDocumentAPI.setContent(updatedContent);
+              toast({ title: `Deleted last paragraph` });
+            }
+          });
+          break;
+          
+        case 'insert_page':
+          // Insert a page break
+          window.standaloneDocumentAPI.insertText('\n\n--- PAGE BREAK ---\n\n');
+          toast({ title: `Inserted new page` });
+          break;
+          
+        case 'clear_all':
+          window.standaloneDocumentAPI.clearContent();
+          toast({ title: `Document cleared` });
           break;
       }
       
@@ -492,6 +844,30 @@ export default function DocumentWorkspace() {
         }
         break;
         
+      case 'delete_last_paragraph':
+        // Remove the last paragraph from the document
+        const content = editor.getHTML();
+        const paragraphs = content.split('</p>').filter(p => p.trim());
+        if (paragraphs.length > 1) {
+          paragraphs.pop(); // Remove last paragraph
+          const newContent = paragraphs.join('</p>') + '</p>';
+          editor.commands.setContent(newContent);
+          toast({ title: `Deleted last paragraph` });
+        }
+        break;
+        
+      case 'insert_page':
+        // Insert a page break (new paragraph with spacing)
+        editor.commands.focus('end');
+        editor.commands.insertContent('<p><br></p><p><br></p>');
+        toast({ title: `Inserted new page` });
+        break;
+        
+      case 'clear_all':
+        editor.commands.clearContent();
+        toast({ title: `Document cleared` });
+        break;
+        
       case 'add_text':
         const { text: addText, position, pageNumber } = command.params;
         if (addText) {
@@ -533,10 +909,7 @@ export default function DocumentWorkspace() {
         }
         break;
         
-      case 'clear_all':
-        editor.commands.clearContent();
-        toast({ title: "Document cleared" });
-        break;
+
     }
     
     // Save changes after executing command
@@ -1073,7 +1446,7 @@ export default function DocumentWorkspace() {
                       const { selection } = editor.state;
                       if (!selection.empty) {
                         // Apply size to selected text only using custom FontSize extension
-                        editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
+                        editor.chain().focus().setFontSize(newSize.toString()).run();
                         toast({ title: `Font size changed to ${newSize}pt for selected text` });
                       } else {
                         toast({ title: "Please select text to change font size" });
@@ -1114,7 +1487,7 @@ export default function DocumentWorkspace() {
                     const { selection } = editor.state;
                     if (!selection.empty) {
                       // Apply size to selected text only using custom FontSize extension
-                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
+                      editor.chain().focus().setFontSize(newSize.toString()).run();
                       toast({ title: `Font size increased to ${newSize}pt for selected text` });
                     } else {
                       toast({ title: "Please select text to change font size" });
@@ -1134,7 +1507,7 @@ export default function DocumentWorkspace() {
                     const { selection } = editor.state;
                     if (!selection.empty) {
                       // Apply size to selected text only using custom FontSize extension
-                      editor.chain().focus().setMark('textStyle', { fontSize: newSize.toString() }).run();
+                      editor.chain().focus().setFontSize(newSize.toString()).run();
                       toast({ title: `Font size decreased to ${newSize}pt for selected text` });
                     } else {
                       toast({ title: "Please select text to change font size" });
@@ -1156,10 +1529,15 @@ export default function DocumentWorkspace() {
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
                 onClick={() => {
+                  console.log('Bold button clicked, editor:', editor, 'useStandaloneEngine:', useStandaloneEngine);
+                  if (!editor) {
+                    toast({ title: "Editor not ready", variant: "destructive" });
+                    return;
+                  }
                   if (useStandaloneEngine) {
                     sendToDocumentEngine('FORMAT_TEXT', { command: 'bold' });
                   } else {
-                    editor?.chain().focus().toggleBold().run();
+                    editor.chain().focus().toggleBold().run();
                   }
                 }}
               >
@@ -1172,10 +1550,14 @@ export default function DocumentWorkspace() {
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
                 onClick={() => {
+                  if (!editor) {
+                    toast({ title: "Editor not ready", variant: "destructive" });
+                    return;
+                  }
                   if (useStandaloneEngine) {
                     sendToDocumentEngine('FORMAT_TEXT', { command: 'italic' });
                   } else {
-                    editor?.chain().focus().toggleItalic().run();
+                    editor.chain().focus().toggleItalic().run();
                   }
                 }}
               >
@@ -1188,10 +1570,14 @@ export default function DocumentWorkspace() {
                     : 'hover:bg-gray-100 text-gray-700'
                 }`}
                 onClick={() => {
+                  if (!editor) {
+                    toast({ title: "Editor not ready", variant: "destructive" });
+                    return;
+                  }
                   if (useStandaloneEngine) {
                     sendToDocumentEngine('FORMAT_TEXT', { command: 'underline' });
                   } else {
-                    editor?.chain().focus().toggleUnderline().run();
+                    editor.chain().focus().toggleUnderline().run();
                   }
                 }}
               >
@@ -1798,6 +2184,7 @@ export default function DocumentWorkspace() {
               {useStandaloneEngine ? (
                 <div className="h-full overflow-y-auto">
                   <StandaloneDocumentEngine
+                    ref={documentEngineRef}
                     onDataUpdate={(data) => {
                       setDocumentContent(data.content);
                       setDocumentStats({
@@ -1922,6 +2309,7 @@ export default function DocumentWorkspace() {
                   </div>
                 )}
                 
+                {console.log('Rendering chat messages:', chatMessages)}
                 {chatMessages.map((message: ChatMessage) => (
                   <div
                     key={message.id}
@@ -1971,13 +2359,14 @@ export default function DocumentWorkspace() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Try: "create a title", "make text bold", "add paragraph"
                 </p>
+
+
               </div>
             </div>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
-
-
+      
 
     </div>
   );

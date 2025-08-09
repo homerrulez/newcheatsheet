@@ -15,6 +15,7 @@ interface ChatPanelProps {
   onAIResponse?: (response: any) => void;
   className?: string;
   currentBoxes?: any[];
+  documentContent?: string;
 }
 
 export default function ChatPanel({ 
@@ -22,7 +23,8 @@ export default function ChatPanel({
   workspaceType, 
   onAIResponse, 
   className,
-  currentBoxes
+  currentBoxes,
+  documentContent
 }: ChatPanelProps) {
   const [message, setMessage] = useState('');
   const queryClient = useQueryClient();
@@ -35,7 +37,7 @@ export default function ChatPanel({
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (msg: string) => sendChatMessage(workspaceId, workspaceType, msg, currentBoxes),
+    mutationFn: (msg: string) => sendChatMessage(workspaceId, workspaceType, msg, currentBoxes, documentContent),
     onSuccess: (response) => {
       console.log('Chat mutation success, calling onAIResponse with:', response);
       queryClient.invalidateQueries({

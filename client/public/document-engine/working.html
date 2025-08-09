@@ -4,6 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Engine</title>
+    <!-- KaTeX for mathematical rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <script>
+      // Global function for LaTeX rendering
+      window.renderMathInElement = function(element, options) {
+        if (typeof renderMathInElement !== 'undefined') {
+          return renderMathInElement(element, options);
+        }
+      };
+      
+      // Auto-render LaTeX in the document
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof renderMathInElement !== 'undefined') {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\[', right: '\\]', display: true},
+              {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false,
+            errorColor: '#cc0000'
+          });
+        }
+      });
+      
+      // Handle INSERT_HTML messages for LaTeX content
+      window.addEventListener('message', function(event) {
+        if (event.data.type === 'INSERT_HTML') {
+          const html = event.data.data.html;
+          console.log('Received INSERT_HTML:', html);
+          
+          // Insert HTML content at cursor position
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            range.deleteContents();
+            range.insertNode(div);
+            
+            // Trigger LaTeX rendering after insertion with comprehensive macros
+            setTimeout(() => {
+              if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(div, {
+                  delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                  ],
+                  throwOnError: false,
+                  errorColor: '#cc0000',
+                  macros: {
+                    // Physics macros
+                    "\\vec": "\\mathbf{#1}",
+                    "\\div": "\\text{div}",
+                    "\\curl": "\\text{curl}",
+                    "\\grad": "\\nabla",
+                    "\\force": "\\mathbf{F}",
+                    "\\moment": "\\mathbf{M}",
+                    "\\velocity": "\\mathbf{v}",
+                    "\\acceleration": "\\mathbf{a}",
+                    "\\momentum": "\\mathbf{p}",
+                    "\\energy": "E",
+                    "\\kinetic": "K",
+                    "\\potential": "U",
+                    "\\work": "W",
+                    "\\power": "P",
+                    "\\pressure": "P",
+                    "\\density": "\\rho",
+                    "\\temperature": "T",
+                    "\\entropy": "S",
+                    "\\enthalpy": "H",
+                    "\\heat": "Q",
+                    
+                    // Chemistry macros
+                    "\\chem": "\\text{#1}",
+                    "\\reaction": "\\ce{#1}",
+                    "\\molecule": "\\ce{#1}",
+                    "\\concentration": "[#1]",
+                    "\\equilibrium": "\\rightleftharpoons",
+                    "\\catalyst": "\\text{catalyst}",
+                    "\\activation": "E_a",
+                    "\\rate": "k",
+                    "\\order": "n",
+                    
+                    // Engineering macros
+                    "\\stress": "\\sigma",
+                    "\\strain": "\\varepsilon",
+                    "\\modulus": "E",
+                    "\\poisson": "\\nu",
+                    "\\shear": "\\tau",
+                    "\\torsion": "T",
+                    "\\bending": "M",
+                    "\\deflection": "\\delta",
+                    "\\frequency": "f",
+                    "\\wavelength": "\\lambda",
+                    "\\amplitude": "A",
+                    "\\phase": "\\phi",
+                    "\\impedance": "Z",
+                    "\\resistance": "R",
+                    "\\capacitance": "C",
+                    "\\inductance": "L",
+                    "\\voltage": "V",
+                    "\\current": "I",
+                    
+                    // Calculus macros
+                    "\\derivative": "\\frac{d}{dx}",
+                    "\\partial": "\\frac{\\partial}{\\partial}",
+                    "\\integral": "\\int",
+                    "\\definite": "\\int_{#1}^{#2}",
+                    "\\limit": "\\lim",
+                    "\\series": "\\sum",
+                    "\\product": "\\prod",
+                    "\\convergence": "\\to",
+                    "\\infinity": "\\infty",
+                    "\\differential": "d",
+                    "\\partialdiff": "\\partial",
+                    
+                    // Mathematical macros
+                    "\\abs": "|#1|",
+                    "\\norm": "\\|#1\\|",
+                    "\\set": "\\{#1\\}",
+                    "\\seq": "(#1)",
+                    "\\mat": "\\begin{pmatrix} #1 \\end{pmatrix}",
+                    "\\det": "\\det",
+                    "\\tr": "\\text{tr}",
+                    "\\rank": "\\text{rank}",
+                    "\\nullity": "\\text{nullity}",
+                    "\\eigenvalue": "\\lambda",
+                    "\\eigenvector": "\\mathbf{v}",
+                    "\\transpose": "T",
+                    "\\inverse": "^{-1}",
+                    "\\conjugate": "\\overline{#1}",
+                    "\\real": "\\text{Re}",
+                    "\\imaginary": "\\text{Im}",
+                    "\\mod": "\\bmod",
+                    "\\gcd": "\\gcd",
+                    "\\lcm": "\\text{lcm}",
+                    "\\factorial": "!",
+                    "\\binomial": "\\binom{#1}{#2}",
+                    "\\permutation": "P(#1,#2)",
+                    "\\combination": "C(#1,#2)"
+                  }
+                });
+                console.log('LaTeX rendering completed for formula sheet');
+              }
+            }, 200);
+          }
+        }
+      });
+    </script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -56,6 +212,21 @@
             background: transparent;
             overflow: hidden;
             padding: 0;
+        }
+        
+        /* LaTeX rendering styles */
+        .katex {
+            font-size: 1em !important;
+            line-height: 1.2 !important;
+        }
+        
+        .katex-display {
+            margin: 0.5em 0 !important;
+        }
+        
+        /* Ensure LaTeX renders properly in the document */
+        .page .katex {
+            font-family: 'KaTeX_Main', 'Times New Roman', serif !important;
         }
         
         /* Print styles - only show document pages when printing */
@@ -113,7 +284,7 @@
 <body>
     <div class="pages-container" id="pagesContainer">
         <div class="page">
-            <textarea class="editor" id="editor1" data-page="1" placeholder="Start typing your document..."></textarea>
+                            <textarea class="editor" id="editor1" data-page="1"></textarea>
             <div class="page-number">Page 1</div>
         </div>
     </div>
@@ -189,6 +360,22 @@
                 checkForOverflow(editor, pageIndex);
                 checkForUnderflow(editor, pageIndex);
                 sendDocumentData();
+                
+                // Trigger LaTeX rendering on input
+                setTimeout(() => {
+                    if (typeof renderMathInElement !== 'undefined') {
+                        renderMathInElement(editor.parentElement, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false,
+                            errorColor: '#cc0000'
+                        });
+                    }
+                }, 100);
             });
             
             // Handle keyboard navigation between pages
@@ -562,12 +749,56 @@
                     break;
                 case 'INSERT_TEXT':
                     if (data.text && pages[currentPageIndex]) {
+                        // Insert text at cursor position
                         const editor = pages[currentPageIndex];
                         const cursorPos = editor.selectionStart;
-                        const text = editor.value;
-                        const newText = text.substring(0, cursorPos) + data.text + text.substring(editor.selectionEnd);
-                        editor.value = newText;
+                        const textBefore = editor.value.substring(0, cursorPos);
+                        const textAfter = editor.value.substring(editor.selectionEnd);
+                        
+                        // Insert the text
+                        editor.value = textBefore + data.text + textAfter;
                         editor.setSelectionRange(cursorPos + data.text.length, cursorPos + data.text.length);
+                        
+                        // Trigger LaTeX rendering after insertion
+                        setTimeout(() => {
+                            if (typeof renderMathInElement !== 'undefined') {
+                                renderMathInElement(editor.parentElement, {
+                                    delimiters: [
+                                        {left: '$$', right: '$$', display: true},
+                                        {left: '$', right: '$', display: false},
+                                        {left: '\\[', right: '\\]', display: true},
+                                        {left: '\\(', right: '\\)', display: false}
+                                    ],
+                                    throwOnError: false,
+                                    errorColor: '#cc0000',
+                                    macros: {
+                                        // Physics macros
+                                        "\\vec": "\\mathbf{#1}",
+                                        "\\div": "\\text{div}",
+                                        "\\curl": "\\text{curl}",
+                                        "\\grad": "\\nabla",
+                                        "\\force": "\\mathbf{F}",
+                                        "\\moment": "\\mathbf{M}",
+                                        "\\velocity": "\\mathbf{v}",
+                                        "\\acceleration": "\\mathbf{a}",
+                                        "\\momentum": "\\mathbf{p}",
+                                        "\\energy": "E",
+                                        "\\kinetic": "K",
+                                        "\\potential": "U",
+                                        "\\work": "W",
+                                        "\\power": "P",
+                                        "\\pressure": "P",
+                                        "\\density": "\\rho",
+                                        "\\temperature": "T",
+                                        "\\entropy": "S",
+                                        "\\enthalpy": "H",
+                                        "\\heat": "Q"
+                                    }
+                                });
+                                console.log('LaTeX rendering completed for text content');
+                            }
+                        }, 200);
+                        
                         checkForOverflow(editor, currentPageIndex);
                         sendDocumentData();
                     }
@@ -638,7 +869,410 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializePages();
             console.log('Document Engine initialized and ready');
+            
+            // Initialize KaTeX auto-render
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false,
+                    errorColor: '#cc0000',
+                    macros: {
+                        // Physics macros
+                        "\\vec": "\\mathbf{#1}",
+                        "\\div": "\\text{div}",
+                        "\\curl": "\\text{curl}",
+                        "\\grad": "\\nabla",
+                        "\\force": "\\mathbf{F}",
+                        "\\moment": "\\mathbf{M}",
+                        "\\velocity": "\\mathbf{v}",
+                        "\\acceleration": "\\mathbf{a}",
+                        "\\momentum": "\\mathbf{p}",
+                        "\\energy": "E",
+                        "\\kinetic": "K",
+                        "\\potential": "U",
+                        "\\work": "W",
+                        "\\power": "P",
+                        "\\pressure": "P",
+                        "\\density": "\\rho",
+                        "\\temperature": "T",
+                        "\\entropy": "S",
+                        "\\enthalpy": "H",
+                        "\\heat": "Q",
+                        
+                        // Chemistry macros
+                        "\\chem": "\\text{#1}",
+                        "\\reaction": "\\ce{#1}",
+                        "\\molecule": "\\ce{#1}",
+                        "\\concentration": "[#1]",
+                        "\\equilibrium": "\\rightleftharpoons",
+                        "\\catalyst": "\\text{catalyst}",
+                        "\\heat": "\\Delta H",
+                        "\\entropy": "\\Delta S",
+                        "\\gibbs": "\\Delta G",
+                        "\\activation": "E_a",
+                        "\\rate": "k",
+                        "\\order": "n",
+                        
+                        // Engineering macros
+                        "\\stress": "\\sigma",
+                        "\\strain": "\\varepsilon",
+                        "\\modulus": "E",
+                        "\\poisson": "\\nu",
+                        "\\shear": "\\tau",
+                        "\\torsion": "T",
+                        "\\bending": "M",
+                        "\\deflection": "\\delta",
+                        "\\frequency": "f",
+                        "\\wavelength": "\\lambda",
+                        "\\amplitude": "A",
+                        "\\phase": "\\phi",
+                        "\\impedance": "Z",
+                        "\\resistance": "R",
+                        "\\capacitance": "C",
+                        "\\inductance": "L",
+                        "\\voltage": "V",
+                        "\\current": "I",
+                        "\\power": "P",
+                        "\\energy": "E",
+                        
+                        // Calculus macros
+                        "\\derivative": "\\frac{d}{dx}",
+                        "\\partial": "\\frac{\\partial}{\\partial}",
+                        "\\integral": "\\int",
+                        "\\definite": "\\int_{#1}^{#2}",
+                        "\\limit": "\\lim",
+                        "\\series": "\\sum",
+                        "\\product": "\\prod",
+                        "\\convergence": "\\to",
+                        "\\infinity": "\\infty",
+                        "\\differential": "d",
+                        "\\partialdiff": "\\partial",
+                        
+                        // Mathematical macros
+                        "\\abs": "|#1|",
+                        "\\norm": "\\|#1\\|",
+                        "\\set": "\\{#1\\}",
+                        "\\seq": "(#1)",
+                        "\\mat": "\\begin{pmatrix} #1 \\end{pmatrix}",
+                        "\\det": "\\det",
+                        "\\tr": "\\text{tr}",
+                        "\\rank": "\\text{rank}",
+                        "\\nullity": "\\text{nullity}",
+                        "\\eigenvalue": "\\lambda",
+                        "\\eigenvalue": "\\lambda",
+                        "\\eigenvector": "\\mathbf{v}",
+                        "\\transpose": "T",
+                        "\\inverse": "^{-1}",
+                        "\\conjugate": "\\overline{#1}",
+                        "\\real": "\\text{Re}",
+                        "\\imaginary": "\\text{Im}",
+                        "\\mod": "\\bmod",
+                        "\\gcd": "\\gcd",
+                        "\\lcm": "\\text{lcm}",
+                        "\\factorial": "!",
+                        "\\binomial": "\\binom{#1}{#2}",
+                        "\\permutation": "P(#1,#2)",
+                        "\\combination": "C(#1,#2)"
+                    }
+                });
+                console.log('KaTeX auto-render initialized with comprehensive macros');
+                
+                // Set up periodic re-rendering for dynamic content
+                setInterval(() => {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false,
+                        errorColor: '#cc0000'
+                    });
+                }, 2000); // Re-render every 2 seconds
+            }
         });
+        
+        // Enhanced text insertion with comprehensive LaTeX rendering for all sciences
+        function insertTextWithLaTeX(text) {
+            if (pages[currentPageIndex]) {
+                const editor = pages[currentPageIndex];
+                const cursorPos = editor.selectionStart;
+                const textBefore = editor.value.substring(0, cursorPos);
+                const textAfter = editor.value.substring(editor.selectionEnd);
+                
+                // Insert the text
+                editor.value = textBefore + text + textAfter;
+                editor.setSelectionRange(cursorPos + text.length, cursorPos + text.length);
+                
+                // Create a temporary div to render LaTeX
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = editor.value;
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                tempDiv.style.top = '-9999px';
+                tempDiv.style.width = editor.offsetWidth + 'px';
+                tempDiv.style.fontFamily = editor.style.fontFamily;
+                tempDiv.style.fontSize = editor.style.fontSize;
+                tempDiv.style.lineHeight = editor.style.lineHeight;
+                document.body.appendChild(tempDiv);
+                
+                // Render LaTeX in the temporary div
+                setTimeout(() => {
+                    if (typeof renderMathInElement !== 'undefined') {
+                        renderMathInElement(tempDiv, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false,
+                            errorColor: '#cc0000',
+                            macros: {
+                                // Physics macros
+                                "\\vec": "\\mathbf{#1}",
+                                "\\div": "\\text{div}",
+                                "\\curl": "\\text{curl}",
+                                "\\grad": "\\nabla",
+                                "\\force": "\\mathbf{F}",
+                                "\\moment": "\\mathbf{M}",
+                                "\\velocity": "\\mathbf{v}",
+                                "\\acceleration": "\\mathbf{a}",
+                                "\\momentum": "\\mathbf{p}",
+                                "\\energy": "E",
+                                "\\kinetic": "K",
+                                "\\potential": "U",
+                                "\\work": "W",
+                                "\\power": "P",
+                                "\\pressure": "P",
+                                "\\density": "\\rho",
+                                "\\temperature": "T",
+                                "\\entropy": "S",
+                                "\\enthalpy": "H",
+                                "\\heat": "Q",
+                                
+                                // Chemistry macros
+                                "\\chem": "\\text{#1}",
+                                "\\reaction": "\\ce{#1}",
+                                "\\molecule": "\\ce{#1}",
+                                "\\concentration": "[#1]",
+                                "\\equilibrium": "\\rightleftharpoons",
+                                "\\catalyst": "\\text{catalyst}",
+                                "\\heat": "\\Delta H",
+                                "\\entropy": "\\Delta S",
+                                "\\gibbs": "\\Delta G",
+                                "\\activation": "E_a",
+                                "\\rate": "k",
+                                "\\order": "n",
+                                
+                                // Engineering macros
+                                "\\stress": "\\sigma",
+                                "\\strain": "\\varepsilon",
+                                "\\modulus": "E",
+                                "\\poisson": "\\nu",
+                                "\\shear": "\\tau",
+                                "\\torsion": "T",
+                                "\\bending": "M",
+                                "\\deflection": "\\delta",
+                                "\\frequency": "f",
+                                "\\wavelength": "\\lambda",
+                                "\\amplitude": "A",
+                                "\\phase": "\\phi",
+                                "\\impedance": "Z",
+                                "\\resistance": "R",
+                                "\\capacitance": "C",
+                                "\\inductance": "L",
+                                "\\voltage": "V",
+                                "\\current": "I",
+                                "\\power": "P",
+                                "\\energy": "E",
+                                
+                                // Calculus macros
+                                "\\derivative": "\\frac{d}{dx}",
+                                "\\partial": "\\frac{\\partial}{\\partial}",
+                                "\\integral": "\\int",
+                                "\\definite": "\\int_{#1}^{#2}",
+                                "\\limit": "\\lim",
+                                "\\series": "\\sum",
+                                "\\product": "\\prod",
+                                "\\convergence": "\\to",
+                                "\\infinity": "\\infty",
+                                "\\differential": "d",
+                                "\\partialdiff": "\\partial",
+                                
+                                // Mathematical macros
+                                "\\abs": "|#1|",
+                                "\\norm": "\\|#1\\|",
+                                "\\set": "\\{#1\\}",
+                                "\\seq": "(#1)",
+                                "\\mat": "\\begin{pmatrix} #1 \\end{pmatrix}",
+                                "\\det": "\\det",
+                                "\\tr": "\\text{tr}",
+                                "\\rank": "\\text{rank}",
+                                "\\nullity": "\\text{nullity}",
+                                "\\eigenvalue": "\\lambda",
+                                "\\eigenvector": "\\mathbf{v}",
+                                "\\transpose": "T",
+                                "\\inverse": "^{-1}",
+                                "\\conjugate": "\\overline{#1}",
+                                "\\real": "\\text{Re}",
+                                "\\imaginary": "\\text{Im}",
+                                "\\mod": "\\bmod",
+                                "\\gcd": "\\gcd",
+                                "\\lcm": "\\text{lcm}",
+                                "\\factorial": "!",
+                                "\\binomial": "\\binom{#1}{#2}",
+                                "\\permutation": "P(#1,#2)",
+                                "\\combination": "C(#1,#2)"
+                            }
+                        });
+                        
+                        // Replace the textarea content with rendered HTML
+                        const renderedContent = tempDiv.innerHTML;
+                        editor.style.display = 'none';
+                        
+                        // Create a contenteditable div to display rendered content
+                        const renderedDiv = document.createElement('div');
+                        renderedDiv.contentEditable = true;
+                        renderedDiv.style.width = editor.offsetWidth + 'px';
+                        renderedDiv.style.height = editor.offsetHeight + 'px';
+                        renderedDiv.style.margin = editor.style.margin;
+                        renderedDiv.style.fontFamily = editor.style.fontFamily;
+                        renderedDiv.style.fontSize = editor.style.fontSize;
+                        renderedDiv.style.lineHeight = editor.style.lineHeight;
+                        renderedDiv.style.border = 'none';
+                        renderedDiv.style.outline = 'none';
+                        renderedDiv.style.background = 'transparent';
+                        renderedDiv.style.overflow = 'hidden';
+                        renderedDiv.style.padding = '0';
+                        renderedDiv.innerHTML = renderedContent;
+                        
+                        // Replace the textarea with the rendered div
+                        editor.parentNode.insertBefore(renderedDiv, editor);
+                        
+                        // Handle input in the rendered div
+                        renderedDiv.addEventListener('input', function() {
+                            // Convert back to LaTeX when editing
+                            const latexContent = convertToLatex(renderedDiv.innerHTML);
+                            editor.value = latexContent;
+                            checkForOverflow(editor, currentPageIndex);
+                            sendDocumentData();
+                        });
+                        
+                        // Handle focus/blur to switch between rendered and editable modes
+                        renderedDiv.addEventListener('focus', function() {
+                            // Switch back to textarea for editing
+                            editor.style.display = 'block';
+                            renderedDiv.style.display = 'none';
+                            editor.focus();
+                        });
+                        
+                        editor.addEventListener('blur', function() {
+                            // Switch back to rendered view
+                            setTimeout(() => {
+                                if (!editor.matches(':focus')) {
+                                    insertTextWithLaTeX(editor.value);
+                                }
+                            }, 100);
+                        });
+                    }
+                    
+                    // Clean up temporary div
+                    document.body.removeChild(tempDiv);
+                }, 100);
+                
+                checkForOverflow(editor, currentPageIndex);
+                sendDocumentData();
+            }
+        }
+        
+        // Convert HTML back to LaTeX for editing
+        function convertToLatex(html) {
+            // This is a simplified conversion - in a real implementation,
+            // you'd need more sophisticated parsing
+            let latex = html;
+            
+            // Convert common LaTeX patterns back
+            latex = latex.replace(/<span class="katex">.*?<\/span>/g, function(match) {
+                // Extract LaTeX from KaTeX spans
+                const katexMatch = match.match(/<span class="katex-mathml">.*?<math.*?>(.*?)<\/math>/);
+                if (katexMatch) {
+                    return katexMatch[1];
+                }
+                return match;
+            });
+            
+            // Remove HTML tags
+            latex = latex.replace(/<[^>]*>/g, '');
+            
+            return latex;
+        }
+        
+        // Enhanced LaTeX preprocessing for all sciences
+        function preprocessLaTeXContent(text) {
+            let processedText = text;
+            
+            // Physics notation preprocessing
+            processedText = processedText.replace(/\\vec\{([^}]*)\}/g, '\\mathbf{$1}');
+            processedText = processedText.replace(/\\nabla\s*\\cdot/g, '\\text{div}');
+            processedText = processedText.replace(/\\nabla\s*\\times/g, '\\text{curl}');
+            
+            // Chemistry notation preprocessing
+            processedText = processedText.replace(/([A-Z][a-z]?)_(\d+)/g, '$1_{$2}');
+            processedText = processedText.replace(/\\rightarrow/g, '\\to');
+            processedText = processedText.replace(/\\leftarrow/g, '\\gets');
+            processedText = processedText.replace(/\\ce\{([^}]*)\}/g, '\\text{$1}');
+            
+            // Engineering notation preprocessing
+            processedText = processedText.replace(/\\stress\{([^}]*)\}/g, '\\sigma_{$1}');
+            processedText = processedText.replace(/\\strain\{([^}]*)\}/g, '\\varepsilon_{$1}');
+            processedText = processedText.replace(/\\force\{([^}]*)\}/g, '\\mathbf{F}_{$1}');
+            processedText = processedText.replace(/\\moment\{([^}]*)\}/g, '\\mathbf{M}_{$1}');
+            
+            // Calculus notation preprocessing
+            processedText = processedText.replace(/\\derivative\{([^}]*)\}/g, '\\frac{d}{d$1}');
+            processedText = processedText.replace(/\\partial\{([^}]*)\}/g, '\\frac{\\partial}{\\partial $1}');
+            processedText = processedText.replace(/\\definite\{([^}]*)\}\{([^}]*)\}/g, '\\int_{$1}^{$2}');
+            
+            // Mathematical notation preprocessing
+            processedText = processedText.replace(/\\abs\{([^}]*)\}/g, '|$1|');
+            processedText = processedText.replace(/\\norm\{([^}]*)\}/g, '\\|$1\\|');
+            processedText = processedText.replace(/\\set\{([^}]*)\}/g, '\\{$1\\}');
+            processedText = processedText.replace(/\\seq\{([^}]*)\}/g, '($1)');
+            
+            // Clean up problematic commands
+            processedText = processedText.replace(/\\text\{[^}]*\}/g, '');
+            processedText = processedText.replace(/\\mathrm\{[^}]*\}/g, '');
+            processedText = processedText.replace(/\\textup\{[^}]*\}/g, '');
+            processedText = processedText.replace(/\([^)]*Units[^)]*\)/g, '');
+            
+            // Remove unit annotations
+            processedText = processedText.replace(/\s*,\s*\([^)]*\)/g, '');
+            processedText = processedText.replace(/\s*\\\,\s*\([^)]*\)/g, '');
+            processedText = processedText.replace(/\s*\\,\s*\([^)]*\)/g, '');
+            processedText = processedText.replace(/\s*\([^)]*\)\s*$/g, '');
+            
+            // Fix common notation issues
+            processedText = processedText.replace(/\\Phi/g, '\\phi');
+            processedText = processedText.replace(/\\_/g, '_');
+            processedText = processedText.replace(/\\left\(/g, '(');
+            processedText = processedText.replace(/\\right\)/g, ')');
+            processedText = processedText.replace(/\\left\[/g, '[');
+            processedText = processedText.replace(/\\right\]/g, ']');
+            processedText = processedText.replace(/\\left\{/g, '\\{');
+            processedText = processedText.replace(/\\right\}/g, '\\}');
+            
+            // Clean up extra spaces
+            processedText = processedText.replace(/\s+/g, ' ').trim();
+            
+            return processedText;
+        }
     </script>
 </body>
 </html>

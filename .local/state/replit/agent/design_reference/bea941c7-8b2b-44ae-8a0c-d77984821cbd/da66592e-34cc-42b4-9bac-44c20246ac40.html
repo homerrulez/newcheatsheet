@@ -1,0 +1,1038 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyFlow - Academic Productivity Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        primary: '#6366F1',
+                        secondary: '#8B5CF6',
+                        accent: '#06B6D4'
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-50 font-sans">
+    <!-- @COMPONENT: LandingPage -->
+    <div id="landing-page" class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <!-- Header -->
+        <header class="px-6 py-4">
+            <nav class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900">StudyFlow</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-slate-600 hover:text-slate-900 transition-colors">
+                        <i class="fas fa-user-circle text-xl"></i>
+                    </button>
+                    <button class="text-slate-600 hover:text-slate-900 transition-colors">
+                        <i class="fas fa-cog text-xl"></i>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <main class="max-w-7xl mx-auto px-6 py-12">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-slate-900 mb-6">
+                    Your Academic <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Powerhouse</span>
+                </h2>
+                <p class="text-xl text-slate-600 max-w-3xl mx-auto mb-8">
+                    Transform your study sessions with AI-powered document editing, dynamic cheat sheets, and beautiful LaTeX formatting. Everything you need for academic excellence.
+                </p>
+                <div class="flex items-center justify-center space-x-4 text-sm text-slate-500">
+                    <span class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>LaTeX Support</span>
+                    <span class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>AI Integration</span>
+                    <span class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Auto-formatting</span>
+                </div>
+            </div>
+
+            <!-- Workspace Cards -->
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Word Document Workspace -->
+                <div onclick="showWorkspace('document')" class="group cursor-pointer transform hover:scale-105 transition-all duration-300">
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-200">
+                        <div class="p-8 text-center">
+                            <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-file-alt text-white text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900 mb-3">Smart Documents</h3>
+                            <p class="text-slate-600 mb-6">Create and edit documents with AI-powered assistance and beautiful LaTeX rendering for mathematical content.</p>
+                            <ul class="text-sm text-slate-500 space-y-2 text-left">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Rich text editing</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>LaTeX math support</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Document history</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>AI auto-formatting</li>
+                            </ul>
+                        </div>
+                        <div class="px-8 pb-8">
+                            <button class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                                Start Writing
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cheat Sheet Workspace -->
+                <div onclick="showWorkspace('cheatsheet')" class="group cursor-pointer transform hover:scale-105 transition-all duration-300">
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-200">
+                        <div class="p-8 text-center">
+                            <div class="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-th-large text-white text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900 mb-3">Dynamic Cheat Sheets</h3>
+                            <p class="text-slate-600 mb-6">Generate organized cheat sheets with auto-resizing content boxes and intelligent formatting.</p>
+                            <ul class="text-sm text-slate-500 space-y-2 text-left">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Auto-sizing boxes</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Formula organization</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Sheet history</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Export ready</li>
+                            </ul>
+                        </div>
+                        <div class="px-8 pb-8">
+                            <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                                Create Sheet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Cheat Sheet -->
+                <div onclick="showWorkspace('template')" class="group cursor-pointer transform hover:scale-105 transition-all duration-300">
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-200">
+                        <div class="p-8 text-center">
+                            <div class="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-file-invoice text-white text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900 mb-3">Template Sheets</h3>
+                            <p class="text-slate-600 mb-6">Use pre-designed templates with structured layouts perfect for academic reference sheets.</p>
+                            <ul class="text-sm text-slate-500 space-y-2 text-left">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>8.5x11 print layout</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Fixed structure</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Professional design</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Ready to print</li>
+                            </ul>
+                        </div>
+                        <div class="px-8 pb-8">
+                            <button class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
+                                Use Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="mt-20 text-center">
+                <h3 class="text-3xl font-bold text-slate-900 mb-12">Powered by Modern Technology</h3>
+                <div class="grid md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-robot text-blue-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-slate-900 mb-2">AI Integration</h4>
+                        <p class="text-sm text-slate-600">ChatGPT powered assistance</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-square-root-alt text-purple-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-slate-900 mb-2">LaTeX Support</h4>
+                        <p class="text-sm text-slate-600">Beautiful mathematical notation</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-expand-arrows-alt text-green-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-slate-900 mb-2">Auto-Sizing</h4>
+                        <p class="text-sm text-slate-600">Dynamic content adjustment</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-mobile-alt text-orange-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-slate-900 mb-2">Responsive</h4>
+                        <p class="text-sm text-slate-600">Works on any device</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- @END_COMPONENT: LandingPage -->
+
+    <!-- @COMPONENT: DocumentWorkspace -->
+    <div id="document-workspace" class="hidden min-h-screen bg-slate-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button onclick="showLanding()" class="text-slate-600 hover:text-slate-900 transition-colors">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-alt text-white text-sm"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-slate-900">Smart Document</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Save
+                    </button>
+                    <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Three-pane layout -->
+        <div class="flex h-screen">
+            <!-- Left Panel: Document History -->
+            <div class="w-64 bg-white border-r border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <h3 class="font-semibold text-slate-900 mb-3">Document History</h3>
+                    <button class="w-full px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm">
+                        <i class="fas fa-plus mr-2"></i>New Document
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div class="space-y-2">
+                        <!-- @MAP: documents.map(doc => ( -->
+                        <div data-mock="true" class="p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <div class="font-medium text-slate-900 text-sm mb-1">Linear Algebra Notes</div>
+                            <div class="text-xs text-slate-500">2 hours ago</div>
+                            <div class="text-xs text-slate-400 mt-1">Last edited: Matrix operations</div>
+                        </div>
+                        <div data-mock="true" class="p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <div class="font-medium text-slate-900 text-sm mb-1">Calculus Problem Set</div>
+                            <div class="text-xs text-slate-500">1 day ago</div>
+                            <div class="text-xs text-slate-400 mt-1">Last edited: Integration techniques</div>
+                        </div>
+                        <div data-mock="true" class="p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <div class="font-medium text-slate-900 text-sm mb-1">Physics Formulas</div>
+                            <div class="text-xs text-slate-500">3 days ago</div>
+                            <div class="text-xs text-slate-400 mt-1">Last edited: Quantum mechanics</div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Panel: Document Editor -->
+            <div class="flex-1 flex flex-col bg-white">
+                <!-- Editor Toolbar -->
+                <div class="border-b border-slate-200 p-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <button class="p-2 hover:bg-slate-100 rounded text-slate-600">
+                                <i class="fas fa-bold"></i>
+                            </button>
+                            <button class="p-2 hover:bg-slate-100 rounded text-slate-600">
+                                <i class="fas fa-italic"></i>
+                            </button>
+                            <button class="p-2 hover:bg-slate-100 rounded text-slate-600">
+                                <i class="fas fa-underline"></i>
+                            </button>
+                        </div>
+                        <div class="w-px h-6 bg-slate-300"></div>
+                        <div class="flex items-center space-x-2">
+                            <button class="p-2 hover:bg-slate-100 rounded text-slate-600">
+                                <i class="fas fa-list-ul"></i>
+                            </button>
+                            <button class="p-2 hover:bg-slate-100 rounded text-slate-600">
+                                <i class="fas fa-list-ol"></i>
+                            </button>
+                        </div>
+                        <div class="w-px h-6 bg-slate-300"></div>
+                        <button class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm">
+                            <i class="fas fa-square-root-alt mr-2"></i>Insert LaTeX
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Document Content -->
+                <div class="flex-1 p-8 overflow-y-auto">
+                    <div data-mock="true" class="max-w-4xl mx-auto">
+                        <h1 class="text-3xl font-bold text-slate-900 mb-6">Linear Algebra Study Notes</h1>
+                        
+                        <div class="prose prose-slate max-w-none">
+                            <h2 class="text-xl font-semibold text-slate-900 mb-4">Matrix Operations</h2>
+                            <p class="text-slate-700 mb-4">Matrices are fundamental structures in linear algebra. Below are key operations:</p>
+                            
+                            <div class="bg-slate-50 p-4 rounded-lg mb-6">
+                                <h3 class="font-medium text-slate-900 mb-2">Matrix Multiplication</h3>
+                                <div class="font-mono text-lg">
+                                    <span id="matrix-mult">C = A \times B</span>
+                                </div>
+                                <p class="text-sm text-slate-600 mt-2">Where the number of columns in A equals the number of rows in B.</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-4 rounded-lg mb-6">
+                                <h3 class="font-medium text-slate-900 mb-2">Determinant Formula</h3>
+                                <div class="font-mono text-lg">
+                                    <span id="determinant">|A| = \sum_{i=1}^{n} a_{i1} \cdot C_{i1}</span>
+                                </div>
+                                <p class="text-sm text-slate-600 mt-2">Cofactor expansion along the first column.</p>
+                            </div>
+
+                            <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
+                                <p class="text-blue-800 font-medium">AI Generated Content</p>
+                                <p class="text-blue-700 text-sm">The above formulas were automatically formatted and inserted by ChatGPT with proper LaTeX rendering.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: ChatGPT -->
+            <div class="w-80 bg-white border-l border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-xs"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">AI Assistant</h3>
+                        <div class="w-2 h-2 bg-green-400 rounded-full ml-auto"></div>
+                    </div>
+                    <p class="text-sm text-slate-600">Ask questions and get formatted answers automatically inserted into your document.</p>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <!-- User Message -->
+                    <div data-mock="true" class="flex justify-end">
+                        <div class="bg-blue-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">Explain matrix multiplication with the formula</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div data-mock="true" class="flex">
+                        <div class="bg-slate-100 p-3 rounded-lg max-w-xs">
+                            <p class="text-sm text-slate-900 mb-2">I'll explain matrix multiplication and insert the formatted formula into your document.</p>
+                            <div class="bg-green-50 border border-green-200 p-2 rounded text-xs text-green-800">
+                                ✓ Formula inserted with LaTeX formatting
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Message -->
+                    <div data-mock="true" class="flex justify-end">
+                        <div class="bg-blue-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">What about determinant calculation?</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div data-mock="true" class="flex">
+                        <div class="bg-slate-100 p-3 rounded-lg max-w-xs">
+                            <p class="text-sm text-slate-900 mb-2">Here's the determinant formula using cofactor expansion:</p>
+                            <div class="bg-green-50 border border-green-200 p-2 rounded text-xs text-green-800">
+                                ✓ Determinant formula added to document
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-4 border-t border-slate-200">
+                    <div class="flex space-x-2">
+                        <input type="text" placeholder="Ask ChatGPT..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-xs text-slate-500">
+                        <span>Press Enter to send</span>
+                        <span class="flex items-center">
+                            <i class="fas fa-magic mr-1"></i>Auto-format enabled
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: DocumentWorkspace -->
+
+    <!-- @COMPONENT: CheatSheetWorkspace -->
+    <div id="cheatsheet-workspace" class="hidden min-h-screen bg-slate-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button onclick="showLanding()" class="text-slate-600 hover:text-slate-900 transition-colors">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-th-large text-white text-sm"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-slate-900">Dynamic Cheat Sheet</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Save Sheet
+                    </button>
+                    <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors">
+                        <i class="fas fa-print mr-2"></i>Print
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Three-pane layout -->
+        <div class="flex h-screen">
+            <!-- Left Panel: Sheet History -->
+            <div class="w-64 bg-white border-r border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <h3 class="font-semibold text-slate-900 mb-3">Cheat Sheet History</h3>
+                    <button class="w-full px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-sm">
+                        <i class="fas fa-plus mr-2"></i>New Sheet
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div class="space-y-2">
+                        <!-- @MAP: cheatSheets.map(sheet => ( -->
+                        <div data-mock="true" class="p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <div class="font-medium text-slate-900 text-sm mb-1">Calculus Formulas</div>
+                            <div class="text-xs text-slate-500">45 boxes</div>
+                            <div class="text-xs text-slate-400 mt-1">Derivatives, Integrals</div>
+                        </div>
+                        <div data-mock="true" class="p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <div class="font-medium text-slate-900 text-sm mb-1">Physics Constants</div>
+                            <div class="text-xs text-slate-500">28 boxes</div>
+                            <div class="text-xs text-slate-400 mt-1">Universal constants</div>
+                        </div>
+                        <div data-mock="true" class="p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <div class="font-medium text-slate-900 text-sm mb-1">Chemistry Equations</div>
+                            <div class="text-xs text-slate-500">32 boxes</div>
+                            <div class="text-xs text-slate-400 mt-1">Reaction mechanisms</div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Panel: Cheat Sheet Content -->
+            <div class="flex-1 flex flex-col bg-white">
+                <!-- Sheet Controls -->
+                <div class="border-b border-slate-200 p-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">Mathematics Reference Sheet</h2>
+                        <div class="flex items-center space-x-2 text-sm text-slate-600">
+                            <span>12 boxes</span>
+                            <span>•</span>
+                            <span>Auto-sizing enabled</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cheat Sheet Content -->
+                <div class="flex-1 p-6 overflow-y-auto">
+                    <div class="grid grid-cols-2 gap-4 max-w-5xl mx-auto">
+                        <!-- @MAP: cheatSheetBoxes.map(box => ( -->
+                        <!-- Formula Box 1 -->
+                        <div data-mock="true" class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-blue-900">Quadratic Formula</h4>
+                                <i class="fas fa-expand-arrows-alt text-blue-500 text-xs"></i>
+                            </div>
+                            <div class="font-mono text-lg mb-2">
+                                <span id="quadratic">x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}</span>
+                            </div>
+                            <p class="text-xs text-blue-700">For equations of the form ax² + bx + c = 0</p>
+                        </div>
+
+                        <!-- Formula Box 2 -->
+                        <div data-mock="true" class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-green-900">Derivative Rules</h4>
+                                <i class="fas fa-expand-arrows-alt text-green-500 text-xs"></i>
+                            </div>
+                            <div class="font-mono text-sm space-y-1">
+                                <div id="power-rule">\frac{d}{dx}[x^n] = nx^{n-1}</div>
+                                <div id="product-rule">\frac{d}{dx}[uv] = u'v + uv'</div>
+                            </div>
+                            <p class="text-xs text-green-700 mt-2">Basic differentiation rules</p>
+                        </div>
+
+                        <!-- Formula Box 3 -->
+                        <div data-mock="true" class="bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-purple-900">Trigonometric Identities</h4>
+                                <i class="fas fa-expand-arrows-alt text-purple-500 text-xs"></i>
+                            </div>
+                            <div class="font-mono text-sm space-y-1">
+                                <div id="sin-cos">\sin^2\theta + \cos^2\theta = 1</div>
+                                <div id="tan-identity">\tan\theta = \frac{\sin\theta}{\cos\theta}</div>
+                            </div>
+                            <p class="text-xs text-purple-700 mt-2">Fundamental trigonometric relationships</p>
+                        </div>
+
+                        <!-- Formula Box 4 -->
+                        <div data-mock="true" class="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-orange-900">Integration by Parts</h4>
+                                <i class="fas fa-expand-arrows-alt text-orange-500 text-xs"></i>
+                            </div>
+                            <div class="font-mono text-lg mb-2">
+                                <span id="integration-parts">\int u \, dv = uv - \int v \, du</span>
+                            </div>
+                            <p class="text-xs text-orange-700">For products of functions</p>
+                        </div>
+
+                        <!-- Formula Box 5 -->
+                        <div data-mock="true" class="bg-gradient-to-br from-teal-50 to-cyan-50 border-2 border-teal-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-teal-900">Logarithm Properties</h4>
+                                <i class="fas fa-expand-arrows-alt text-teal-500 text-xs"></i>
+                            </div>
+                            <div class="font-mono text-sm space-y-1">
+                                <div id="log-product">\log(ab) = \log a + \log b</div>
+                                <div id="log-power">\log(a^n) = n\log a</div>
+                            </div>
+                            <p class="text-xs text-teal-700 mt-2">Essential logarithm rules</p>
+                        </div>
+
+                        <!-- Formula Box 6 -->
+                        <div data-mock="true" class="bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-pink-900">Distance Formula</h4>
+                                <i class="fas fa-expand-arrows-alt text-pink-500 text-xs"></i>
+                            </div>
+                            <div class="font-mono text-lg mb-2">
+                                <span id="distance">d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}</span>
+                            </div>
+                            <p class="text-xs text-pink-700">Distance between two points</p>
+                        </div>
+                        <!-- @END_MAP )) -->
+
+                        <!-- Add More Box -->
+                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
+                            <div class="text-center text-slate-500">
+                                <i class="fas fa-plus text-2xl mb-2"></i>
+                                <p class="text-sm">Add new box via AI</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: ChatGPT -->
+            <div class="w-80 bg-white border-l border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-xs"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">Formula Assistant</h3>
+                        <div class="w-2 h-2 bg-green-400 rounded-full ml-auto"></div>
+                    </div>
+                    <p class="text-sm text-slate-600">Request formulas and they'll be added as auto-sized boxes to your sheet.</p>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <!-- User Message -->
+                    <div data-mock="true" class="flex justify-end">
+                        <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">Give me 10 essential calculus formulas</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div data-mock="true" class="flex">
+                        <div class="bg-slate-100 p-3 rounded-lg max-w-xs">
+                            <p class="text-sm text-slate-900 mb-2">I've added essential calculus formulas to your sheet, each in its own auto-sized box:</p>
+                            <div class="space-y-1 text-xs">
+                                <div class="bg-green-50 border border-green-200 p-1 rounded text-green-800">✓ Quadratic Formula</div>
+                                <div class="bg-green-50 border border-green-200 p-1 rounded text-green-800">✓ Derivative Rules</div>
+                                <div class="bg-green-50 border border-green-200 p-1 rounded text-green-800">✓ Integration by Parts</div>
+                                <div class="text-slate-500">+ 7 more boxes added</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Message -->
+                    <div data-mock="true" class="flex justify-end">
+                        <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">Add trigonometric identities</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div data-mock="true" class="flex">
+                        <div class="bg-slate-100 p-3 rounded-lg max-w-xs">
+                            <p class="text-sm text-slate-900 mb-2">Added trigonometric identities in a new box with proper LaTeX formatting.</p>
+                            <div class="bg-green-50 border border-green-200 p-2 rounded text-xs text-green-800">
+                                ✓ Trig identities box created & auto-sized
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-4 border-t border-slate-200">
+                    <div class="flex space-x-2">
+                        <input type="text" placeholder="Request formulas..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm">
+                        <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-xs text-slate-500">
+                        <span>Each answer = new box</span>
+                        <span class="flex items-center">
+                            <i class="fas fa-expand-arrows-alt mr-1"></i>Auto-resize
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: CheatSheetWorkspace -->
+
+    <!-- @COMPONENT: TemplateWorkspace -->
+    <div id="template-workspace" class="hidden min-h-screen bg-slate-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button onclick="showLanding()" class="text-slate-600 hover:text-slate-900 transition-colors">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-invoice text-white text-sm"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-slate-900">Template Cheat Sheet</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Export PDF
+                    </button>
+                    <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors">
+                        <i class="fas fa-print mr-2"></i>Print
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Template Layout -->
+        <div class="flex h-screen">
+            <!-- Left Panel: Template Options -->
+            <div class="w-64 bg-white border-r border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <h3 class="font-semibold text-slate-900 mb-3">Template Library</h3>
+                    <select class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option>Mathematics Reference</option>
+                        <option>Physics Formulas</option>
+                        <option>Chemistry Equations</option>
+                        <option>Statistics Summary</option>
+                    </select>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                            <div class="font-medium text-emerald-900 text-sm mb-1">Current Template</div>
+                            <div class="text-xs text-emerald-700">Mathematics Reference</div>
+                            <div class="text-xs text-emerald-600 mt-1">8.5" × 11" • 16 sections</div>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-medium text-slate-900 text-sm">Section Status</h4>
+                            <!-- @MAP: templateSections.map(section => ( -->
+                            <div data-mock="true" class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Algebra</span>
+                                <span class="text-green-600"><i class="fas fa-check"></i></span>
+                            </div>
+                            <div data-mock="true" class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Calculus</span>
+                                <span class="text-green-600"><i class="fas fa-check"></i></span>
+                            </div>
+                            <div data-mock="true" class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Geometry</span>
+                                <span class="text-yellow-600"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div data-mock="true" class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Statistics</span>
+                                <span class="text-slate-400"><i class="fas fa-circle"></i></span>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Panel: Template Sheet (8.5x11) -->
+            <div class="flex-1 flex flex-col bg-slate-100">
+                <!-- Template Controls -->
+                <div class="bg-white border-b border-slate-200 p-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">Mathematics Reference Sheet</h2>
+                        <div class="flex items-center space-x-4 text-sm text-slate-600">
+                            <span class="flex items-center">
+                                <i class="fas fa-ruler mr-1"></i>8.5" × 11"
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-th mr-1"></i>16 sections
+                            </span>
+                            <span class="flex items-center text-green-600">
+                                <i class="fas fa-print mr-1"></i>Print ready
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8.5x11 Template Layout -->
+                <div class="flex-1 p-8 overflow-y-auto flex items-center justify-center">
+                    <div class="bg-white shadow-2xl" style="width: 680px; height: 880px; padding: 40px;">
+                        <!-- Template Header -->
+                        <div class="text-center mb-6 border-b-2 border-slate-300 pb-3">
+                            <h1 class="text-2xl font-bold text-slate-900">MATHEMATICS REFERENCE SHEET</h1>
+                            <p class="text-sm text-slate-600 mt-1">Essential Formulas & Concepts</p>
+                        </div>
+
+                        <!-- 4x4 Grid Layout -->
+                        <div class="grid grid-cols-4 gap-3 h-full">
+                            <!-- Section 1: Algebra -->
+                            <div data-mock="true" class="bg-blue-50 border border-blue-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-blue-900 text-xs mb-2 text-center">ALGEBRA</h3>
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-mono text-xs">
+                                        <span id="template-quadratic">x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}</span>
+                                    </div>
+                                    <div class="text-xs text-blue-800">Quadratic Formula</div>
+                                    <div class="font-mono text-xs mt-2">
+                                        <span id="template-factoring">(a+b)^2 = a^2 + 2ab + b^2</span>
+                                    </div>
+                                    <div class="text-xs text-blue-800">Perfect Square</div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Calculus -->
+                            <div data-mock="true" class="bg-green-50 border border-green-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-green-900 text-xs mb-2 text-center">CALCULUS</h3>
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-mono text-xs">
+                                        <span id="template-derivative">\frac{d}{dx}[x^n] = nx^{n-1}</span>
+                                    </div>
+                                    <div class="text-xs text-green-800">Power Rule</div>
+                                    <div class="font-mono text-xs mt-2">
+                                        <span id="template-integral">\int x^n dx = \frac{x^{n+1}}{n+1} + C</span>
+                                    </div>
+                                    <div class="text-xs text-green-800">Integration</div>
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Trigonometry -->
+                            <div data-mock="true" class="bg-purple-50 border border-purple-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-purple-900 text-xs mb-2 text-center">TRIGONOMETRY</h3>
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-mono text-xs">
+                                        <span id="template-pythagorean">\sin^2\theta + \cos^2\theta = 1</span>
+                                    </div>
+                                    <div class="text-xs text-purple-800">Pythagorean Identity</div>
+                                    <div class="font-mono text-xs mt-2">
+                                        <span id="template-tan">\tan\theta = \frac{\sin\theta}{\cos\theta}</span>
+                                    </div>
+                                    <div class="text-xs text-purple-800">Tangent</div>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Geometry -->
+                            <div data-mock="true" class="bg-orange-50 border border-orange-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-orange-900 text-xs mb-2 text-center">GEOMETRY</h3>
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-mono text-xs">
+                                        <span id="template-area">A = \pi r^2</span>
+                                    </div>
+                                    <div class="text-xs text-orange-800">Circle Area</div>
+                                    <div class="font-mono text-xs mt-2">
+                                        <span id="template-volume">V = \frac{4}{3}\pi r^3</span>
+                                    </div>
+                                    <div class="text-xs text-orange-800">Sphere Volume</div>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Statistics -->
+                            <div data-mock="true" class="bg-teal-50 border border-teal-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-teal-900 text-xs mb-2 text-center">STATISTICS</h3>
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-mono text-xs">
+                                        <span id="template-mean">\bar{x} = \frac{\sum x_i}{n}</span>
+                                    </div>
+                                    <div class="text-xs text-teal-800">Mean</div>
+                                    <div class="font-mono text-xs mt-2">
+                                        <span id="template-stddev">s = \sqrt{\frac{\sum(x_i-\bar{x})^2}{n-1}}</span>
+                                    </div>
+                                    <div class="text-xs text-teal-800">Std Deviation</div>
+                                </div>
+                            </div>
+
+                            <!-- Section 6: Logarithms -->
+                            <div data-mock="true" class="bg-pink-50 border border-pink-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-pink-900 text-xs mb-2 text-center">LOGARITHMS</h3>
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-mono text-xs">
+                                        <span id="template-log-product">\log(ab) = \log a + \log b</span>
+                                    </div>
+                                    <div class="text-xs text-pink-800">Product Rule</div>
+                                    <div class="font-mono text-xs mt-2">
+                                        <span id="template-log-power">\log(a^n) = n\log a</span>
+                                    </div>
+                                    <div class="text-xs text-pink-800">Power Rule</div>
+                                </div>
+                            </div>
+
+                            <!-- Additional sections (6 more to fill 4x4 grid) -->
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">VECTORS</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="ml-1">AI Filling...</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">MATRICES</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">SEQUENCES</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">COMPLEX</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">LIMITS</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">SERIES</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">PROBABILITY</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">CONSTANTS</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">CONVERSIONS</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 border border-slate-200 rounded p-3 flex flex-col">
+                                <h3 class="font-bold text-slate-700 text-xs mb-2 text-center">MISC</h3>
+                                <div class="flex-1 text-center text-xs text-slate-500 flex items-center justify-center">
+                                    <i class="fas fa-circle"></i>
+                                    <span class="ml-1">Empty</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: ChatGPT -->
+            <div class="w-80 bg-white border-l border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <div class="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-xs"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">Template Filler</h3>
+                        <div class="w-2 h-2 bg-green-400 rounded-full ml-auto"></div>
+                    </div>
+                    <p class="text-sm text-slate-600">AI fills specific template sections with properly formatted content.</p>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <!-- User Message -->
+                    <div data-mock="true" class="flex justify-end">
+                        <div class="bg-emerald-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">Fill the empty sections with relevant formulas</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div data-mock="true" class="flex">
+                        <div class="bg-slate-100 p-3 rounded-lg max-w-xs">
+                            <p class="text-sm text-slate-900 mb-2">I'm filling the template sections systematically:</p>
+                            <div class="space-y-1 text-xs">
+                                <div class="bg-green-50 border border-green-200 p-1 rounded text-green-800">✓ Algebra section complete</div>
+                                <div class="bg-green-50 border border-green-200 p-1 rounded text-green-800">✓ Calculus section complete</div>
+                                <div class="bg-yellow-50 border border-yellow-200 p-1 rounded text-yellow-800">⏳ Working on Vectors...</div>
+                                <div class="text-slate-500">8 sections remaining</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Message -->
+                    <div data-mock="true" class="flex justify-end">
+                        <div class="bg-emerald-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">Focus on the most essential formulas for each topic</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div data-mock="true" class="flex">
+                        <div class="bg-slate-100 p-3 rounded-lg max-w-xs">
+                            <p class="text-sm text-slate-900 mb-2">Prioritizing the most fundamental formulas for each section. Content is optimized for the template's fixed layout.</p>
+                            <div class="bg-blue-50 border border-blue-200 p-2 rounded text-xs text-blue-800">
+                                📋 Template constraints applied automatically
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-4 border-t border-slate-200">
+                    <div class="flex space-x-2">
+                        <input type="text" placeholder="Template instructions..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm">
+                        <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-xs text-slate-500">
+                        <span>Fills template sections</span>
+                        <span class="flex items-center">
+                            <i class="fas fa-file-invoice mr-1"></i>Print optimized
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: TemplateWorkspace -->
+
+    <script>
+        // TODO: Implement business logic, API calls, or state management
+        (function() {
+            // Simple navigation between workspaces
+            window.showWorkspace = function(workspace) {
+                // Hide landing page
+                document.getElementById('landing-page').classList.add('hidden');
+                
+                // Hide all workspaces
+                document.getElementById('document-workspace').classList.add('hidden');
+                document.getElementById('cheatsheet-workspace').classList.add('hidden');
+                document.getElementById('template-workspace').classList.add('hidden');
+                
+                // Show selected workspace
+                document.getElementById(workspace + '-workspace').classList.remove('hidden');
+            };
+
+            window.showLanding = function() {
+                // Hide all workspaces
+                document.getElementById('document-workspace').classList.add('hidden');
+                document.getElementById('cheatsheet-workspace').classList.add('hidden');
+                document.getElementById('template-workspace').classList.add('hidden');
+                
+                // Show landing page
+                document.getElementById('landing-page').classList.remove('hidden');
+            };
+
+            // Initialize KaTeX rendering when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ]
+                    });
+                }
+            });
+
+            // Simulate LaTeX rendering for specific elements
+            setTimeout(function() {
+                const mathElements = [
+                    'matrix-mult', 'determinant', 'quadratic', 'power-rule', 'product-rule',
+                    'sin-cos', 'tan-identity', 'integration-parts', 'log-product', 'log-power',
+                    'distance', 'template-quadratic', 'template-factoring', 'template-derivative',
+                    'template-integral', 'template-pythagorean', 'template-tan', 'template-area',
+                    'template-volume', 'template-mean', 'template-stddev', 'template-log-product',
+                    'template-log-power'
+                ];
+
+                mathElements.forEach(function(id) {
+                    const element = document.getElementById(id);
+                    if (element && typeof katex !== 'undefined') {
+                        try {
+                            katex.render(element.textContent, element, {
+                                displayMode: false,
+                                throwOnError: false
+                            });
+                        } catch (e) {
+                            console.warn('KaTeX rendering failed for element:', id);
+                        }
+                    }
+                });
+            }, 100);
+        })();
+    </script>
+</body>
+</html>

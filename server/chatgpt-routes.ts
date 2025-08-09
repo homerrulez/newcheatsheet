@@ -1,5 +1,7 @@
+import 'dotenv/config';
 import express from 'express';
 import OpenAI from 'openai';
+import { storage } from './storage';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -15,30 +17,84 @@ router.post('/chat-sessions/:sessionId/messages', async (req, res) => {
       return res.status(400).json({ error: 'Message content is required' });
     }
 
-    // Build conversation context with document awareness but natural conversation
-    const systemPrompt = `You are ChatGPT, a helpful AI assistant created by OpenAI. You can have natural conversations about any topic, help with writing, answer questions, provide explanations, and assist with various tasks.
+    // Build comprehensive conversation context with advanced features
+    const systemPrompt = `You are ChatGPT, a powerful AI assistant with advanced document editing and mathematical rendering capabilities. You can have natural conversations about any topic while providing intelligent document assistance.
 
-You are currently integrated into StudyFlow, a document editing platform. The user is working on a document, and you can help them with:
-- Writing and editing content
-- Answering questions about any topic
-- Providing explanations and clarifications  
-- Helping with research and analysis
-- Giving feedback and suggestions
-- Performing document operations when requested
+🎯 **CORE CAPABILITIES:**
 
-When the user asks you to modify their document (like "add this to my document", "replace that text", "delete this section", etc.), you can provide specific commands. But most importantly, have natural conversations just like the real ChatGPT.
+**💬 Natural Conversation:**
+- Answer questions on any topic (science, history, technology, etc.)
+- Provide explanations and clarifications
+- Help with problem-solving and brainstorming
+- Creative writing and storytelling assistance
+- General knowledge and research help
+
+**📝 Advanced Document Editing:**
+- Natural language document commands
+- Real-time content generation and modification
+- Intelligent formatting and structure changes
+- Context-aware editing that preserves document integrity
+- Multi-step document operations
+
+**🧮 Live Mathematical Rendering:**
+- Beautiful LaTeX mathematical notation rendering
+- Physics notation (vectors, tensors, quantum mechanics)
+- Chemistry notation (chemical formulas, equations)
+- Engineering notation (technical symbols, formulas)
+- Scientific notation (all subject-specific mathematical symbols)
+- Real-time equation preservation and enhancement
+
+**🎨 Smart Document Features:**
+- Writing improvement and enhancement
+- Tone adjustment (professional, academic, casual, formal, creative)
+- Content generation with proper formatting
+- Structural document changes
+- Intelligent error prevention
+
+**📊 Context Awareness:**
+- Understands current document content and structure
+- Maintains conversation history and context
+- Preserves mathematical content and formatting
+- Smart suggestions based on document context
+- Multi-session document state management
 
 Current document content length: ${documentContent ? documentContent.length : 0} characters
 
-IMPORTANT: Respond naturally and conversationally. Only provide structured commands when the user explicitly asks you to modify their document. For general questions, explanations, help, or conversation, respond normally as you would on ChatGPT.com.
+**🔧 DOCUMENT COMMAND SYSTEM:**
+When the user requests document modifications, you can use these commands:
+- [COMMAND:ADD_TEXT]new content[/COMMAND] - Add text to document
+- [COMMAND:REPLACE_TEXT:old_text]new text[/COMMAND] - Replace specific text
+- [COMMAND:DELETE_TEXT]text to delete[/COMMAND] - Delete specific text
+- [COMMAND:FORMAT_TEXT:text:BOLD/ITALIC/UNDERLINE][/COMMAND] - Format text
+- [COMMAND:CENTER_TEXT]text to center[/COMMAND] - Center align text
+- [COMMAND:DELETE_LAST_PARAGRAPH][/COMMAND] - Remove last paragraph
+- [COMMAND:INSERT_PAGE][/COMMAND] - Add new page
+- [COMMAND:CLEAR_ALL][/COMMAND] - Clear entire document
 
-If the user asks you to modify the document, you can include special markers in your response:
-- [COMMAND:ADD_TEXT]text content here[/COMMAND] to add text
-- [COMMAND:REPLACE_TEXT:old_text]new text here[/COMMAND] to replace text
-- [COMMAND:DELETE_TEXT]text to delete[/COMMAND] to delete text
-- [COMMAND:FORMAT_TEXT:text_to_format:BOLD/ITALIC/UNDERLINE][/COMMAND] to format text
+**🧮 MATHEMATICAL RENDERING:**
+You can include LaTeX mathematical notation that will be beautifully rendered:
+- Physics: \\vec{F} = m\\vec{a}, E = mc^2, \\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}
+- Chemistry: H_2O, CO_2, CH_4 + 2O_2 \\rightarrow CO_2 + 2H_2O
+- Engineering: \\sigma = \\frac{F}{A}, P = \\frac{W}{t}, \\tau = F \\times r
+- Mathematics: \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}, \\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
 
-But again, only use these when explicitly asked to modify the document. For everything else, just chat naturally.`;
+**🎯 RESPONSE GUIDELINES:**
+1. For general questions and conversation: Respond naturally as ChatGPT
+2. For document modifications: Use appropriate command markers
+3. For mathematical content: Include proper LaTeX notation
+4. For writing improvement: Provide enhanced content with formatting
+5. Always preserve document structure and mathematical integrity
+6. Maintain professional quality and readability
+
+**⚡ SPECIAL FEATURES:**
+- Real-time mathematical rendering with KaTeX
+- Context-aware document editing
+- Intelligent error prevention
+- Multi-step operation support
+- Session-based document state management
+- Equation preservation and enhancement
+
+Remember: You're an intelligent writing partner that can handle both natural conversation and advanced document editing with beautiful mathematical rendering!`;
 
     // Get chat history for this session to maintain conversation context
     // Note: In a real implementation, you'd fetch this from storage
@@ -66,6 +122,28 @@ But again, only use these when explicitly asked to modify the document. For ever
       .replace(/\[\/COMMAND\]/g, '')
       .trim();
 
+    console.log('Saving user message to session:', sessionId);
+    // Save user message to database
+    await storage.createChatMessage({
+      sessionId: sessionId,
+      workspaceId: documentId,
+      workspaceType: 'document',
+      role: 'user',
+      content: content,
+      documentCommand: null
+    });
+
+    console.log('Saving assistant message to session:', sessionId);
+    // Save assistant message to database
+    await storage.createChatMessage({
+      sessionId: sessionId,
+      workspaceId: documentId,
+      workspaceType: 'document',
+      role: 'assistant',
+      content: cleanContent,
+      documentCommand: documentCommands.length > 0 ? documentCommands[0] : null
+    });
+
     // Build response in the format expected by the frontend
     const chatResponse = {
       content: cleanContent,
@@ -82,7 +160,7 @@ But again, only use these when explicitly asked to modify the document. For ever
   }
 });
 
-// Parse document commands from ChatGPT response
+// Enhanced document command parsing with mathematical rendering support
 function parseDocumentCommands(content: string): any[] {
   const commands: any[] = [];
   
@@ -102,11 +180,11 @@ function parseDocumentCommands(content: string): any[] {
   const replaceMatches = content.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/g);
   if (replaceMatches) {
     replaceMatches.forEach(match => {
-      const parts = match.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/);
-      if (parts && parts.length >= 3) {
+      const [, oldText, newText] = match.match(/\[COMMAND:REPLACE_TEXT:(.*?)\](.*?)\[\/COMMAND\]/) || [];
+      if (oldText && newText) {
         commands.push({
           type: 'replace_text',
-          params: { targetText: parts[1], newText: parts[2] }
+          params: { oldText, newText }
         });
       }
     });
@@ -125,24 +203,56 @@ function parseDocumentCommands(content: string): any[] {
   }
 
   // Parse FORMAT_TEXT commands
-  const formatMatches = content.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/g);
+  const formatMatches = content.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]/g);
   if (formatMatches) {
     formatMatches.forEach(match => {
-      const parts = match.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]\[\/COMMAND\]/);
-      if (parts && parts.length >= 3) {
-        const formatting: any = {};
-        const formatType = parts[2].toLowerCase();
-        if (formatType.includes('bold')) formatting.bold = true;
-        if (formatType.includes('italic')) formatting.italic = true;
-        if (formatType.includes('underline')) formatting.underline = true;
-        
+      const [, text, format] = match.match(/\[COMMAND:FORMAT_TEXT:(.*?):(.*?)\]/) || [];
+      if (text && format) {
         commands.push({
           type: 'format_text',
-          params: { text: parts[1], formatting }
+          params: { text, format: format.toUpperCase() }
         });
       }
     });
   }
+
+  // Parse CENTER_TEXT commands
+  const centerMatches = content.match(/\[COMMAND:CENTER_TEXT\](.*?)\[\/COMMAND\]/g);
+  if (centerMatches) {
+    centerMatches.forEach(match => {
+      const text = match.replace(/\[COMMAND:CENTER_TEXT\]/, '').replace(/\[\/COMMAND\]/, '');
+      commands.push({
+        type: 'center_text',
+        params: { text }
+      });
+    });
+  }
+
+  // Parse DELETE_LAST_PARAGRAPH command
+  if (content.includes('[COMMAND:DELETE_LAST_PARAGRAPH]')) {
+    commands.push({
+      type: 'delete_last_paragraph',
+      params: {}
+    });
+  }
+
+  // Parse INSERT_PAGE command
+  if (content.includes('[COMMAND:INSERT_PAGE]')) {
+    commands.push({
+      type: 'insert_page',
+      params: {}
+    });
+  }
+
+  // Parse CLEAR_ALL command
+  if (content.includes('[COMMAND:CLEAR_ALL]')) {
+    commands.push({
+      type: 'clear_all',
+      params: {}
+    });
+  }
+
+
 
   return commands;
 }

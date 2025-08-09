@@ -2,7 +2,8 @@ export async function sendChatMessage(
   workspaceId: string,
   workspaceType: string,
   message: string,
-  currentBoxes?: any[]
+  currentBoxes?: any[],
+  documentContent?: string
 ) {
   const response = await fetch('/api/chat', {
     method: 'POST',
@@ -14,6 +15,7 @@ export async function sendChatMessage(
       workspaceType,
       message,
       currentBoxes,
+      documentContent,
     }),
   });
 
