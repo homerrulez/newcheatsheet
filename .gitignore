@@ -1,3 +1,5 @@
 .env 
 "env copy back" 
 *.env 
+node_modules/ 
+"node_modules/" 
